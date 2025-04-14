@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NETWORKCO LMS</title>
+    <link rel="stylesheet" href="Login.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">NETWORKCO</div>
+        <div class="nav-links">
+            <button>EXPLORE</button>
+            <button>SIGN IN</button>
+            <button>REGISTER</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <h1>Welcome to the NETWORKCO LMS</h1>
+        <p>Broaden your reach by broadening your knowledge</p>
+        <button class="login-btn-main" onclick="showLogin()">LOGIN ➔</button>
+    </main>
+
+    <!-- Reviews Section -->
+    <section class="reviews">
+        <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <h3>Review title</h3>
+            <p>Review body</p>
+            <div class="reviewer">
+                <img src="https://via.placeholder.com/30" alt="Reviewer">
+                <span>Reviewer name<br>Date</span>
+            </div>
+        </div>
+        <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <h3>Review title</h3>
+            <p>Review body</p>
+            <div class="reviewer">
+                <img src="https://via.placeholder.com/30" alt="Reviewer">
+                <span>Reviewer name<br>Date</span>
+            </div>
+        </div>
+        <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <h3>Review title</h3>
+            <p>Review body</p>
+            <div class="reviewer">
+                <img src="https://via.placeholder.com/30" alt="Reviewer">
+                <span>Reviewer name<br>Date</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Popup -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-container">
+            <button class="close-btn" onclick="hideLogin()">×</button>
+            <h2>Login</h2>
+            <form>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="login-btn">Login</button>
+                <a href="#" class="forgot-password">Forgot Password?</a>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showLogin() {
+            document.getElementById('loginOverlay').style.display = 'flex';
+        }
+
+        function hideLogin() {
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
