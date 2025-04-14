@@ -11,9 +11,9 @@
     <header class="header">
         <div class="logo">NETWORKCO</div>
         <div class="nav-links">
-            <button>EXPLORE</button>
-            <button>SIGN IN</button>
-            <button>REGISTER</button>
+            <button onclick="showLogin()">SIGN IN</button>
+            <button onclick="showRegister()">REGISTER</button>
+
         </div>
     </header>
 
@@ -74,6 +74,41 @@
             </form>
         </div>
     </div>
+<!-- Register Popup -->
+<div class="login-overlay" id="registerOverlay">
+    <div class="login-container">
+        <button class="close-btn" onclick="hideRegister()">×</button>
+        <h2>Register</h2>
+        <form>
+            <div class="form-group">
+                <label for="regName">Name</label>
+                <input type="text" id="regName" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="regSurname">Surname</label>
+                <input type="text" id="regSurname" name="surname" required>
+            </div>
+            <div class="form-group">
+                <label for="regEmail">Email</label>
+                <input type="email" id="regEmail" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="regPassword">Password</label>
+                <input type="password" id="regPassword" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="regRole">Role</label>
+                <input type="text" id="regRole" name="role" required>
+            </div>
+            <div class="form-group">
+                <label for="regLevel">Level</label>
+                <input type="text" id="regLevel" name="level" required>
+            </div>
+            <button type="submit" class="login-btn">Register</button>
+        </form>
+    </div>
+</div>
+
 
     <script>
         function showLogin() {
@@ -83,6 +118,23 @@
         function hideLogin() {
             document.getElementById('loginOverlay').style.display = 'none';
         }
+
+        function showLogin() {
+        document.getElementById('loginOverlay').style.display = 'flex';
+    }
+
+    function hideLogin() {
+        document.getElementById('loginOverlay').style.display = 'none';
+    }
+
+    function showRegister() {
+        document.getElementById('registerOverlay').style.display = 'flex';
+    }
+
+    function hideRegister() {
+        document.getElementById('registerOverlay').style.display = 'none';
+    }
+        
     </script>
 </body>
 </html>
