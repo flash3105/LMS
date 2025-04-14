@@ -1,0 +1,23 @@
+{
+  "name": "lms",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flash3105/LMS.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/flash3105/LMS/issues"
+  },
+  "homepage": "https://github.com/flash3105/LMS#readme",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
