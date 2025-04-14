@@ -1,3 +1,5 @@
+require('dotenv').config(); // this loads .env variables
+
 const express = require('express');
 const connectDB = require('./config/db');
 
