@@ -15,7 +15,7 @@ document.querySelector('form').addEventListener('submit', async (e) => {
 
         if (data.token) {
             localStorage.setItem('token', data.token);
-            window.location.href = '/';
+            window.location.href = 'Dashboard/InternDashboard.html';
         } else {
             alert(data.error);
         }
