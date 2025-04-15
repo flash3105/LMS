@@ -1,0 +1,104 @@
+.navbar {
+    padding: 0.5rem 1rem; 
+  }
+  
+  .Nav-logo {
+    height: 30px;        
+    width: auto;         
+    transform: scale(2.2); 
+    transform-origin: center; 
+  }
+      body {
+        background-color: #f1f1f1;
+        min-height: 100vh;
+        display: flex;
+        font-family: 'Segoe UI', sans-serif;
+      }
+      
+      .sidebar {
+        width: 250px;
+        background-color: #e9ecef;
+        color: #333;
+        padding-top: 20px;
+        position: fixed;
+        height: 100vh;
+        border-right: 1px solid #9872e0;
+      }
+      .sidebar a {
+        color: #333;
+        display: block;
+        padding: 12px 20px;
+        text-decoration: none;
+        border-bottom: 1px solid #9872e0;
+      }
+      .sidebar a:hover, .sidebar a.active {
+        background-color: #f8f9fa;
+        font-weight: 600;
+      }
+      .main {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+      }
+      .topbar {
+        background-color: #f8f9fa;
+        padding: 17px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .search-bar input {
+        border-radius: 20px;
+        padding: 6px 15px;
+        border: 1px solid #ced4da;
+      }
+      .search-bar button {
+        margin-left: 8px;
+        border-radius: 20px;
+        background-color: #9872e0;
+        color: white;
+        border: none;
+        padding: 6px 15px;
+      }
+      .welcome {
+        padding: 30px 25px 10px;
+      }
+      .card-container {
+        padding: 10px 25px 25px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+      .course-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        flex: 1 1 250px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border-left: 5px solid #9872e0;
+      }
+      .topbar img {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+      }
+      .section-title {
+        padding: 0 25px;
+        margin-bottom: 10px;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: #343a40;
+      }
+      .view-more {
+        text-align: center;
+        width: 100%;
+        margin-top: 20px;
+      }
+      .view-more button {
+        background-color: #9872e0;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 20px;
+        display: inline-block;
+      } 
