@@ -79,7 +79,7 @@
     <div class="login-container">
         <button class="close-btn" onclick="hideRegister()">×</button>
         <h2>Register</h2>
-        <form>
+        <form id="registerForm" onsubmit="handleRegister(event)">
             <div class="form-group">
                 <label for="regName">Name</label>
                 <input type="text" id="regName" name="name" placeholder="Value" required>
@@ -116,6 +116,7 @@
             </div>
             <button type="submit" class="login-btn">Register</button>
         </form>
+        <p id="registerFeedback" style="color: green; display: none;">Successfully registered!</p>
     </div>
 </div>
 
@@ -150,5 +151,8 @@
     }
         
     </script>
+   
+    <script src="Login/Login.js"></script>        
+    <script src="Login/Register.js"></script>
 </body>
 </html>
