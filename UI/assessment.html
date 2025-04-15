@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LMS Dashboard</title>
   <style>
     body {
@@ -63,7 +63,7 @@
     .progress-fill {
       background: #1e88e5;
       height: 10px;
-      width: 70%; /* Dynamic progress value */
+      width: 0%; /* Dynamically set via JS */
     }
 
     .info {
@@ -72,9 +72,27 @@
       margin-top: 0.5rem;
     }
 
+    .continue-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #1e88e5;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: bold;
+      transition: background 0.2s ease;
+    }
+
+    .continue-btn:hover {
+      background-color: #1565c0;
+    }
+
+    /* Completed Courses Table */
     table {
       width: 100%;
-      margin-top: 1rem;
+      margin-top: 2rem;
       border-collapse: collapse;
     }
 
@@ -99,37 +117,32 @@
 <header>LMS Dashboard</header>
 
 <div class="dashboard">
-  
+
+  <!-- Ongoing Courses Section -->
   <h2>Ongoing Courses</h2>
   <div class="grid">
+    <!-- Example Course 1 -->
     <div class="card">
       <h3>Intro to Data Science</h3>
       <div class="progress-bar">
-        <div class="progress-fill" style="width: 70%;"></div>
+        <div class="progress-fill" id="course1-progress" style="width: 70%;"></div>
       </div>
       <div class="info">70% Complete • 6 hrs spent</div>
+      <a href="course.html?id=data-science&lesson=3" class="continue-btn">Continue</a>
     </div>
+
+    <!-- Example Course 2 -->
     <div class="card">
       <h3>Python for Beginners</h3>
       <div class="progress-bar">
-        <div class="progress-fill" style="width: 45%;"></div>
+        <div class="progress-fill" id="course2-progress" style="width: 45%;"></div>
       </div>
       <div class="info">45% Complete • 2.5 hrs spent</div>
+      <a href="course.html?id=python-beginners&lesson=2" class="continue-btn">Continue</a>
     </div>
   </div>
 
-  <h2>Upcoming Classes</h2>
-  <div class="grid">
-    <div class="card">
-      <h3>Data Ethics Q&A</h3>
-      <div class="info">April 18 • 3:00 PM • Dr. Alice W.</div>
-    </div>
-    <div class="card">
-      <h3>Pandas Workshop</h3>
-      <div class="info">April 22 • 11:00 AM • John K.</div>
-    </div>
-  </div>
-
+  <!-- Completed Courses Section -->
   <h2>Completed Courses</h2>
   <table>
     <thead>
@@ -157,6 +170,19 @@
   </table>
 
 </div>
+
+<!-- Optional JavaScript to dynamically update progress bars -->
+<script>
+  // Dynamic Progress Tracking (In a real application, this would be fetched from a database or localStorage)
+  const courseProgress = {
+    "data-science": 70,
+    "python-beginners": 45
+  };
+
+  // Update Progress Bars dynamically
+  document.getElementById("course1-progress").style.width = courseProgress["data-science"] + "%";
+  document.getElementById("course2-progress").style.width = courseProgress["python-beginners"] + "%";
+</script>
 
 </body>
 </html>
