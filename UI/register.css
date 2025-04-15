@@ -53,7 +53,22 @@
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 14px;
+
   }
+
+  .register-form select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.register-form label {
+    display: block;
+    margin-bottom: 5px;
+}
   
   button {
     margin-top: 10px;
