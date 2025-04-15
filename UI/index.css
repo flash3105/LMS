@@ -178,6 +178,30 @@ body {
     border-radius: 4px;
 }
 
+/* Form Group Styling for Registration Popup */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    appearance: none; /* Remove default dropdown arrow */
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="5" viewBox="0 0 10 5"><path d="M0 0h10L5 5z" fill="%23999"/></svg>') no-repeat right 10px center;
+    background-size: 10px;
+    cursor: pointer;
+}
+
 .login-btn {
     width: 100%;
     padding: 10px;
@@ -213,3 +237,5 @@ body {
     font-size: 20px;
     cursor: pointer;
 }
+
+
