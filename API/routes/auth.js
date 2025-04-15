@@ -6,7 +6,9 @@ const User = require('../models/User');
 
 // Register
 router.post('/register', async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password, role,name, surname, level} = req.body;
+
+  console.log('Received registration request:', req.body); // Log only
 
   try {
     let user = await User.findOne({ email });
@@ -14,11 +16,12 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    user = new User({ email, password: hashedPassword, role });
+    user = new User({ email, password: hashedPassword, role,name,surname, level });
     await user.save();
 
-    res.json({ message: 'User registered successfully' });
+    res.json({ message: 'User registered successfully', token: 'mock-token' }); 
   } catch (err) {
+    console.error('Server error:', err);
     res.status(500).send('Server error');
   }
 });
@@ -26,7 +29,7 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-
+  console.log('Received login request:', req.body); // Log only
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ error: 'User not found' });
