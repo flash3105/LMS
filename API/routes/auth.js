@@ -40,6 +40,16 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, 'mysecretkey', { expiresIn: '1h' });
 
     // Send user info along with the token
+    console.log({
+      token,
+      user: {
+        email: user.email,
+        name: user.name,
+        surname: user.surname,
+        role: user.role,
+        level: user.level,
+      },
+    });
     res.json({
       token,
       user: {

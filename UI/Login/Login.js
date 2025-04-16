@@ -1,29 +1,60 @@
 document.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const email = document.querySelector('#username').value;
+  
+    // Get form values
+    const email = document.querySelector('#username').value.trim();
     const password = document.querySelector('#password').value;
-
-    try {
-        const res = await fetch('http://localhost:5000/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-        });
-
-        const data = await res.json();
-
-        if (data.token) {
-            // Store token and user info in localStorage
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user)); // Save user info as a JSON string
-
-            // Redirect to the dashboard
-            window.location.href = 'Dashboard/InternDashboard.html';
-        } else {
-            alert(data.error);
-        }
-    } catch (err) {
-        alert('Server error');
+  
+    // Basic validation
+    if (!email || !password) {
+      alert('Please fill in all fields');
+      return;
     }
-});
+  
+    console.log('Attempting to log in with:', { email, password });
+  
+    try {
+      // Show loading state
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Logging in...';
+  
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+  
+      console.log('Response status:', res.status);
+      const data = await res.json();
+      console.log('Response data:', data);
+  
+      if (res.ok) {
+        // Store authentication data
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        console.log('Login successful, user:', data.user);
+        
+        // Add delay to see logs before redirect
+  setTimeout(() => {
+    window.location.href = 'Dashboard/InternDashboard.html';
+  }, 1000);
+      } else {
+        console.error('Login error:', data.error);
+        alert(data.error || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Network error:', err);
+      alert('Unable to connect to server. Please try again later.');
+    } finally {
+      // Reset button state
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Login';
+      }
+    }
+  });

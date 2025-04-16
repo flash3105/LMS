@@ -76,9 +76,14 @@
   <script src="InternDashboard.js"></script>
   <script>
     // Retrieve the name from localStorage
-    const userName = localStorage.getItem('name') || 'User'; // Default to 'User' if no name is found
-    document.getElementById('userName').textContent = userName;
-
+     // Default to 'User' if no name is found
+   
+  const searchInput = document.getElementById('searchInput');
+  const user = localStorage.getItem('user') || 'User'; // Default to 'User' if no user is found
+  console.log(user);
+  const userName = JSON.parse(user).name || 'User'; // Default to 'User' if no name is found
+  document.getElementById('userName').textContent = userName;
+  // Set the user name in the top bar
     // Update the dynamic user name in the welcome message
     const dynamicUserName = document.getElementById('dynamicUserName');
     if (dynamicUserName) {
