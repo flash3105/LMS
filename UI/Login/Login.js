@@ -14,7 +14,11 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         const data = await res.json();
 
         if (data.token) {
+            // Store token and user info in localStorage
             localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user)); // Save user info as a JSON string
+
+            // Redirect to the dashboard
             window.location.href = 'Dashboard/InternDashboard.html';
         } else {
             alert(data.error);

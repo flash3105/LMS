@@ -10,7 +10,24 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  role: { type: String, enum: ['intern', 'instructor', 'admin'], default: 'intern' }
+  role: { 
+    type: String, 
+    enum: ['intern', 'instructor', 'admin'], 
+    default: 'intern' 
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  surname: {
+    type: String,
+    required: true,
+  },
+  level: {
+    type: String,
+    enum: ['beginner', 'intermediate', 'expert'],
+    required: true,
+  },
 });
 
 module.exports = mongoose.model("User", UserSchema);
