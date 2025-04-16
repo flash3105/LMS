@@ -36,14 +36,14 @@
         </div>
       </div>
       <div class="d-flex align-items-center gap-3">
-        <span class="fw-semibold text-dark">Zinhle Mkhabela</span>
+        <span id="userName" class="fw-semibold text-dark"></span>
         <img src="/UI/images/businesswoman-executive-professional-success-concept.jpg" alt="Profile" class="rounded-circle" />
       </div>
     </div>
 
     <!-- Welcome Section -->
     <div class="welcome">
-      <h2 class="fw-bold text-dark">Welcome to your Dashboard, Zinhle 👋</h2>
+      <h2 class="fw-bold text-dark">Welcome to your Dashboard, <span id="dynamicUserName"></span> 👋</h2>
       <p class="text-muted">Explore your courses and track your learning journey below.</p>
     </div>
 
@@ -74,5 +74,16 @@
 
   <!-- Include the JavaScript -->
   <script src="InternDashboard.js"></script>
+  <script>
+    // Retrieve the name from localStorage
+    const userName = localStorage.getItem('name') || 'User'; // Default to 'User' if no name is found
+    document.getElementById('userName').textContent = userName;
+
+    // Update the dynamic user name in the welcome message
+    const dynamicUserName = document.getElementById('dynamicUserName');
+    if (dynamicUserName) {
+        dynamicUserName.textContent = userName;
+    }
+  </script>
 </body>
 </html>
