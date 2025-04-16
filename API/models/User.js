@@ -12,8 +12,8 @@ const UserSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    enum: ['intern', 'instructor', 'admin'], 
-    default: 'intern' 
+    enum: ['Intern', 'Instructor', 'Admin'], 
+    default: 'Intern' 
   },
   name: {
     type: String,
@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema({
   },
   level: {
     type: String,
-    enum: ['beginner', 'intermediate', 'expert'],
+    enum: ['Beginner', 'Intermediate', 'Expert'],
     required: true,
   },
 });
