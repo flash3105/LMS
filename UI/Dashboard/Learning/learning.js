@@ -1,4 +1,7 @@
-export function renderLearningTab(contentArea) {
+import { fetchCourses, courses, userData } from '../Data/data.js';
+import { renderCourseDetails } from '../Courses/Courses.js';
+
+export async function renderLearningTab(contentArea) {
   contentArea.innerHTML = `
     <div class="welcome">
       <h2 class="fw-bold">Learning Dashboard</h2>
@@ -8,29 +11,33 @@ export function renderLearningTab(contentArea) {
     <div class="card-container" id="courseContainer"></div>
   `;
 
-  // Fetch and render courses
-  fetchCourses();
+  // Fetch courses and render them
+  await fetchCourses(); // Ensure courses are fetched before rendering
+  renderCourses(courses);
 }
 
 function renderCourses(courseList) {
-    const container = document.getElementById("courseContainer");
-    if (!container) return;
-    container.innerHTML = "";
-    courseList.forEach(course => {
-      const card = document.createElement("div");
-      card.className = "course-card";
-      card.innerHTML = `
-        <h5>${course.title}</h5>
-        <p>${course.description}</p>
-        <button class="btn btn-success btn-sm enrol-button" onclick="event.stopPropagation(); enrolInCourse('${course.title}')">
-          ${userData[currentUser.email].enrolledCourses.includes(course.title) ? 'Enrolled' : 'Enrol'}
-        </button>
-      `;
-      card.addEventListener("click", () => {
-        isCourseDetailsView = true;
-        currentCourse = course;
-        renderCourseDetails(document.getElementById("contentArea"), course);
-      });
-      container.appendChild(card);
+  const container = document.getElementById("courseContainer");
+  if (!container) return;
+
+  container.innerHTML = ""; // Clear the container
+  courseList.forEach(course => {
+    const card = document.createElement("div");
+    card.className = "course-card";
+    card.innerHTML = `
+      <h5>${course.title}</h5>
+      <p>${course.description}</p>
+      <button class="btn btn-success btn-sm enrol-button" onclick="event.stopPropagation(); enrolInCourse('${course.title}')">
+        ${
+          userData[currentUser.email]?.enrolledCourses?.includes(course.title)
+            ? "Enrolled"
+            : "Enrol"
+        }
+      </button>
+    `;
+    card.addEventListener("click", () => {
+      renderCourseDetails(document.getElementById("contentArea"), course);
     });
-  }
+    container.appendChild(card);
+  });
+}

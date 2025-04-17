@@ -1,7 +1,7 @@
 import { fetchCourses, fetchUserData, fetchMessages, courses, userData, messages } from '../Data/data.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const userId = JSON.parse(localStorage.getItem('user')).id; // Get user ID from localStorage
+  const userId = JSON.parse(localStorage.getItem('user')).name; // Get user ID from localStorage
 
   await fetchCourses(); // Fetch courses
   await fetchUserData(userId); // Fetch user data

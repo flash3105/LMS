@@ -1,5 +1,4 @@
 // assessments.js
-import { renderContent } from './Render.js';
 
 
 // Fetch assessments from the API
@@ -12,7 +11,7 @@ async function fetchAssessments() {
     return await response.json();
   } catch (error) {
     console.error('Error fetching assessments:', error);
-    return [];
+    return []; // Return an empty array if the API call fails
   }
 }
 
@@ -54,8 +53,8 @@ function handleAssessmentActions() {
   });
 }
 
-function renderEmptyState() {
-  return `
+function renderEmptyState(container) {
+  container.innerHTML = `
     <tr>
       <td colspan="6" class="text-center py-4">
         <div class="empty-state">
@@ -72,6 +71,17 @@ export async function renderAssessmentsTab(containerId = 'contentArea') {
     // Fetch assessments from the API
     const assessments = await fetchAssessments();
 
+    // Get the container element
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error(`Container with ID "${containerId}" not found.`);
+      return;
+    }
+
+    // Clear the container
+    container.innerHTML = '';
+
+    // Build the assessments table
     const content = `
       <div class="assessments-container">
         <div class="assessments-header mb-4">
@@ -93,10 +103,10 @@ export async function renderAssessmentsTab(containerId = 'contentArea') {
                     <th>Action</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="assessmentsTableBody">
                   ${assessments.length > 0 
                     ? assessments.map(assessment => renderAssessmentRow(assessment)).join('') 
-                    : renderEmptyState()}
+                    : ''}
                 </tbody>
               </table>
             </div>
@@ -105,16 +115,30 @@ export async function renderAssessmentsTab(containerId = 'contentArea') {
       </div>
     `;
 
-    render(containerId, content);
+    // Insert the content into the container
+    container.innerHTML = content;
+
+    // Handle empty state
+    if (assessments.length === 0) {
+      const tableBody = document.getElementById('assessmentsTableBody');
+      renderEmptyState(tableBody);
+    }
+
+    // Add event listeners for actions
     handleAssessmentActions();
     
   } catch (error) {
     console.error("Error rendering assessments:", error);
-    render(containerId, `
-      <div class="alert alert-danger">
-        Failed to load assessments. Please try again later.
-      </div>
-    `);
+
+    // Get the container element
+    const container = document.getElementById(containerId);
+    if (container) {
+      container.innerHTML = `
+        <div class="alert alert-danger">
+          Failed to load assessments. Please try again later.
+        </div>
+      `;
+    }
   }
 }
 
