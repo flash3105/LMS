@@ -1,0 +1,30 @@
+/* assessments.css */
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .status-badge.upcoming {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+  
+  .status-badge.completed {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  .assessment-row.upcoming {
+    background-color: #f8f9fa;
+  }
+  
+  .empty-state {
+    color: #6c757d;
+    padding: 2rem;
+  }
+  
+  .empty-state i {
+    opacity: 0.5;
+  }
