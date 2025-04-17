@@ -36,10 +36,7 @@ function renderContent(tab) {
       renderProfileTab(contentArea, currentUser);
       break;
     case "learning":
-      renderLearningTab(contentArea);
-      break;
-    case "courses":
-      renderCourseDetails(contentArea); // fixed function name
+      renderLearningTab(contentArea,currentUser);
       break;
     case "assessments":
       renderAssessmentsTab(contentArea);
@@ -57,34 +54,37 @@ function setupSidebarNavigation() {
   if (!links) return;
 
   links.forEach(link => {
-    if (!link) return;
-
     link.addEventListener("click", (e) => {
-      if (!e) return;
-
       e.preventDefault();
-      links.forEach(l => {
-        if (!l) return;
-        l.classList.remove("active");
-      });
+
+      // Remove "active" class from all links
+      links.forEach(l => l.classList.remove("active"));
+
+      // Add "active" class to the clicked link
       link.classList.add("active");
-      const tab = link.getAttribute("id")?.replace("Link", "")?.toLowerCase();
-      if (!tab) return;
-      renderContent(tab);
+
+      // Extract the tab name from the link's id
+      const tab = link.getAttribute("id")?.replace("Link", "").toLowerCase();
+      if (tab) {
+        renderContent(tab); // Call renderContent with the correct tab
+      } else {
+        console.error("Invalid tab id:", link.getAttribute("id"));
+      }
     });
   });
 
+  // Sign out functionality
   const signOut = document.getElementById("signOutLink");
-  if (!signOut) return;
-
-  signOut.addEventListener("click", () => {
-    try {
-      localStorage.clear();
-      window.location.href = "/UI/Login/Login.html";
-    } catch (err) {
-      console.error("Error signing out:", err);
-    }
-  });
+  if (signOut) {
+    signOut.addEventListener("click", () => {
+      try {
+        localStorage.clear();
+        window.location.href = "/UI/Login/Login.html";
+      } catch (err) {
+        console.error("Error signing out:", err);
+      }
+    });
+  }
 }
 
 function searchGlobal() {
