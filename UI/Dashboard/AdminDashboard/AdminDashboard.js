@@ -1,12 +1,7 @@
 // Ensure the script is treated as a module
 import { renderSidebar } from '../Components/Sidebar.js';
+import { renderadminLearning } from './AdminLearning.js' 
 
-document.addEventListener("DOMContentLoaded", () => {
-  const sidebarContainer = document.getElementById("sidebarContainer");
-  if (sidebarContainer) sidebarContainer.innerHTML = renderSidebar();
-
-  
-});
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
 let currentTab = "home";
 
@@ -37,7 +32,7 @@ function renderContent(tab) {
       renderProfileTab(contentArea, currentUser);
       break;
     case "learning":
-      renderLearningTab(contentArea,currentUser);
+      renderLearningTab(contentArea); // Now correctly references renamed function
       break;
     case "assessments":
       renderAssessmentsTab(contentArea);
@@ -58,10 +53,8 @@ function setupSidebarNavigation() {
     link.addEventListener("click", (e) => {
       e.preventDefault();
 
-      // Remove "active" class from all links
+      // Remove "active" class from all links and add to the clicked link
       links.forEach(l => l.classList.remove("active"));
-
-      // Add "active" class to the clicked link
       link.classList.add("active");
 
       // Extract the tab name from the link's id
@@ -91,10 +84,11 @@ function setupSidebarNavigation() {
 function searchGlobal() {
   const query = document.getElementById("searchInput")?.value.toLowerCase();
   if (!query) return;
+
+  const contentArea = document.getElementById("contentArea");
   if (currentTab === "learning") {
-    renderLearningTab(document.getElementById("contentArea"), query);
+    renderLearningTab(contentArea, query); // Now properly filters content
   } else {
     alert(`Searching for: ${query}`);
   }
 }
-
