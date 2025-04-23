@@ -19,17 +19,17 @@
   }
   
   .Nav-logo {
-    height: 40px;
-    width: auto;
-    transform: scale(2.2);
+    height: 60px; /* Adjust the height to make the logo smaller */
+    width: auto; /* Maintain aspect ratio */
+    transform: scale(1.5); /* Reduce the scale */
     transform-origin: center;
     transition: transform 0.3s ease;
     display: block;
-    margin: 0 auto 20px;
+    margin: 0 auto 10px; /* Reduce the bottom margin */
   }
   
   .Nav-logo:hover {
-    transform: scale(2.4);
+    transform: scale(1.7); /* Slightly increase the hover effect */
   }
 
 /* Topbar */
@@ -43,6 +43,8 @@
     position: sticky;
     top: 0;
     z-index: 900;
+    margin-left: 250px; /* Add margin to account for the sidebar width */
+    width: calc(100% - 250px); /* Adjust the width to exclude the sidebar */
   }
   
   .topbar .search-bar {
@@ -127,4 +129,3 @@
     color: #1e88e5;
     border-left-color: #1e88e5;
   }
-  
