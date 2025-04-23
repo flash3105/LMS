@@ -40,7 +40,7 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         
         // Add delay to see logs before redirect
   setTimeout(() => {
-    window.location.href = 'Dashboard/InternDashboard.html';
+    window.location.href = 'Dashboard/AdminDashboard/Admindashboard.html';
   }, 1000);
       } else {
         console.error('Login error:', data.error);

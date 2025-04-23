@@ -1,4 +1,5 @@
 // Global variable for current user
+
 let currentUser = JSON.parse(localStorage.getItem("currentUser")) || null;
 
 function signOut() {
