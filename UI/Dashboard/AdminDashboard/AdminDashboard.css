@@ -1,3 +1,94 @@
+/* Global Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    background-color: #f5f7fb;
+    min-height: 100vh;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    color: #333;
+    line-height: 1.6;
+  }
+  /* Navbar */
+.navbar {
+    padding: 0.5rem 1rem;
+    background-color: #ffffff;
+  }
+  
+  .Nav-logo {
+    height: 40px;
+    width: auto;
+    transform: scale(2.2);
+    transform-origin: center;
+    transition: transform 0.3s ease;
+    display: block;
+    margin: 0 auto 20px;
+  }
+  
+  .Nav-logo:hover {
+    transform: scale(2.4);
+  }
+
+/* Topbar */
+.topbar {
+    background-color: #f8f9fa;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 900;
+  }
+  
+  .topbar .search-bar {
+    max-width: 400px;
+    width: 100%;
+    position: relative;
+  }
+  
+  .topbar .search-bar input {
+    border-radius: 20px;
+    padding: 8px 15px;
+    border: 1px solid #ced4da;
+    width: 100%;
+    font-size: 0.9rem;
+  }
+  
+  .topbar .search-bar button {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 20px;
+    background-color: #1e88e5;
+    color: white;
+    border: none;
+    padding: 5px 15px;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+  }
+  
+  .topbar .search-bar button:hover {
+    background-color: #1565c0;
+  }
+  
+  .topbar img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+  
+  /* Content Area */
+  .content-area {
+    padding: 20px 0;
+  }
+  
 
 
 .sidebar {
