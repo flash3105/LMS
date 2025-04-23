@@ -1,6 +1,6 @@
 // Ensure the script is treated as a module
 import { renderSidebar } from '../Components/Sidebar.js';
-import { renderadminLearning } from './AdminLearning.js' 
+import { renderHomeTab } from './AdminHome.js';
 
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
 let currentTab = "home";
@@ -28,20 +28,20 @@ function renderContent(tab) {
     case "home":
       renderHomeTab(contentArea, currentUser);
       break;
-    case "profile":
-      renderProfileTab(contentArea, currentUser);
+   // case "profile":
+     // renderProfileTab(contentArea, currentUser);
+     // break;
+    //case "learning":
+    //  renderLearningTab(contentArea); // Now correctly references renamed function
+     // break;
+    //case "assessments":
+     // renderAssessmentsTab(contentArea);
       break;
-    case "learning":
-      renderLearningTab(contentArea); // Now correctly references renamed function
-      break;
-    case "assessments":
-      renderAssessmentsTab(contentArea);
-      break;
-    case "messages":
+   /* case "messages":
       renderMessagesTab(contentArea);
       break;
     default:
-      console.error(`Unknown tab: ${tab}`);
+      console.error(`Unknown tab: ${tab}`);*/
   }
 }
 
