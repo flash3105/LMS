@@ -1,4 +1,4 @@
-import { renderadminLearning } from './AdminLearning.js';
+//import { renderadminLearning } from './AdminLearning.js';
 
 // Component: Quick Links
 function renderQuickLinks() {
@@ -68,5 +68,5 @@ export function renderHomeTab(container, user) {
     `;
 
     // Render additional content in the content area
-    renderadminLearning(document.getElementById('contentArea'));
+    //renderadminLearning(document.getElementById('contentArea'));
 }
