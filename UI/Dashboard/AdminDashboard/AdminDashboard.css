@@ -129,3 +129,38 @@
     color: #1e88e5;
     border-left-color: #1e88e5;
   }
+  .profile-section {
+    background-color: #ffffff;
+    border: 2px solid #d1d5db;
+    border-radius: 10px;
+    padding: 20px;
+  }
+  
+  .profile-section h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #1e88e5;
+  }
+  
+  .profile-section p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-bottom: 10px;
+  }
+  
+  .profile-section .settings-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #d1d5db;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .profile-section .settings-item:hover {
+    background-color: #f1f3f5;
+  }
+  
+  .profile-section .settings-item p {
+    margin: 0;
+    color: #1a202c;
+  }
