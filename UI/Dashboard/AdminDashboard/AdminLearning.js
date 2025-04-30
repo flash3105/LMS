@@ -23,8 +23,8 @@ export async function renderadminLearning(container, query = '') {
     );
 
     container.innerHTML = `
-      <h2>Learning Management</h2>
       <div class="admin-learning-container">
+        <h2>Learning Management</h2>
         <div class="add-course-section">
           <h3>${allCourses.length === 0 ? 'No Courses Found - Add Your First Course' : 'Add New Course'}</h3>
           <form id="courseForm">

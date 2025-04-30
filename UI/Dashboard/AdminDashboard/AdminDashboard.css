@@ -1,154 +1,157 @@
 /* Global Reset and Base Styles */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    background-color: #f5f7fb;
-    min-height: 100vh;
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    color: #333;
-    line-height: 1.6;
-  }
-  /* Navbar */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f5f7fb;
+  min-height: 100vh;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* Navbar */
 .navbar {
-    padding: 0.5rem 1rem;
-    background-color: #ffffff;
-  }
-  
-  .Nav-logo {
-    height: 60px; /* Adjust the height to make the logo smaller */
-    width: auto; /* Maintain aspect ratio */
-    transform: scale(1.5); /* Reduce the scale */
-    transform-origin: center;
-    transition: transform 0.3s ease;
-    display: block;
-    margin: 0 auto 10px; /* Reduce the bottom margin */
-  }
-  
-  .Nav-logo:hover {
-    transform: scale(1.7); /* Slightly increase the hover effect */
-  }
+  padding: 0.5rem 1rem;
+  background-color: #ffffff;
+}
+
+.Nav-logo {
+  height: 60px;
+  width: auto;
+  transform: scale(1.5);
+  transform-origin: center;
+  transition: transform 0.3s ease;
+  display: block;
+  margin: 0 auto 10px;
+}
+
+.Nav-logo:hover {
+  transform: scale(1.7);
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: #fff;
+  color: #333;
+  padding: 20px 0;
+  position: fixed;
+  height: 100vh;
+  border-right: 1px solid #ccc;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  transition: transform 0.3s ease;
+}
+
+.sidebar a {
+  color: #555;
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  border-left: 4px solid transparent;
+}
+
+.sidebar a i {
+  margin-right: 10px;
+  font-size: 1.1rem;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+  background-color: #f0f0f0;
+  color: #1e88e5;
+  border-left-color: #1e88e5;
+}
 
 /* Topbar */
 .topbar {
-    background-color: #f8f9fa;
-    padding: 15px 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 900;
-    margin-left: 250px; /* Add margin to account for the sidebar width */
-    width: calc(100% - 250px); /* Adjust the width to exclude the sidebar */
-  }
-  
-  .topbar .search-bar {
-    max-width: 400px;
-    width: 100%;
-    position: relative;
-  }
-  
-  .topbar .search-bar input {
-    border-radius: 20px;
-    padding: 8px 15px;
-    border: 1px solid #ced4da;
-    width: 100%;
-    font-size: 0.9rem;
-  }
-  
-  .topbar .search-bar button {
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
-    border-radius: 20px;
-    background-color: #1e88e5;
-    color: white;
-    border: none;
-    padding: 5px 15px;
-    font-size: 0.9rem;
-    transition: background-color 0.2s ease;
-  }
-  
-  .topbar .search-bar button:hover {
-    background-color: #1565c0;
-  }
-  
-  .topbar img {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 50%;
-  }
-  
-  /* Content Area */
-  .content-area {
-    padding: 20px 0;
-  }
-  
+  background-color: #f8f9fa;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  margin-left: 250px; /* Offset by sidebar width */
+  width: calc(100% - 250px); /* Adjust width to exclude sidebar */
+}
 
+.topbar .search-bar {
+  max-width: 400px;
+  width: 100%;
+  position: relative;
+}
 
-.sidebar {
-    width: 250px;
-    background-color: #fff;
-    color: #333;
-    padding: 20px 0;
-    position: fixed;
-    height: 100vh;
-    border-right: 1px solid #ccc;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
-    z-index: 1000;
-    transition: transform 0.3s ease;
-  }
-  
-  .sidebar a {
-    color: #555;
-    display: flex;
-    align-items: center;
-    padding: 15px 20px;
-    text-decoration: none;
-    font-size: 1rem;
-    font-weight: 500;
-    transition: background-color 0.2s ease, color 0.2s ease;
-    border-left: 4px solid transparent;
-  }
-  
-  .sidebar a i {
-    margin-right: 10px;
-    font-size: 1.1rem;
-  }
-  
-  .sidebar a:hover,
-  .sidebar a.active {
-    background-color: #f0f0f0;
-    color: #1e88e5;
-    border-left-color: #1e88e5;
-  }
-  /* Profile Section */
+.topbar .search-bar input {
+  border-radius: 20px;
+  padding: 8px 15px;
+  border: 1px solid #ced4da;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+.topbar .search-bar button {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 20px;
+  background-color: #1e88e5;
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.topbar .search-bar button:hover {
+  background-color: #1565c0;
+}
+
+.topbar img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Content Area */
+.content-area {
+  margin-left: 250px; /* Offset by sidebar width */
+  width: calc(100% - 250px); /* Adjust width to exclude sidebar */
+  padding: 20px;
+}
+
+/* Profile Section */
 .profile-section {
   background-color: #ffffff;
-  border: 1px solid #e5e7eb; /* Light border for separation */
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .profile-section h3 {
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 15px;
-  color: #1e88e5; /* Primary color for headings */
+  color: #1e88e5;
 }
 
 .profile-section p {
   font-size: 1rem;
-  color: #4b5563; /* Neutral text color */
+  color: #4b5563;
   margin-bottom: 10px;
   line-height: 1.5;
 }
@@ -166,12 +169,12 @@
 .profile-section .learning-stats {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #e5e7eb; /* Separator for sections */
+  border-top: 1px solid #e5e7eb;
 }
 
 .profile-section .learning-stats p {
   font-size: 1rem;
-  color: #374151; /* Slightly darker text color */
+  color: #374151;
   margin-bottom: 10px;
 }
 
@@ -195,23 +198,34 @@
 
 .profile-section .settings-item p {
   margin: 0;
-  color: #1a202c; /* Darker text for settings */
+  color: #1a202c;
   font-size: 1rem;
   font-weight: 500;
 }
 
 .profile-section .settings-item i {
   font-size: 1.2rem;
-  color: #6b7280; /* Neutral icon color */
+  color: #6b7280;
   transition: color 0.2s ease;
 }
 
 .profile-section .settings-item:hover i {
-  color: #1e88e5; /* Highlight icon on hover */
+  color: #1e88e5;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .topbar {
+      margin-left: 0;
+      width: 100%;
+  }
+
+  .content-area {
+      margin-left: 0;
+      width: 100%;
+      padding: 15px;
+  }
+
   .profile-section {
       padding: 15px;
   }

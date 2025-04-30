@@ -3,6 +3,8 @@ import { renderSidebar } from '../Components/Sidebar.js';
 import { renderHomeTab } from './AdminHome.js';
 import { renderadminLearning } from './AdminLearning.js';
 import { renderProfileTab } from '../My Profile/my_profile.js';
+import { renderAssessmentsTab } from '../Components/Assessment.js';
+
 
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
 let currentTab = "home";
@@ -35,9 +37,9 @@ function renderContent(tab) {
      break;
     case "learning":
      renderadminLearning(contentArea, ""); // Now correctly references renamed function
-     // break;
-    //case "assessments":
-     // renderAssessmentsTab(contentArea);
+     break;
+    case "assessments":
+      renderAssessmentsTab(contentArea);
       break;
    /* case "messages":
       renderMessagesTab(contentArea);
