@@ -1,7 +1,14 @@
 import { fetchCourses } from '../Data/data.js';
 import { courses } from '../Data/data.js';
 
+function loadCSS() {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = './AdminLearning.css'; 
+  document.head.appendChild(link);
+}
 
+loadCSS();
 
 
 export async function renderadminLearning(container, query = '') {

@@ -129,38 +129,102 @@
     color: #1e88e5;
     border-left-color: #1e88e5;
   }
+  /* Profile Section */
+.profile-section {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb; /* Light border for separation */
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+}
+
+.profile-section h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #1e88e5; /* Primary color for headings */
+}
+
+.profile-section p {
+  font-size: 1rem;
+  color: #4b5563; /* Neutral text color */
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+/* Account Details Section */
+.profile-section .account-details {
+  margin-bottom: 20px;
+}
+
+.profile-section .account-details p {
+  margin: 5px 0;
+}
+
+/* Learning Stats Section */
+.profile-section .learning-stats {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb; /* Separator for sections */
+}
+
+.profile-section .learning-stats p {
+  font-size: 1rem;
+  color: #374151; /* Slightly darker text color */
+  margin-bottom: 10px;
+}
+
+/* Settings Section */
+.profile-section .settings-item {
+  padding: 10px 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.profile-section .settings-item:hover {
+  background-color: #f9fafb;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.profile-section .settings-item p {
+  margin: 0;
+  color: #1a202c; /* Darker text for settings */
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.profile-section .settings-item i {
+  font-size: 1.2rem;
+  color: #6b7280; /* Neutral icon color */
+  transition: color 0.2s ease;
+}
+
+.profile-section .settings-item:hover i {
+  color: #1e88e5; /* Highlight icon on hover */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
   .profile-section {
-    background-color: #ffffff;
-    border: 2px solid #d1d5db;
-    border-radius: 10px;
-    padding: 20px;
+      padding: 15px;
   }
-  
+
   .profile-section h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 15px;
-    color: #1e88e5;
+      font-size: 1.3rem;
   }
-  
+
   .profile-section p {
-    font-size: 1rem;
-    color: #6b7280;
-    margin-bottom: 10px;
+      font-size: 0.9rem;
   }
-  
+
   .profile-section .settings-item {
-    padding: 10px 0;
-    border-bottom: 1px solid #d1d5db;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+      padding: 8px 10px;
   }
-  
-  .profile-section .settings-item:hover {
-    background-color: #f1f3f5;
-  }
-  
-  .profile-section .settings-item p {
-    margin: 0;
-    color: #1a202c;
-  }
+}
