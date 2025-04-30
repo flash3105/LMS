@@ -20,7 +20,7 @@
   
   .Nav-logo {
     height: 60px; /* Adjust the height to make the logo smaller */
-    width: auto; /* Maintain aspect ratio */
+    width: 60px; /* Maintain aspect ratio */
     transform: scale(1.5); /* Reduce the scale */
     transform-origin: center;
     transition: transform 0.3s ease;
