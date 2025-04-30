@@ -14,19 +14,25 @@ export async function renderadminLearning(container, query = '') {
   try {
     // Fetch courses from API (with localStorage fallback)
     await fetchCourses();
-    
+
     // Get courses from the global variable (populated by fetchCourses)
     const allCourses = courses || [];
     const filteredCourses = allCourses.filter(course =>
-      course.title.toLowerCase().includes(query.toLowerCase()) ||
-      course.code.toLowerCase().includes(query.toLowerCase())
+      course.courseName.toLowerCase().includes(query.toLowerCase()) ||
+      course.courseCode.toLowerCase().includes(query.toLowerCase())
     );
 
     container.innerHTML = `
-     
       <div class="admin-learning-container">
-       <h2>Learning Management</h2>
-        <div class="add-course-section">
+        <h2>Learning Management</h2>
+        
+        <!-- Add Course Button -->
+        <button id="toggleAddCourse" class="primary-button">
+          ${allCourses.length === 0 ? 'Add Your First Course' : 'Add New Course'}
+        </button>
+        
+        <!-- Add Course Section -->
+        <div class="add-course-section" id="addCourseSection" style="display: none;">
           <h3>${allCourses.length === 0 ? 'No Courses Found - Add Your First Course' : 'Add New Course'}</h3>
           <form id="courseForm">
             <div class="form-group">
@@ -63,20 +69,25 @@ export async function renderadminLearning(container, query = '') {
               </div>
             </div>
             
-            <button type="submit" class="primary-button">
-              ${allCourses.length === 0 ? 'Create First Course' : 'Add Course'}
-            </button>
+            <div class="form-actions">
+              <button type="submit" class="primary-button">
+                ${allCourses.length === 0 ? 'Create First Course' : 'Add Course'}
+              </button>
+              <button type="button" id="closeAddCourse" class="secondary-button">Close</button>
+            </div>
           </form>
         </div>
+        
 
+        <!-- Course List -->
         <div id="courseList" class="course-list">
           ${filteredCourses.length > 0 ? `
             <h3>${filteredCourses.length} ${filteredCourses.length === 1 ? 'Course' : 'Courses'}</h3>
             ${filteredCourses.map(course => `
               <div class="course-card">
-                <h4>${course.title} (${course.code})</h4>
+                <h4>${course.courseName} (${course.courseCode})</h4>
                 <p class="course-meta">Author: ${course.authorEmail} • ${course.visibility === 'public' ? 'Public' : 'Private'}</p>
-                <p>${course.description}</p>
+                <p>${course.courseDescription}</p>
                 <div class="course-actions">
                   <button class="edit-btn" data-id="${course.id}">Edit</button>
                   <button class="delete-btn" data-id="${course.id}">Delete</button>
@@ -91,9 +102,24 @@ export async function renderadminLearning(container, query = '') {
             </div>
           `}
         </div>
-      </div>
+        </div>
+      
     `;
 
+    // Add event listener to toggle the Add Course section
+    const toggleButton = container.querySelector('#toggleAddCourse');
+    const addCourseSection = container.querySelector('#addCourseSection');
+    toggleButton.addEventListener('click', () => {
+      addCourseSection.style.display = addCourseSection.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Add event listener to close the Add Course section
+    const closeButton = container.querySelector('#closeAddCourse');
+    closeButton.addEventListener('click', () => {
+      addCourseSection.style.display = 'none';
+    });
+
+    // Add event listener for the form submission
     const form = container.querySelector('#courseForm');
     form.addEventListener('submit', handleCourseSubmit);
 

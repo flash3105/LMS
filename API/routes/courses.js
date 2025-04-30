@@ -45,4 +45,18 @@ router.post(
     }
   );
 
+// Route to retrieve all courses
+router.get('/all', async (req, res) => {
+  try {
+    const courses = await Course.find(); // Retrieve all courses from the database
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error('Error retrieving courses:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
+
 module.exports = router;

@@ -4,7 +4,7 @@
 .admin-learning-container {
     margin-left: 250px; /* Match sidebar width */
     padding: 20px;
-    margin-top: 400px; 
+    margin-top: 350px; 
     min-height: calc(100vh - 60px);
     background-color: #f5f7fa;
     text-align: center;
