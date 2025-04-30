@@ -6,7 +6,7 @@ export let messages = [];
 // Fetch courses from the database
 export async function fetchCourses() {
   try {
-    const response = await fetch('http://localhost:5000/api/courses'); // Replace with your API endpoint
+    const response = await fetch('http://localhost:5000/api/courses/all'); // Replace with your API endpoint
     if (!response.ok) {
       throw new Error('Failed to fetch courses');
     }
