@@ -89,7 +89,7 @@ function searchGlobal() {
 
   const contentArea = document.getElementById("contentArea");
   if (currentTab === "learning") {
-    renderLearningTab(contentArea, query); // Now properly filters content
+    renderAdminLearning(contentArea, query); // Now properly filters content
   } else {
     alert(`Searching for: ${query}`);
   }
