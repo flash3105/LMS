@@ -15,61 +15,23 @@ body {
 
 /* Navbar */
 .navbar {
-  padding: 0.5rem 1rem;
-  background-color: #ffffff;
-}
-
-.Nav-logo {
-  height: 60px;
-  width: auto;
-  transform: scale(1.5);
-  transform-origin: center;
-  transition: transform 0.3s ease;
-  display: block;
-  margin: 0 auto 10px;
-}
-
-.Nav-logo:hover {
-  transform: scale(1.7);
-}
-
-/* Sidebar */
-.sidebar {
-  width: 250px;
-  background-color: #fff;
-  color: #333;
-  padding: 20px 0;
-  position: fixed;
-  height: 100vh;
-  border-right: 1px solid #ccc;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
-  z-index: 1000;
-  transition: transform 0.3s ease;
-}
-
-.sidebar a {
-  color: #555;
-  display: flex;
-  align-items: center;
-  padding: 15px 20px;
-  text-decoration: none;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  border-left: 4px solid transparent;
-}
-
-.sidebar a i {
-  margin-right: 10px;
-  font-size: 1.1rem;
-}
-
-.sidebar a:hover,
-.sidebar a.active {
-  background-color: #f0f0f0;
-  color: #1e88e5;
-  border-left-color: #1e88e5;
-}
+    padding: 0.5rem 1rem;
+    background-color: #ffffff;
+  }
+  
+  .Nav-logo {
+    height: 60px; /* Adjust the height to make the logo smaller */
+    width: auto; /* Maintain aspect ratio */
+    transform: scale(1.5); /* Reduce the scale */
+    transform-origin: center;
+    transition: transform 0.3s ease;
+    display: block;
+    margin: 0 auto 10px; /* Reduce the bottom margin */
+  }
+  
+  .Nav-logo:hover {
+    transform: scale(1.7); /* Slightly increase the hover effect */
+  }
 
 /* Topbar */
 .topbar {
@@ -241,4 +203,4 @@ body {
   .profile-section .settings-item {
       padding: 8px 10px;
   }
-}
+}j

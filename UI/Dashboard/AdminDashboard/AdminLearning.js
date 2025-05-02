@@ -10,39 +10,88 @@ function loadCSS() {
 
 loadCSS();
 
-
 export async function renderadminLearning(container, query = '') {
   try {
     // Fetch courses from API (with localStorage fallback)
     await fetchCourses();
-    
+
     // Get courses from the global variable (populated by fetchCourses)
     const allCourses = courses || [];
     const filteredCourses = allCourses.filter(course =>
-      course.title.toLowerCase().includes(query.toLowerCase())
+      course.courseName.toLowerCase().includes(query.toLowerCase()) ||
+      course.courseCode.toLowerCase().includes(query.toLowerCase())
     );
 
     container.innerHTML = `
       <div class="admin-learning-container">
         <h2>Learning Management</h2>
+<<<<<<< HEAD
         <div class="add-course-section">
+=======
+        
+        <!-- Add Course Button -->
+        <button id="toggleAddCourse" class="primary-button">
+          ${allCourses.length === 0 ? 'Add Your First Course' : 'Add New Course'}
+        </button>
+        
+        <!-- Add Course Section -->
+        <div class="add-course-section" id="addCourseSection" style="display: none;">
+>>>>>>> 39252339c7ad51c7eb171d52a9022252a0e33065
           <h3>${allCourses.length === 0 ? 'No Courses Found - Add Your First Course' : 'Add New Course'}</h3>
           <form id="courseForm">
-            <input type="text" id="courseTitle" placeholder="Course Title" required />
-            <textarea id="courseDescription" placeholder="Course Description" required></textarea>
-            <button type="submit" class="primary-button">
-              ${allCourses.length === 0 ? 'Create First Course' : 'Add Course'}
-            </button>
+            <div class="form-group">
+              <label for="courseName">Course Name*</label>
+              <input type="text" id="courseName" placeholder="Introduction to Web Development" required />
+            </div>
+            
+            <div class="form-group">
+              <label for="courseCode">Course Code*</label>
+              <input type="text" id="courseCode" placeholder="WEB101" required />
+            </div>
+            
+            <div class="form-group">
+              <label for="authorEmail">Author Email*</label>
+              <input type="email" id="authorEmail" placeholder="instructor@example.com" required />
+            </div>
+            
+            <div class="form-group">
+              <label for="courseDescription">Description*</label>
+              <textarea id="courseDescription" placeholder="Detailed course description..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label>Visibility</label>
+              <div class="radio-group">
+                <label>
+                  <input type="radio" name="visibility" value="public" checked />
+                  Public (Visible to all users)
+                </label>
+                <label>
+                  <input type="radio" name="visibility" value="private" />
+                  Private (Only visible to enrolled users)
+                </label>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="submit" class="primary-button">
+                ${allCourses.length === 0 ? 'Create First Course' : 'Add Course'}
+              </button>
+              <button type="button" id="closeAddCourse" class="secondary-button">Close</button>
+            </div>
           </form>
         </div>
+        
 
+        <!-- Course List -->
         <div id="courseList" class="course-list">
           ${filteredCourses.length > 0 ? `
             <h3>${filteredCourses.length} ${filteredCourses.length === 1 ? 'Course' : 'Courses'}</h3>
             ${filteredCourses.map(course => `
               <div class="course-card">
-                <h4>${course.title}</h4>
-                <p>${course.description}</p>
+                <h4>${course.courseName} (${course.courseCode})</h4>
+                <p class="course-meta">Author: ${course.authorEmail} • ${course.visibility === 'public' ? 'Public' : 'Private'}</p>
+                <p>${course.courseDescription}</p>
                 <div class="course-actions">
                   <button class="edit-btn" data-id="${course.id}">Edit</button>
                   <button class="delete-btn" data-id="${course.id}">Delete</button>
@@ -57,9 +106,24 @@ export async function renderadminLearning(container, query = '') {
             </div>
           `}
         </div>
-      </div>
+        </div>
+      
     `;
 
+    // Add event listener to toggle the Add Course section
+    const toggleButton = container.querySelector('#toggleAddCourse');
+    const addCourseSection = container.querySelector('#addCourseSection');
+    toggleButton.addEventListener('click', () => {
+      addCourseSection.style.display = addCourseSection.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Add event listener to close the Add Course section
+    const closeButton = container.querySelector('#closeAddCourse');
+    closeButton.addEventListener('click', () => {
+      addCourseSection.style.display = 'none';
+    });
+
+    // Add event listener for the form submission
     const form = container.querySelector('#courseForm');
     form.addEventListener('submit', handleCourseSubmit);
 
@@ -94,67 +158,105 @@ export async function renderadminLearning(container, query = '') {
 
 async function handleCourseSubmit(event) {
   event.preventDefault();
-  const title = document.getElementById('courseTitle').value.trim();
-  const description = document.getElementById('courseDescription').value.trim();
+  const courseName = document.getElementById('courseName').value.trim();
+  const courseCode = document.getElementById('courseCode').value.trim();
+  const authorEmail = document.getElementById('authorEmail').value.trim();
+  const courseDescription = document.getElementById('courseDescription').value.trim();
+  const visibility = document.querySelector('input[name="visibility"]:checked').value;
 
-  if (title && description) {
+  if (courseName && courseCode && authorEmail && courseDescription) {
     try {
-      const response = await fetch('http://localhost:5000/api/courses', {
+      const response = await fetch('http://localhost:5000/api/courses/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify({ 
+          courseName,
+          courseCode,
+          authorEmail,
+          courseDescription,
+          visibility
+        }),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to add course');
+        // Handle validation errors from backend
+        if (data.errors) {
+          const errorMessages = data.errors.map(err => err.msg).join('\n');
+          throw new Error(errorMessages);
+        }
+        throw new Error(data.message || 'Failed to add course');
       }
 
-      // Refresh the course list from API
+      // Refresh the course list
       const container = document.getElementById('contentArea');
       await renderadminLearning(container);
       
       // Clear the form
-      document.getElementById('courseTitle').value = '';
+      document.getElementById('courseName').value = '';
+      document.getElementById('courseCode').value = '';
+      document.getElementById('authorEmail').value = '';
       document.getElementById('courseDescription').value = '';
       
-      // Show success message
       showToast('Course added successfully!');
     } catch (error) {
       console.error('Error adding course:', error);
-      showToast('Failed to add course. Please try again.', 'error');
+      showToast(error.message || 'Failed to add course. Please try again.', 'error');
     }
   } else {
-    showToast('Please fill in all fields', 'warning');
+    showToast('Please fill in all required fields', 'warning');
   }
 }
-
 async function handleEditCourse(event) {
   const courseId = event.target.dataset.id;
-  // Implement your edit logic here
-  // You might want to show a modal or convert the card to an editable form
-  console.log('Edit course:', courseId);
+  // Find the course in the courses array
+  const courseToEdit = courses.find(course => course.id === courseId);
+  
+  if (courseToEdit) {
+    // Populate the form with existing values
+    document.getElementById('courseName').value = courseToEdit.title;
+    document.getElementById('courseCode').value = courseToEdit.code;
+    document.getElementById('authorEmail').value = courseToEdit.authorEmail;
+    document.getElementById('courseDescription').value = courseToEdit.description;
+    document.querySelector(`input[name="visibility"][value="${courseToEdit.visibility}"]`).checked = true;
+    
+    // Change the form to update mode
+    const form = document.getElementById('courseForm');
+    form.dataset.editMode = 'true';
+    form.dataset.courseId = courseId;
+    
+    // Change the submit button text
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Update Course';
+    
+    // Scroll to the form
+    form.scrollIntoView({ behavior: 'smooth' });
+  }
 }
 
 async function handleDeleteCourse(event) {
   const courseId = event.target.dataset.id;
-  try {
-    const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
-      method: 'DELETE'
-    });
+  if (confirm('Are you sure you want to delete this course?')) {
+    try {
+      const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
+        method: 'DELETE'
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to delete course');
+      if (!response.ok) {
+        throw new Error('Failed to delete course');
+      }
+
+      // Refresh the course list
+      const container = document.getElementById('contentArea');
+      await renderadminLearning(container);
+      showToast('Course deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      showToast('Failed to delete course', 'error');
     }
-
-    // Refresh the course list
-    const container = document.getElementById('contentArea');
-    await renderadminLearning(container);
-    showToast('Course deleted successfully!');
-  } catch (error) {
-    console.error('Error deleting course:', error);
-    showToast('Failed to delete course', 'error');
   }
 }
 
