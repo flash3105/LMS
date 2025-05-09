@@ -8,10 +8,7 @@ export function renderProfileTab(contentArea, currentUser) {
   };
 
   contentArea.innerHTML = `
-    <div class="welcome">
-      <h2 class="fw-bold">My Profile</h2>
-      <p class="text-muted">Manage your account and track your progress.</p>
-    </div>
+    
     <div class="profile-section">
       <h3>Account Details</h3>
       <p><strong>Name:</strong> ${currentUser.name}</p>

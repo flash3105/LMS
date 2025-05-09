@@ -1,3 +1,4 @@
+const messages = JSON.parse(localStorage.getItem("messages")) || [];
 export function renderMessagesTab(contentArea) {
   contentArea.innerHTML = `
     <div class="welcome">
@@ -16,16 +17,28 @@ export function renderMessagesTab(contentArea) {
   `;
 }
 
-function sendMessage(event) {
-    event.preventDefault();
-    const content = event.target.querySelector("textarea").value;
-    messages.push({
-      id: messages.length + 1,
-      sender: currentUser.name,
-      subject: content.substring(0, 20) + "...",
-      content,
-      date: new Date().toISOString().split("T")[0]
-    });
-    localStorage.setItem("messages", JSON.stringify(messages));
-    renderMessagesTab(document.getElementById("contentArea"));
-  }
+function renderMessage(message) {
+  return `
+    <div class="message-item">
+      <h4>${message.subject}</h4>
+      <p><strong>From:</strong> ${message.sender}</p>
+      <p><strong>Date:</strong> ${message.date}</p>
+      <p>${message.content}</p>
+      <hr>
+    </div>
+  `;
+}
+
+function sendMessage(event, currentUser) {
+  event.preventDefault();
+  const content = event.target.querySelector("textarea").value;
+  messages.push({
+    id: messages.length + 1,
+    sender: currentUser.name,
+    subject: content.substring(0, 20) + "...",
+    content,
+    date: new Date().toISOString().split("T")[0]
+  });
+  localStorage.setItem("messages", JSON.stringify(messages));
+  renderMessagesTab(document.getElementById("contentArea"));
+}

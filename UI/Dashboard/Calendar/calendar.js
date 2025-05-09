@@ -1,4 +1,4 @@
-function renderCalendarTab(contentArea) {
+export function renderCalendarTab(contentArea) {
     contentArea.innerHTML = `
       <div class="welcome">
         <h2 class="fw-bold">Calendar</h2>
@@ -10,3 +10,4 @@ function renderCalendarTab(contentArea) {
       </div>
     `;
   }
+

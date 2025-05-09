@@ -1,4 +1,4 @@
-function renderAssistTab(contentArea) {
+export function renderAssistTab(contentArea) {
     contentArea.innerHTML = `
       <div class="welcome">
         <h2 class="fw-bold">Need Help?</h2>

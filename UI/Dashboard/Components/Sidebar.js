@@ -13,8 +13,8 @@ export function renderSidebar() {
     <div class="sidebar">
       <div class="sidebar-header">
         <a class="navbar-brand" href="#">
-          <img src="/UI/images/networkco.logo.png" class="img-fluid Nav-logo" alt="logo">
-        </a>
+
+         <img src="UI\Dashboard\images\networkco.logo.png" alt="Logo"> </a>
       </div>
       <div class="sidebar-menu">
         <a href="#" id="homeLink" class="active">

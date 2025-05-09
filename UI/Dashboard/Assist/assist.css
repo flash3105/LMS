@@ -1,0 +1,68 @@
+/* General Styles */
+.assist-section {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: 20px auto;
+  }
+  
+  .assist-section h2 {
+    font-size: 2rem;
+    color: #343a40;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  
+  .assist-section p {
+    font-size: 1rem;
+    color: #6c757d;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .assist-section form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .assist-section .form-label {
+    font-weight: bold;
+    color: #495057;
+  }
+  
+  .assist-section .form-control {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 1rem;
+  }
+  
+  .assist-section .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+  }
+  
+  .assist-section button {
+    background-color: #007bff;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .assist-section button:hover {
+    background-color: #0056b3;
+  }
+  
+  .assist-section button:focus {
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }

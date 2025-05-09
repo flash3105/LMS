@@ -2,7 +2,7 @@
 
 
 // Fetch assessments from the API
-async function fetchAssessments() {
+async  function fetchAssessments() {
   try {
     const response = await fetch('http://localhost:5000/api/assessments'); // Replace with your API endpoint
     if (!response.ok) {
@@ -11,7 +11,8 @@ async function fetchAssessments() {
     return await response.json();
   } catch (error) {
     console.error('Error fetching assessments:', error);
-    return []; // Return an empty array if the API call fails
+    throw new Error('Failed to fetch assessments');
+
   }
 }
 
@@ -68,79 +69,46 @@ function renderEmptyState(container) {
 
 export async function renderAssessmentsTab(containerId = 'contentArea') {
   try {
-    // Fetch assessments from the API
     const assessments = await fetchAssessments();
 
-    // Get the container element
     const container = document.getElementById(containerId);
     if (!container) {
       console.error(`Container with ID "${containerId}" not found.`);
       return;
     }
 
-    // Clear the container
-    container.innerHTML = '';
-
-    // Build the assessments table
-    const content = `
+    container.innerHTML = `
       <div class="assessments-container">
-        <div class="assessments-header mb-4">
-          <h2 class="fw-bold">Assessments</h2>
-          <p class="text-muted">Track your upcoming and completed assessments</p>
-        </div>
-        
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-hover assessments-table">
-                <thead class="table-light">
-                  <tr>
-                    <th>Assessment</th>
-                    <th>Course</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                    <th>Grade</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="assessmentsTableBody">
-                  ${assessments.length > 0 
-                    ? assessments.map(assessment => renderAssessmentRow(assessment)).join('') 
-                    : ''}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <h2 class="fw-bold">Assessments</h2>
+        <p class="text-muted">Track your upcoming and completed assessments</p>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Assessment</th>
+              <th>Course</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Grade</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${assessments.map(renderAssessmentRow).join('')}
+          </tbody>
+        </table>
       </div>
     `;
-
-    // Insert the content into the container
-    container.innerHTML = content;
-
-    // Handle empty state
-    if (assessments.length === 0) {
-      const tableBody = document.getElementById('assessmentsTableBody');
-      renderEmptyState(tableBody);
-    }
-
-    // Add event listeners for actions
-    handleAssessmentActions();
-    
   } catch (error) {
-    console.error("Error rendering assessments:", error);
+    console.error('Error rendering assessments:', error);
 
-    // Get the container element
     const container = document.getElementById(containerId);
     if (container) {
       container.innerHTML = `
-        <div class="alert alert-danger">
-          Failed to load assessments. Please try again later.
+        <div class="assessments-container text-center py-5">
+          <h2 class="fw-bold">Assessments</h2>
+          <p class="text-muted">Coming Soon</p>
         </div>
       `;
     }
   }
 }
-
-// For testing purposes if needed
-window.renderAssessmentsTab = renderAssessmentsTab;

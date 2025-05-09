@@ -3,6 +3,11 @@ import { renderSidebar } from '../Components/Sidebar.js';
 import { renderHomeTab } from './AdminHome.js';
 import { renderadminLearning } from './AdminLearning.js';
 import { renderProfileTab } from '../My Profile/my_profile.js';
+import { renderAssessmentsTab } from '../Components/Assessment.js';
+import { renderMessagesTab } from '../Messages/messages.js';
+//import { renderCalendarTab } from '../Calendar/calendar.js';
+import { renderAssistTab } from '../Assist/assist.js'; 
+//import { fetchAssessments } from '../Components/Assessment.js'; // Ensure this import is correct
 
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
 let currentTab = "home";
@@ -35,15 +40,30 @@ function renderContent(tab) {
      break;
     case "learning":
      renderadminLearning(contentArea, ""); // Now correctly references renamed function
-     // break;
-    //case "assessments":
-     // renderAssessmentsTab(contentArea);
       break;
-   /* case "messages":
+    case "assessments":
+     renderAssessmentsTab(contentArea);
+      break;
+    case "messages":
       renderMessagesTab(contentArea);
       break;
+      
+    case "calendar":
+        renderCalendarTab(contentArea);
+        break;
+
+    case "assist":
+      renderAssistTab(contentArea);
+      break
+    /*case "assessments":
+      fetchAssessments().then(data => {
+        renderAssessmentsTab(contentArea, data); // Pass the fetched data to the render function
+      });
+      break;*/
+
     default:
-      console.error(`Unknown tab: ${tab}`);*/
+      console.error(`Unknown tab: ${tab}`);
+      
   }
 }
 
@@ -92,5 +112,18 @@ function searchGlobal() {
     renderAdminLearning(contentArea, query); // Now properly filters content
   } else {
     alert(`Searching for: ${query}`);
+  }
+}
+
+async function fetchAssessments() {
+  try {
+    const response = await fetch('http://localhost:5000/api/assessments');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch assessments: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    throw error;
   }
 }

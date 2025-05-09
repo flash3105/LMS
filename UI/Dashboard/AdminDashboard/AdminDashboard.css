@@ -228,3 +228,151 @@
       padding: 8px 10px;
   }
 }
+
+/* General Styles */
+.messages-section {
+  background-color: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin: 20px auto;
+}
+
+.messages-section h3 {
+  font-size: 1.5rem;
+  color: #343a40;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 5px;
+}
+
+.message-item {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.message-item h4 {
+  font-size: 1.2rem;
+  color: #495057;
+  margin-bottom: 10px;
+}
+
+.message-item p {
+  font-size: 1rem;
+  color: #6c757d;
+  margin: 5px 0;
+}
+
+.message-form {
+  margin-top: 20px;
+}
+
+.message-form textarea {
+  width: 100%;
+  border: 1px solid #ced4da;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 1rem;
+  resize: none;
+}
+
+.message-form textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+}
+
+.message-form button {
+  background-color: #007bff;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.message-form button:hover {
+  background-color: #0056b3;
+}
+
+.message-form button:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* General Styles */
+.assist-section {
+  background-color: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 20px auto;
+}
+
+.assist-section h2 {
+  font-size: 2rem;
+  color: #343a40;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.assist-section p {
+  font-size: 1rem;
+  color: #6c757d;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.assist-section form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.assist-section .form-label {
+  font-weight: bold;
+  color: #495057;
+}
+
+.assist-section .form-control {
+  border: 1px solid #ced4da;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+.assist-section .form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+}
+
+.assist-section button {
+  background-color: #007bff;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.assist-section button:hover {
+  background-color: #0056b3;
+}
+
+.assist-section button:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
