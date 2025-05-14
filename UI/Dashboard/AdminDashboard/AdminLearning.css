@@ -1,13 +1,13 @@
 /* AdminLearning.css */
 /* General Styles */
 .admin-learning-container {
-    margin-left: 250px; /* Match sidebar width */
+    width: 100%;
+    min-height: 100vh; 
+    margin-left: 0px; 
     padding: 20px;
-    margin-top: 770px; 
-    min-height: calc(100vh - 60px);
+    box-sizing: border-box; 
     background-color: #f5f7fa;
 }
-
 
 /* Form Styles */
 .form-group {
