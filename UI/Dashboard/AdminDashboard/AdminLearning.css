@@ -1,14 +1,14 @@
 /* AdminLearning.css */
 /* General Styles */
-
 .admin-learning-container {
-    margin-left: 250px; /* Match sidebar width */
+    width: 100%;
+    min-height: 100vh; 
+    margin-left: 250px; 
     padding: 20px;
-    margin-top: 770px; 
-    min-height: calc(100vh - 60px);
+    box-sizing: border-box; 
     background-color: #f5f7fa;
-    text-align: center;
 }
+
 
 /* Form Styles */
 .form-group {
@@ -95,35 +95,46 @@
 }
 
 /* Course List Styles */
+
 .course-list {
     margin-top: 2rem;
-    background: white;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: transparent; 
+    padding: 0; 
+    box-shadow: none; 
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 20px; 
+    width: 100%;
 }
 
 .course-list h3 {
+    grid-column: 1 / -1; 
     font-size: 1.25rem;
     color: #2d3748;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid #e2e8f0;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .course-card {
+    position: relative;
     background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    padding: 1.25rem;
-    margin-bottom: 1rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 6px solid #4299e1;
+    padding-left: 16px; 
 }
 
 .course-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
+
 
 .course-card h4 {
     font-size: 1.125rem;
@@ -148,7 +159,7 @@
 }
 
 .edit-btn {
-    background-color: #f6ad55;
+    background-color: #4299e1;
     color: white;
     padding: 0.5rem 1rem;
     border: none;
@@ -159,11 +170,11 @@
 }
 
 .edit-btn:hover {
-    background-color: #ed8936;
+    background-color: #4299e1;
 }
 
 .delete-btn {
-    background-color: #fc8181;
+    background-color: #4299e1;
     color: white;
     padding: 0.5rem 1rem;
     border: none;
@@ -174,7 +185,7 @@
 }
 
 .delete-btn:hover {
-    background-color: #f56565;
+    background-color: #4299e1;
 }
 
 /* Empty and Error States */
@@ -206,10 +217,20 @@
 }
 
 /* Responsive Adjustments */
+@media (max-width: 1024px) {
+    .course-list {
+        grid-template-columns: repeat(2, 1fr); 
+    }
+}
+
 @media (max-width: 768px) {
     .admin-learning-container {
         margin-left: 0;
         padding: 1rem;
+    }
+    
+    .course-list {
+        grid-template-columns: 1fr; 
     }
     
     .radio-group {
@@ -217,3 +238,7 @@
         gap: 0.5rem;
     }
 }
+
+
+
+

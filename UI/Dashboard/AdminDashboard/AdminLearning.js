@@ -16,7 +16,26 @@ export async function renderadminLearning(container, query = '') {
     await fetchCourses();
 
     // Get courses from the global variable (populated by fetchCourses)
-    const allCourses = courses || [];
+   
+    const allCourses = courses && courses.length > 0 ? courses : [
+      {
+        id: '1',
+        courseName: 'Introduction to Web Development',
+        courseCode: 'WEB101',
+        authorEmail: 'webdev@example.com',
+        courseDescription: 'Learn the basics of HTML, CSS, and JavaScript.',
+        visibility: 'public'
+      },
+      {
+        id: '2',
+        courseName: 'Advanced JavaScript',
+        courseCode: 'JS201',
+        authorEmail: 'js@example.com',
+        courseDescription: 'Deep dive into JavaScript ES6+, async programming, and frameworks.',
+        visibility: 'private'
+      }
+    ];
+    
     const filteredCourses = allCourses.filter(course =>
       course.courseName.toLowerCase().includes(query.toLowerCase()) ||
       course.courseCode.toLowerCase().includes(query.toLowerCase())
@@ -267,3 +286,7 @@ function showToast(message, type = 'success') {
     toast.remove();
   }, 3000);
 }
+
+
+
+
