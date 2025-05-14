@@ -1,11 +1,10 @@
 /* AdminLearning.css */
 /* General Styles */
 .admin-learning-container {
-    width: 100%;
-    min-height: 100vh; 
-    margin-left: 250px; 
+    margin-left: 250px; /* Match sidebar width */
     padding: 20px;
-    box-sizing: border-box; 
+    margin-top: 770px; 
+    min-height: calc(100vh - 60px);
     background-color: #f5f7fa;
 }
 
