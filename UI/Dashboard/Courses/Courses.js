@@ -1,122 +1,161 @@
-export function renderCourseDetails(contentArea, course) {
-    const userProgress = userData[currentUser.email];
-    const isEnrolled = userProgress.enrolledCourses.includes(course.title);
-    const completedLessons = userProgress.completedLessons ? userProgress.completedLessons[course.title] || [] : [];
-    const progress = userProgress.courseProgress ? userProgress.courseProgress[course.title] || 0 : 0;
-  
+// Courses.js
+import { fetchCourseDetails } from '../Data/data.js';
+
+export async function renderCourseDetails(contentArea, course) {
+  // Show loading state
+  contentArea.innerHTML = `
+    <div class="course-details-loading">
+      <h2>Loading Course Details...</h2>
+    </div>
+  `;
+
+  try {
+    // Fetch detailed course information including resources and assessments
+    const courseDetails = await fetchCourseDetails(course._id);
+    
+    // Render the course details page
     contentArea.innerHTML = `
-      <button class="back-button" onclick="goBackToCourses()">Back to Courses</button>
-      <div class="course-details">
-        <h3>${course.title}</h3>
-        <p>${course.description}</p>
-        <p><strong>Instructor:</strong> ${course.instructor}</p>
-        ${currentUser.role === "student" ? `
-          <button class="enrol-button ${isEnrolled ? 'enrolled' : ''}" onclick="enrolInCourse('${course.title}')">
-            ${isEnrolled ? 'Enrolled' : 'Enrol'}
-          </button>
-        ` : ''}
-        ${isEnrolled ? `
-          <div class="progress-bar">
-            <div class="progress-bar-fill" style="width: ${progress}%"></div>
+      <div class="course-details-container">
+        <!-- Course Header Section -->
+        <div class="course-header">
+          <h1 class="course-title">${course.courseName}</h1>
+          <p class="course-description">${course.courseDescription}</p>
+          <div class="course-meta">
+            <span class="badge bg-primary">${course.courseCode}</span>
+            <span class="text-muted">Author: ${course.authorEmail}</span>
           </div>
-          <h4>Lessons</h4>
-          ${course.lessons.length > 0 ? course.lessons.map(lesson => `
-            <div class="lesson-item ${completedLessons.includes(lesson.id) ? 'completed' : ''}">
-              <div>
-                <h5>${lesson.title}</h5>
-                <p>${lesson.content}</p>
-              </div>
-              ${!completedLessons.includes(lesson.id) ? `
-                <button onclick="completeLesson('${course.title}', ${lesson.id})">Complete</button>
-              ` : '<span>Completed</span>'}
+        </div>
+        
+        <!-- Course Navigation Tabs -->
+        <ul class="nav nav-tabs" id="courseTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="resources-tab" data-bs-toggle="tab" data-bs-target="#resources" type="button" role="tab">Resources</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="assessments-tab" data-bs-toggle="tab" data-bs-target="#assessments" type="button" role="tab">Assessments</button>
+          </li>
+        </ul>
+        
+        <!-- Tab Content -->
+        <div class="tab-content" id="courseTabsContent">
+          <!-- Resources Tab -->
+          <div class="tab-pane fade show active" id="resources" role="tabpanel">
+            <div class="resources-container" id="resourcesContainer">
+              ${renderResources(courseDetails.resources || [])}
             </div>
-          `).join('') : '<p>No lessons available.</p>'}
-          <h4>Assessments</h4>
-          <table class="assessments-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Grade</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${course.assessments.length > 0 ? course.assessments.map(assessment => `
-                <tr>
-                  <td>${assessment.name}</td>
-                  <td>${assessment.dueDate}</td>
-                  <td>${assessment.status}</td>
-                  <td>${assessment.grade || 'N/A'}</td>
-                </tr>
-              `).join('') : '<tr><td colspan="4">No assessments available.</td></tr>'}
-            </tbody>
-          </table>
-        ` : ''}
+          </div>
+          
+          <!-- Assessments Tab -->
+          <div class="tab-pane fade" id="assessments" role="tabpanel">
+            <div class="assessments-container" id="assessmentsContainer">
+              ${renderAssessments(courseDetails.assessments || [])}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Initialize Bootstrap tabs if needed
+    if (window.bootstrap) {
+      new window.bootstrap.Tab(document.querySelector('#resources-tab'));
+    }
+    
+  } catch (error) {
+    console.error("Error rendering course details:", error);
+    contentArea.innerHTML = `
+      <div class="alert alert-danger">
+        <h2>Error Loading Course</h2>
+        <p>${error.message || 'Failed to load course details'}</p>
+        <button class="btn btn-secondary" onclick="window.history.back()">Go Back</button>
       </div>
     `;
   }
+}
 
-  
-function enrolInCourse(courseTitle) {
-    const userProgress = userData[currentUser.email];
-    if (!userProgress.enrolledCourses.includes(courseTitle)) {
-      userProgress.enrolledCourses.push(courseTitle);
-      userProgress.courseProgress = userProgress.courseProgress || {};
-      userProgress.courseProgress[courseTitle] = 0;
-      userProgress.completedLessons = userProgress.completedLessons || {};
-      userProgress.completedLessons[courseTitle] = [];
-      localStorage.setItem("userData", JSON.stringify(userData));
-      renderCourseDetails(document.getElementById("contentArea"), courses.find(course => course.title === courseTitle));
-    }
+function renderResources(resources) {
+  if (resources.length === 0) {
+    return `
+      <div class="empty-resources">
+        <p>No resources available for this course yet.</p>
+      </div>
+    `;
   }
   
-  // Complete a lesson
-  function completeLesson(courseTitle, lessonId) {
-    const userProgress = userData[currentUser.email];
-    if (!userProgress.completedLessons[courseTitle]) {
-      userProgress.completedLessons[courseTitle] = [];
-    }
-    userProgress.completedLessons[courseTitle].push(lessonId);
-  
-    // Calculate progress
-    const course = courses.find(c => c.title === courseTitle);
-    const totalLessons = course.lessons.length;
-    const completedLessons = userProgress.completedLessons[courseTitle].length;
-    userProgress.courseProgress[courseTitle] = (completedLessons / totalLessons) * 100;
-  
-    // Check if course is completed
-    if (completedLessons === totalLessons) {
-      userProgress.completedCourses.push({
-        title: courseTitle,
-        date: new Date().toISOString().split("T")[0],
-        score: "90%", // Simulated score
-        timeSpent: `${Math.floor(completedLessons / 2)}h ${completedLessons * 10}m`
-      });
-    }
-  
-    localStorage.setItem("userData", JSON.stringify(userData));
-    renderCourseDetails(document.getElementById("contentArea"), course);
+  return `
+    <div class="resource-list">
+      ${resources.map(resource => `
+        <div class="resource-item card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">${resource.title}</h5>
+            <p class="card-text">${resource.description || 'No description provided'}</p>
+            <div class="resource-actions">
+              ${resource.type === 'link' ? 
+                `<a href="${resource.url}" target="_blank" class="btn btn-outline-primary">Open Link</a>` : 
+                `<button class="btn btn-outline-primary">Download File</button>`}
+            </div>
+            ${resource.uploadDate ? `<small class="text-muted">Posted on ${new Date(resource.uploadDate).toLocaleDateString()}</small>` : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderAssessments(assessments) {
+  if (assessments.length === 0) {
+    return `
+      <div class="empty-assessments">
+        <p>No assessments available for this course yet.</p>
+      </div>
+    `;
   }
   
-  // Go back to the main courses list
-  function goBackToCourses() {
-    isCourseDetailsView = false;
-    renderLearningTab(document.getElementById("contentArea"));
+  return `
+    <div class="assessment-list">
+      ${assessments.map(assessment => `
+        <div class="assessment-item card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h5 class="card-title">${assessment.title}</h5>
+                <p class="card-text">${assessment.description || 'No description provided'}</p>
+              </div>
+              <span class="badge ${getAssessmentBadgeClass(assessment.status)}">
+                ${assessment.status || 'Pending'}
+              </span>
+            </div>
+            
+            <div class="assessment-meta mt-2">
+              <small class="text-muted me-3">
+                <strong>Due:</strong> ${assessment.dueDate ? new Date(assessment.dueDate).toLocaleDateString() : 'No due date'}
+              </small>
+              <small class="text-muted">
+                <strong>Points:</strong> ${assessment.points || 'N/A'}
+              </small>
+            </div>
+            
+            <div class="assessment-actions mt-3">
+              ${assessment.status === 'completed' ? 
+                `<button class="btn btn-success btn-sm" disabled>Completed</button>` : 
+                `<button class="btn btn-primary btn-sm start-assessment" data-assessment-id="${assessment._id}">
+                  ${assessment.status === 'in-progress' ? 'Continue' : 'Start'}
+                </button>`}
+              ${assessment.grade ? 
+                `<span class="ms-2 badge bg-info">Grade: ${assessment.grade}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function getAssessmentBadgeClass(status) {
+  switch (status) {
+    case 'completed': return 'bg-success';
+    case 'in-progress': return 'bg-warning text-dark';
+    case 'pending': return 'bg-secondary';
+    case 'overdue': return 'bg-danger';
+    default: return 'bg-secondary';
   }
-  function viewMoreCourses() {
-    if (currentTab !== "learning" || isCourseDetailsView) return;
-    displayedCourses += 6;
-    const query = document.getElementById("searchInput").value.toLowerCase();
-    let courseList = courses;
-    if (query) {
-      courseList = courses.filter(course =>
-        course.title.toLowerCase().includes(query) ||
-        course.description.toLowerCase().includes(query)
-      );
-    }
-    renderCourses(courseList.slice(0, displayedCourses));
-    if (displayedCourses >= courseList.length) {
-      document.getElementById("viewMoreBtn").style.display = "none";
-    }
-  }
+}

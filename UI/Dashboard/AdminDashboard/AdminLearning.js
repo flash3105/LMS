@@ -1,6 +1,6 @@
 import { fetchCourses } from '../Data/data.js';
 import { courses } from '../Data/data.js';
-
+import { renderResources } from './Resources.js';
 function loadCSS() {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
@@ -89,8 +89,8 @@ export async function renderadminLearning(container, query = '') {
                 <p class="course-meta">Author: ${course.authorEmail} • ${course.visibility === 'public' ? 'Public' : 'Private'}</p>
                 <p>${course.courseDescription}</p>
                 <div class="course-actions">
-                  <button class="edit-btn" data-id="${course.id}">Edit</button>
-                  <button class="delete-btn" data-id="${course.id}">Delete</button>
+                  <button class="edit-btn" data-id="${course._id}">Edit</button>
+                  <button class="delete-btn" data-id="${course._id}">Delete</button>
                 </div>
               </div>
             `).join('')}
@@ -160,6 +160,8 @@ async function handleCourseSubmit(event) {
   const courseDescription = document.getElementById('courseDescription').value.trim();
   const visibility = document.querySelector('input[name="visibility"]:checked').value;
 
+  console.log('Form values:', { courseName, courseCode, authorEmail, courseDescription, visibility });
+
   if (courseName && courseCode && authorEmail && courseDescription) {
     try {
       const response = await fetch('http://localhost:5000/api/courses/add', {
@@ -179,7 +181,6 @@ async function handleCourseSubmit(event) {
       const data = await response.json();
       
       if (!response.ok) {
-        // Handle validation errors from backend
         if (data.errors) {
           const errorMessages = data.errors.map(err => err.msg).join('\n');
           throw new Error(errorMessages);
@@ -206,30 +207,16 @@ async function handleCourseSubmit(event) {
     showToast('Please fill in all required fields', 'warning');
   }
 }
+
 async function handleEditCourse(event) {
   const courseId = event.target.dataset.id;
   // Find the course in the courses array
-  const courseToEdit = courses.find(course => course.id === courseId);
-  
+  const courseToEdit = courses.find(course => course._id === courseId);
+
   if (courseToEdit) {
-    // Populate the form with existing values
-    document.getElementById('courseName').value = courseToEdit.title;
-    document.getElementById('courseCode').value = courseToEdit.code;
-    document.getElementById('authorEmail').value = courseToEdit.authorEmail;
-    document.getElementById('courseDescription').value = courseToEdit.description;
-    document.querySelector(`input[name="visibility"][value="${courseToEdit.visibility}"]`).checked = true;
-    
-    // Change the form to update mode
-    const form = document.getElementById('courseForm');
-    form.dataset.editMode = 'true';
-    form.dataset.courseId = courseId;
-    
-    // Change the submit button text
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.textContent = 'Update Course';
-    
-    // Scroll to the form
-    form.scrollIntoView({ behavior: 'smooth' });
+    // Route to Resources.js and render resources for this course
+    const container = document.getElementById('contentArea');
+    renderResources(container, courseToEdit);
   }
 }
 

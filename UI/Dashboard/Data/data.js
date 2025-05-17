@@ -75,3 +75,17 @@ export async function fetchMessages(userId) {
   }
 }
 
+// data.js
+export async function fetchCourseDetails(courseId) {
+  try {
+    const response = await fetch(`http://localhost:5000/api/courses/${courseId}/details`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch course details');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching course details:', error);
+    throw error;
+  }
+}
+
