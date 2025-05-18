@@ -366,3 +366,135 @@ body {
     padding: 8px 10px;
   }
 }
+
+
+
+
+/* ====== Main Container Styling ====== */
+.main {
+  padding: 30px;
+  background-color: #f9fafc;
+  font-family: 'Segoe UI', sans-serif;
+  color: #333;
+}
+
+/* ====== Heading Styling ====== */
+.main h1 {
+  font-size: 2rem;
+  color: #1e88e5;
+  margin-bottom: 10px;
+}
+
+.main h2 {
+  font-size: 1.5rem;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  color: #2c3e50;
+  border-bottom: 2px solid #1e88e5;
+  padding-bottom: 5px;
+}
+
+/* ====== Quick Links, Activity, Stats, Announcements ====== */
+.main .quick-links,
+.main .activity,
+.main .stats,
+.main .announcements {
+  background-color: #fff;
+  padding: 20px;
+  margin-bottom: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.main ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.main ul li {
+  margin: 10px 0;
+  padding-left: 15px;
+  position: relative;
+}
+
+.main ul li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #1e88e5;
+  font-weight: bold;
+}
+
+/* ====== Stats Section ====== */
+.main .stats p {
+  font-size: 1.1rem;
+  margin: 8px 0;
+  font-weight: 500;
+}
+
+/* ====== Announcements and Activity Styling ====== */
+.main .announcements li,
+.main .activity li {
+  color: #444;
+  font-size: 0.95rem;
+}
+
+/* ====== Modern Section Cards for Courses & Messages ====== */
+.section-card {
+  background-color: #ffffff;
+  padding: 20px 25px;
+  margin-bottom: 25px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s ease;
+}
+
+.section-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.section-card h2 {
+  font-size: 1.3rem;
+  color: #1e88e5;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-card h2 i {
+  font-size: 1.2rem;
+  color: #1e88e5;
+}
+
+.section-card p {
+  color: #555;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+
+
+
+.main .quick-links li {
+  padding: 12px 15px;
+  background: #f8fafc;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  margin: 0 !important;
+  padding-left: 15px !important;
+}
+
+.main .quick-links li:hover {
+  background: #e6f0ff;
+  transform: translateX(5px);
+}
+
+.main .quick-links li::before {
+  display: none;
+}
+
+
+
+
+
