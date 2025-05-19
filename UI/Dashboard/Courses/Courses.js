@@ -41,7 +41,7 @@ export async function renderCourseDetails(contentArea, course) {
           <!-- Resources Tab -->
           <div class="tab-pane fade show active" id="resources" role="tabpanel">
             <div class="resources-container" id="resourcesContainer">
-              ${renderResources(courseDetails.resources || [])}
+              ${renderResources(courseDetails || [])}
             </div>
           </div>
           
@@ -73,32 +73,35 @@ export async function renderCourseDetails(contentArea, course) {
 }
 
 function renderResources(resources) {
-  if (resources.length === 0) {
+  if (!resources || resources.length === 0) {
     return `
-      <div class="empty-resources">
+      <div class="empty-message">
         <p>No resources available for this course yet.</p>
       </div>
     `;
   }
-  
-  return `
-    <div class="resource-list">
-      ${resources.map(resource => `
-        <div class="resource-item card mb-3">
-          <div class="card-body">
-            <h5 class="card-title">${resource.title}</h5>
-            <p class="card-text">${resource.description || 'No description provided'}</p>
-            <div class="resource-actions">
-              ${resource.type === 'link' ? 
-                `<a href="${resource.url}" target="_blank" class="btn btn-outline-primary">Open Link</a>` : 
-                `<button class="btn btn-outline-primary">Download File</button>`}
-            </div>
-            ${resource.uploadDate ? `<small class="text-muted">Posted on ${new Date(resource.uploadDate).toLocaleDateString()}</small>` : ''}
-          </div>
+
+  return resources.map(resource => {
+    // Get the file extension
+    const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
+    // Only allow view for certain types
+    const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
+    const fileUrl = resource.filePath ? `http://localhost:5000/${resource.filePath.replace(/\\/g, '/')}` : '#';
+
+    return `
+      <div class="resource-item">
+        <h4>${resource.title}</h4>
+        <p class="resource-meta">Type: ${resource.type} • Added: ${new Date(resource.createdAt).toLocaleDateString()}</p>
+        <p>${resource.description || 'No description'}</p>
+        <div class="resource-actions">
+          ${canView ? `<a href="${fileUrl}" target="_blank" class="primary-button" style="margin-right:8px;">View</a>` : ''}
+          <a href="http://localhost:5000/api/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>
+          <button class="edit-resource" data-id="${resource._id}">Edit</button>
+          <button class="delete-resource" data-id="${resource._id}">Delete</button>
         </div>
-      `).join('')}
-    </div>
-  `;
+      </div>
+    `;
+  }).join('');
 }
 
 function renderAssessments(assessments) {

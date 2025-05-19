@@ -1,5 +1,6 @@
 import { fetchCourses, courses, userData } from '../Data/data.js';
 import { renderCourseDetails } from '../Courses/Courses.js';
+import { renderResources } from '../AdminDashboard/Resources.js';
 
 export async function renderLearningTab(contentArea) {
   contentArea.innerHTML = `
@@ -62,6 +63,8 @@ function renderCourses(courseList, containerId) {
     
     // Add click handler for the view details button
     card.querySelector('.view-btn').addEventListener('click', (e) => {
+
+      
       e.stopPropagation();
       renderCourseDetails(document.getElementById("contentArea"), course);
     });
