@@ -1,0 +1,81 @@
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const Resource = require('../models/Resource'); // Make sure you have this model
+const Course = require('../models/Course');     // For associating resources with courses
+const fs = require('fs');
+
+// Ensure upload directory exists
+const uploadDir = 'uploads/resources';
+if (!fs.existsSync(uploadDir)){
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Set up multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir); // Use the defined upload directory
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
+
+// Route: Add a new resource to a course
+router.post('/courses/:courseId/resources', upload.single('file'), async (req, res) => {
+  try {
+    const { title, type, description } = req.body;
+    const { courseId } = req.params;
+    if (!req.file) {
+      return res.status(400).json({ message: 'File is required.' });
+    }
+
+    // Create resource document
+    const resource = new Resource({
+      title,
+      type,
+      description,
+      filePath: req.file.path,
+      originalName: req.file.originalname,
+      course: courseId
+    });
+    await resource.save();
+
+    // Optionally, add resource to course's resources array
+    await Course.findByIdAndUpdate(courseId, { $push: { resources: resource._id } });
+
+    res.status(201).json({ message: 'Resource added successfully', resource });
+  } catch (error) {
+    console.error('Error adding resource:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Route: Get all resources for a course
+router.get('/courses/:courseId/resources', async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const resources = await Resource.find({ course: courseId });
+    res.status(200).json(resources);
+  } catch (error) {
+    console.error('Error fetching resources:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Route: Download a resource file
+router.get('/resources/:resourceId/download', async (req, res) => {
+  try {
+    const resource = await Resource.findById(req.params.resourceId);
+    if (!resource) return res.status(404).json({ message: 'Resource not found' });
+    res.download(resource.filePath, resource.originalName);
+  } catch (error) {
+    console.error('Error downloading resource:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+module.exports = router;
