@@ -89,3 +89,17 @@ export async function fetchCourseDetails(courseId) {
   }
 }
 
+// Fetch assessments for a course from the database
+export async function fetchAssessments(courseId) {
+  try {
+    const response = await fetch(`http://localhost:5000/api/courses/${courseId}/assessments`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch assessments');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    throw error;
+  }
+}
+

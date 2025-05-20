@@ -1,5 +1,5 @@
 // Courses.js
-import { fetchCourseDetails } from '../Data/data.js';
+import { fetchCourseDetails, fetchAssessments } from '../Data/data.js';
 
 export async function renderCourseDetails(contentArea, course) {
   // Show loading state
@@ -10,9 +10,11 @@ export async function renderCourseDetails(contentArea, course) {
   `;
 
   try {
-    // Fetch detailed course information including resources and assessments
+    // Fetch detailed course information including resources
     const courseDetails = await fetchCourseDetails(course._id);
-    
+    // Fetch assessments for this course
+    const assessments = await fetchAssessments(course._id);
+
     // Render the course details page
     contentArea.innerHTML = `
       <div class="course-details-container">
@@ -48,7 +50,7 @@ export async function renderCourseDetails(contentArea, course) {
           <!-- Assessments Tab -->
           <div class="tab-pane fade" id="assessments" role="tabpanel">
             <div class="assessments-container" id="assessmentsContainer">
-              ${renderAssessments(courseDetails.assessments || [])}
+              ${renderAssessments(assessments || [])}
             </div>
           </div>
         </div>
