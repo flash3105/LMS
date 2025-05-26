@@ -103,3 +103,15 @@ export async function fetchAssessments(courseId) {
   }
 }
 
+// Fetch all assessments from the database
+export async function fetchAllAssessments() {
+  try {
+    const response = await fetch('http://localhost:5000/api/assessments');
+    if (!response.ok) throw new Error('Failed to fetch all assessments');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching all assessments:', error);
+    throw error;
+  }
+}
+

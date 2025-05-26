@@ -210,6 +210,106 @@
   color: #1e88e5; /* Highlight icon on hover */
 }
 
+.messages-section {
+  background-color: #ffffff;
+  border: 2px solid #d1d5db;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.messages-section h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #1e88e5;
+}
+
+.message-item {
+  padding: 15px;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.message-item h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #1e88e5;
+}
+
+.message-item p {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.message-form {
+  margin-top: 20px;
+}
+
+.message-form textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #d1d5db;
+  margin-bottom: 10px;
+}
+
+.message-form button {
+  background-color: #1e88e5;
+  color: #ffffff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.message-form button:hover {
+  background-color: #1565c0;
+}
+
+/* Assist Tab */
+.assist-section {
+  background-color: #ffffff;
+  border: 2px solid #d1d5db;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.assist-section h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #1e88e5;
+}
+
+.assist-section .form-label {
+  font-weight: 500;
+  color: #333;
+}
+
+/* FAQ Section */
+.faq-section {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 2rem;
+  box-shadow: 0 2px 8px rgba(30,136,229,0.05);
+}
+
+.faq-item {
+  margin-bottom: 18px;
+}
+
+.faq-item strong {
+  color: #1e88e5;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.faq-item p {
+  color: #555;
+  margin: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .profile-section {

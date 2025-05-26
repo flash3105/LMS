@@ -1,4 +1,4 @@
-function renderAssistTab(contentArea) {
+export function renderAssistTab(contentArea) {
     contentArea.innerHTML = `
       <div class="welcome">
         <h2 class="fw-bold">Need Help?</h2>
@@ -16,6 +16,25 @@ function renderAssistTab(contentArea) {
           </div>
           <button type="submit" class="btn btn-primary">Submit Request</button>
         </form>
+      </div>
+      <div class="faq-section" style="margin-top:2rem;">
+        <h3>Frequently Asked Questions</h3>
+        <div class="faq-item">
+          <strong>How do I reset my password?</strong>
+          <p>Go to your profile settings and click "Reset Password". Follow the instructions sent to your email.</p>
+        </div>
+        <div class="faq-item">
+          <strong>How do I contact my instructor?</strong>
+          <p>Use the Messages tab to send a direct message to your instructor.</p>
+        </div>
+        <div class="faq-item">
+          <strong>Where can I find my grades?</strong>
+          <p>Navigate to the Grades tab in your dashboard to view all your course grades.</p>
+        </div>
+        <div class="faq-item">
+          <strong>How do I submit an assignment?</strong>
+          <p>Go to the relevant course, find the assignment under Resources or Assessments, and use the upload option provided.</p>
+        </div>
       </div>
     `;
   }

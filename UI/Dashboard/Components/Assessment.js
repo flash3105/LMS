@@ -16,6 +16,20 @@ async function fetchAssessments() {
 }
 
 function renderAssessmentRow(assessment) {
+  // Determine due date highlighting
+  let dueClass = '';
+  if (assessment.dueDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(assessment.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    if (dueDate < today) {
+      dueClass = 'due-passed';
+    } else if (dueDate.getTime() === today.getTime()) {
+      dueClass = 'due-today';
+    }
+  }
+
   const statusClass = assessment.status.toLowerCase().replace(' ', '-');
   const actionText = assessment.status === 'Upcoming' ? 'Attempt' : 'View';
   const gradeDisplay = assessment.grade || 'N/A';
@@ -24,7 +38,7 @@ function renderAssessmentRow(assessment) {
     <tr class="assessment-row ${statusClass}">
       <td>${assessment.name}</td>
       <td>${assessment.course}</td>
-      <td>${new Date(assessment.dueDate).toLocaleDateString()}</td>
+      <td class="${dueClass}">${new Date(assessment.dueDate).toLocaleDateString()}</td>
       <td><span class="status-badge ${statusClass}">${assessment.status}</span></td>
       <td>${gradeDisplay}</td>
       <td>

@@ -5,7 +5,9 @@ import { renderLearningTab } from './Learning/learning.js';
 import { renderCourseDetails } from './Courses/Courses.js';
 import { renderAssessmentsTab } from './Components/Assessment.js';
 import { renderMessagesTab } from './Messages/messages.js';
-
+import{ renderCalendarTab } from './Calendar/calendar.js';
+import { renderAssessmentPage } from './AssessmentPage.js';
+import { renderAssistTab } from './Assist/assist.js';
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
 let currentTab = "home";
 
@@ -39,10 +41,16 @@ function renderContent(tab) {
       renderLearningTab(contentArea,currentUser);
       break;
     case "assessments":
-      renderAssessmentsTab(contentArea);
+      renderAssessmentPage(contentArea);
       break;
     case "messages":
       renderMessagesTab(contentArea);
+      break;
+    case "calendar":
+      renderCalendarTab(contentArea);
+      break;
+    case "assist":
+      renderAssistTab(contentArea);
       break;
     default:
       console.error(`Unknown tab: ${tab}`);
