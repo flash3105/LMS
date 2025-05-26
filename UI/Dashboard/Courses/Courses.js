@@ -1,5 +1,5 @@
 // Courses.js
-import { fetchCourseDetails, fetchAssessments } from '../Data/data.js';
+import { fetchCourseDetails, fetchAssessments ,userData} from '../Data/data.js';
 
 export async function renderCourseDetails(contentArea, course) {
   // Show loading state
@@ -72,6 +72,62 @@ export async function renderCourseDetails(contentArea, course) {
       </div>
     `;
   }
+
+  // Attach event listeners for the Start and Cancel buttons
+  document.querySelectorAll('.start-assessment').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.getAttribute('data-assessment-id');
+      document.getElementById('assessment-submit-area-' + id).style.display = 'block';
+    });
+  });
+  document.querySelectorAll('.cancel-submit').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.getAttribute('data-assessment-id');
+      document.getElementById('assessment-submit-area-' + id).style.display = 'none';
+    });
+  });
+  document.querySelectorAll('.assessment-submit-form').forEach(form => {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const parent = form.closest('.assessment-submit-area');
+      const fileInput = form.querySelector('input[type="file"]');
+      const comment = form.querySelector('textarea').value;
+      const assessmentItem = form.closest('.assessment-item');
+      const assessmentId = assessmentItem.getAttribute('data-assessment-id');
+      const courseId = assessmentItem.getAttribute('data-course-id') || course._id; // fallback to current course
+      const username = userData.email || 'Unknown'; // adjust as needed for your user context
+      const submitTime = new Date().toISOString();
+
+      if (!fileInput.files.length) {
+        parent.querySelector('.submit-message').innerHTML = '<span style="color:red;">Please attach a file.</span>';
+        return;
+      }
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('comment', comment);
+      formData.append('email', username);
+      formData.append('courseId', courseId);
+      formData.append('assessmentId', assessmentId);
+      formData.append('submittedAt', submitTime);
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/assessments/${assessmentId}/submit`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) throw new Error('Submission failed');
+        parent.querySelector('.submit-message').innerHTML = '<span style="color:green;">Submitted successfully!</span>';
+        form.reset();
+        // Hide the submission area after a short delay
+        setTimeout(() => {
+          parent.style.display = 'none';
+          parent.querySelector('.submit-message').innerHTML = '';
+        }, 1200);
+      } catch (err) {
+        parent.querySelector('.submit-message').innerHTML = '<span style="color:red;">Submission failed.</span>';
+      }
+    });
+  });
 }
 
 function renderResources(resources) {
@@ -114,43 +170,88 @@ function renderAssessments(assessments) {
       </div>
     `;
   }
-  
+
+  let submitAreaId = 'assessment-submit-area';
+
   return `
     <div class="assessment-list">
-      ${assessments.map(assessment => `
-        <div class="assessment-item card mb-3">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <h5 class="card-title">${assessment.title}</h5>
-                <p class="card-text">${assessment.description || 'No description provided'}</p>
+      ${assessments.map(assessment => {
+        // Due date highlighting
+        let dueClass = '';
+        if (assessment.dueDate) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const dueDate = new Date(assessment.dueDate);
+          dueDate.setHours(0, 0, 0, 0);
+          if (dueDate < today) {
+            dueClass = 'due-passed';
+          } else if (dueDate.getTime() === today.getTime()) {
+            dueClass = 'due-today';
+          }
+        }
+
+        // Show file link if filePath exists
+        let fileLink = '';
+        if (assessment.filePath) {
+          const fileUrl = `http://localhost:5000/${assessment.filePath.replace(/\\/g, '/')}`;
+          // Only allow view for certain types
+          const ext = assessment.originalName ? assessment.originalName.split('.').pop().toLowerCase() : '';
+          const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
+          if (canView) {
+            fileLink = `<a href="${fileUrl}" target="_blank" class="btn btn-outline-info btn-sm" style="margin-left:8px;">View Attached File</a>`;
+          } else {
+            fileLink = `<a href="${fileUrl}" download class="btn btn-outline-info btn-sm" style="margin-left:8px;">Download Attached File</a>`;
+          }
+        }
+
+        return `
+          <div class="assessment-item card mb-3" data-assessment-id="${assessment._id}">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h5 class="card-title">${assessment.title}</h5>
+                  <p class="card-text">${assessment.description || 'No description provided'}</p>
+                  ${fileLink}
+                </div>
+                <span class="badge ${getAssessmentBadgeClass(assessment.status)}">
+                  ${assessment.status || 'Pending'}
+                </span>
               </div>
-              <span class="badge ${getAssessmentBadgeClass(assessment.status)}">
-                ${assessment.status || 'Pending'}
-              </span>
-            </div>
-            
-            <div class="assessment-meta mt-2">
-              <small class="text-muted me-3">
-                <strong>Due:</strong> ${assessment.dueDate ? new Date(assessment.dueDate).toLocaleDateString() : 'No due date'}
-              </small>
-              <small class="text-muted">
-                <strong>Points:</strong> ${assessment.points || 'N/A'}
-              </small>
-            </div>
-            
-            <div class="assessment-actions mt-3">
-              ${assessment.status === 'completed' ? 
-                `<button class="btn btn-success btn-sm" disabled>Completed</button>` : 
-                `<button class="btn btn-primary btn-sm start-assessment" data-assessment-id="${assessment._id}">
-                  ${assessment.status === 'in-progress' ? 'Continue' : 'Start'}
-                </button>`}
-              ${assessment.grade ? 
-                `<span class="ms-2 badge bg-info">Grade: ${assessment.grade}</span>` : ''}
+              <div class="assessment-meta mt-2">
+                <small class="text-muted me-3 ${dueClass}">
+                  <strong>Due:</strong> ${assessment.dueDate ? new Date(assessment.dueDate).toLocaleDateString() : 'No due date'}
+                </small>
+                <small class="text-muted">
+                  <strong>Points:</strong> ${assessment.points || 'N/A'}
+                </small>
+              </div>
+              <div class="assessment-actions mt-3">
+                ${assessment.status === 'completed' ? 
+                  `<button class="btn btn-success btn-sm" disabled>Completed</button>` : 
+                  `<button class="btn btn-primary btn-sm start-assessment" data-assessment-id="${assessment._id}">
+                    ${assessment.status === 'in-progress' ? 'Continue' : 'Start'}
+                  </button>`}
+                ${assessment.grade ? 
+                  `<span class="ms-2 badge bg-info">Grade: ${assessment.grade}</span>` : ''}
+              </div>
+              <div id="${submitAreaId}-${assessment._id}" class="assessment-submit-area" style="display:none; margin-top:1rem;">
+                <form enctype="multipart/form-data" class="assessment-submit-form">
+                  <div class="mb-2">
+                    <label for="submissionFile-${assessment._id}" class="form-label">Attach your file:</label>
+                    <input type="file" id="submissionFile-${assessment._id}" name="submissionFile" class="form-control" required>
+                  </div>
+                  <div class="mb-2">
+                    <textarea class="form-control" name="submissionComment" placeholder="Add a comment (optional)"></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-success btn-sm">Submit Assessment</button>
+                  <button type="button" class="btn btn-secondary btn-sm cancel-submit" data-assessment-id="${assessment._id}" style="margin-left:8px;">Cancel</button>
+                </form>
+                <div class="submit-message mt-2"></div>
+              </div>
             </div>
           </div>
-        </div>
-      `).join('')}
+        `;
+      }).join('')}
     </div>
   `;
 }

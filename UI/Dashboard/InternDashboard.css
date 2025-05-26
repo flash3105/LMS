@@ -595,6 +595,30 @@ body {
   color: #333;
 }
 
+/* FAQ Section */
+.faq-section {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 2rem;
+  box-shadow: 0 2px 8px rgba(30,136,229,0.05);
+}
+
+.faq-item {
+  margin-bottom: 18px;
+}
+
+.faq-item strong {
+  color: #1e88e5;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.faq-item p {
+  color: #555;
+  margin: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 992px) {
   .grid, .stats-grid {
@@ -634,4 +658,101 @@ body {
     font-size: 0.85rem;
     padding: 10px;
   }
+}
+
+
+/* Resource List Styles */
+.resources-container {
+  margin-top: 1.5rem;
+}
+
+.resource-item {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(49, 130, 206, 0.07);
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: box-shadow 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.resource-item:hover {
+  box-shadow: 0 6px 24px rgba(49, 130, 206, 0.13);
+  border-color: #bcd0ee;
+}
+
+.resource-item h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.resource-meta {
+  font-size: 0.95rem;
+  color: #718096;
+  margin-bottom: 0.5rem;
+}
+
+.resource-item p {
+  margin-bottom: 0.7rem;
+  color: #4a5568;
+}
+
+.resource-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.resource-actions .primary-button {
+  background: linear-gradient(135deg, #3182ce, #4f46e5);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 7px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(49, 130, 206, 0.10);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.resource-actions .primary-button:hover {
+  background: linear-gradient(135deg, #225ea8, #3730a3);
+}
+
+.resource-actions button {
+  background: #f7fafc;
+  color: #2d3748;
+  border: 1px solid #cbd5e0;
+  border-radius: 7px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, border 0.2s;
+}
+
+.resource-actions button:hover {
+  background: #e2e8f0;
+  border-color: #a0aec0;
+}
+
+@media (max-width: 700px) {
+  .resource-item {
+    padding: 1rem;
+  }
+  .resource-actions {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+}
+
+.assessment-submit-area {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
 }

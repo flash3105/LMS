@@ -4,7 +4,9 @@ import { renderHomeTab } from './AdminHome.js';
 import { renderadminLearning } from './AdminLearning.js';
 import { renderProfileTab } from '../My Profile/my_profile.js';
 import { renderSetAssessment } from '../Assessments/assessments.js';
-
+import { renderMessagesTab } from '../Messages/messages.js';
+import { renderCalendarTab } from '../Calendar/calendar.js';
+import { renderAssistTab } from '../Assist/assist.js';
 
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
 let currentTab = "home";
@@ -40,12 +42,20 @@ function renderContent(tab) {
       break;
     case "assessments":
       renderSetAssessment(contentArea);
-     // break;
-   /* case "messages":
+      break;
+   case "messages":
       renderMessagesTab(contentArea);
       break;
+
+  case "assist":
+      renderAssistTab(contentArea);
+      break;
+  case "calendar":
+      renderCalendarTab(contentArea);
+      break;
+
     default:
-      console.error(`Unknown tab: ${tab}`);*/
+      console.error(`Unknown tab: ${tab}`);
   }
 }
 

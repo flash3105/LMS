@@ -1,3 +1,14 @@
+let messages = [];
+
+try {
+  const stored = localStorage.getItem('messages');
+  if (stored) {
+    messages = JSON.parse(stored);
+  }
+} catch (e) {
+  messages = [];
+}
+
 export function renderMessagesTab(contentArea) {
   contentArea.innerHTML = `
     <div class="welcome">
@@ -29,3 +40,19 @@ function sendMessage(event) {
     localStorage.setItem("messages", JSON.stringify(messages));
     renderMessagesTab(document.getElementById("contentArea"));
   }
+
+function renderMessage(message) {
+  if (!message) {
+    return `<div class="empty-message">No message</div>`;
+  }
+  return `
+    <div class="message-item">
+      <div class="message-header">
+        <strong>${message.sender}</strong>
+        <span class="message-date">${message.date}</span>
+      </div>
+      <div class="message-subject">${message.subject || ''}</div>
+      <div class="message-content">${message.content || ''}</div>
+    </div>
+  `;
+}

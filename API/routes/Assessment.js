@@ -68,6 +68,17 @@ router.get('/courses/:courseId/assessments', async (req, res) => {
   }
 });
 
+// Route: Get all assessments (for all courses)
+router.get('/assessments', async (req, res) => {
+  try {
+    const assessments = await Assessment.find({});
+    res.status(200).json(assessments);
+  } catch (error) {
+    console.error('Error fetching all assessments:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Route: Download an assessment file
 router.get('/assessments/:assessmentId/download', async (req, res) => {
   try {
