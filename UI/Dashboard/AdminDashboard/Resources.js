@@ -131,13 +131,19 @@ export function renderResources(container, course) {
       e.preventDefault();
 
       const title = document.getElementById('resourceTitle').value.trim();
-      const type = document.getElementById('resourceType').value;
+      let type = document.getElementById('resourceType').value;
       const description = document.getElementById('resourceDescription').value.trim();
       const fileInput = document.getElementById('resourceFile');
       const linkInput = document.getElementById('resourceLink');
+      let link = linkInput ? linkInput.value.trim() : '';
       const file = fileInput.files[0];
-      const link = linkInput ? linkInput.value.trim() : '';
 
+      // Auto-detect YouTube links
+      if (link && (link.includes('youtube.com') || link.includes('youtu.be'))) {
+        type = 'link'; // keep as 'link' so backend expects a link, not a file
+      }
+
+      // Validation
       if (!title || !type || (type === 'link' ? !link : !file)) {
         alert('Please fill in all required fields and attach a file or provide a link.');
         return;
@@ -158,27 +164,15 @@ export function renderResources(container, course) {
           method: 'POST',
           body: formData
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Failed to add resource');
+
+        if (!response.ok) throw new Error('Failed to add resource');
+
         loadCourseResources(course._id);
         resourceForm.reset();
         fileGroup.style.display = '';
         linkGroup.style.display = 'none';
-        alert('Resource added!');
-        
-        // If it's a YouTube link, render it in the resources list area
-        if (type === 'link' && link && (link.includes('youtube.com') || link.includes('youtu.be'))) {
-          const resourcesList = document.getElementById('resourcesList');
-          const match = link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/);
-          if (resourcesList && match && match[1]) {
-            resourcesList.innerHTML = `
-              <div style="margin:20px 0;">
-                <iframe width="420" height="236" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen></iframe>
-                <div><a href="${link}" target="_blank">Watch on YouTube</a></div>
-              </div>
-            ` + resourcesList.innerHTML;
-          }
-        }
+        alert('Resource added successfully!');
+
       } catch (err) {
         alert('Error: ' + err.message);
       }
@@ -199,70 +193,63 @@ async function loadCourseResources(courseId) {
       return;
     }
     
-   resourcesList.innerHTML = resources.map(resource => {
+  resourcesList.innerHTML = resources.map(resource => {
   const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
   const fileUrl = resource.type === 'link'
     ? resource.link
     : (resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '#');
-  
-  const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
-  const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
+
+  // Safely handle date display
+  const displayDate = resource.createdAt 
+    ? new Date(resource.createdAt).toLocaleDateString() 
+    : 'Recently added';
 
   // Improved YouTube detection
   let isYouTube = false;
   let youTubeId = '';
-  if (resource.type === 'link' && resource.link) {
+  if (resource.link && (resource.type === 'link' || resource.type === 'video')) {
     const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
     isYouTube = youtubeRegex.test(resource.link);
-    
     if (isYouTube) {
-      // Extract YouTube ID from various URL formats
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
       const match = resource.link.match(regExp);
       youTubeId = (match && match[2].length === 11) ? match[2] : null;
     }
   }
 
+  // Detect if file can be viewed in browser
+  const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
+
   return `
     <div class="resource-item">
       <h4>${resource.title}</h4>
-      <p class="resource-meta">Type: ${resource.type} • Added: ${new Date(resource.createdAt).toLocaleDateString()}</p>
+      <p class="resource-meta">Type: ${resource.type} • Added: ${displayDate}</p>
       <p>${resource.description || 'No description'}</p>
       
       <div class="resource-actions">
-        ${canView ? `<a href="${fileUrl}" target="_blank" class="primary-button" style="margin-right:8px;">View</a>` : ''}
-        ${resource.filePath && resource.type !== 'link' ? `<a href="${API_BASE_URL}/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>` : ''}
+        ${resource.type === 'link' ? `
+          <a href="${resource.link}" target="_blank" class="primary-button" style="margin-right:8px;">
+            Open Link
+          </a>
+        ` : ''}
+        ${resource.filePath && resource.type !== 'link' ? `
+          <a href="${fileUrl}" target="_blank" class="primary-button" style="margin-right:8px;">
+            ${canView ? 'View' : 'Download'}
+          </a>
+        ` : ''}
         <button class="edit-resource" data-id="${resource._id}">Edit</button>
         <button class="delete-resource" data-id="${resource._id}">Delete</button>
       </div>
       
-      ${isVideoFile ? `
-        <video width="420" height="236" controls style="margin-top:10px;">
-          <source src="${fileUrl}" type="video/${ext}">
-          Your browser does not support the video tag.
-        </video>
-      ` : ''}
-      
       ${isYouTube && youTubeId ? `
         <div style="margin-top:10px;">
-          <iframe width="420" height="236" 
+          <iframe width="100%" height="315" 
                   src="https://www.youtube.com/embed/${youTubeId}" 
                   frameborder="0" 
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                   allowfullscreen></iframe>
-          <div style="margin-top:8px;">
-            <a href="${resource.link}" target="_blank" style="color:#3182ce;text-decoration:underline;">
-              Open on YouTube
-            </a>
-          </div>
         </div>
-      ` : (resource.type === 'link' && resource.link ? `
-        <div style="margin-top:10px;">
-          <a href="${resource.link}" target="_blank" style="color:#3182ce;text-decoration:underline;">
-            ${isYouTube ? 'Open YouTube Video' : 'Visit Link'}
-          </a>
-        </div>
-      ` : '')}
+      ` : ''}
     </div>
   `;
 }).join('');
