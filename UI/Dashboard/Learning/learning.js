@@ -2,10 +2,8 @@ import { fetchCourses, courses, userData } from '../Data/data.js';
 import { renderCourseDetails } from '../Courses/Courses.js';
 import { renderResources } from '../AdminDashboard/Resources.js';
 
-import.meta.env; // Ensure Vite env is loaded
-
 // Use API_BASE_URL from .env or fallback
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 export async function renderLearningTab(contentArea) {
   contentArea.innerHTML = `
