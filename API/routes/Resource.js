@@ -49,6 +49,7 @@ router.post('/courses/:courseId/resources', upload.single('file'), async (req, r
 
     if (type === 'link') {
       resourceData.link = link;
+      resourceData.filePath = link; // Save the link as filePath for consistency
     } else {
       resourceData.filePath = req.file.path;
       resourceData.originalName = req.file.originalname;
