@@ -314,53 +314,59 @@ function renderResources(resources) {
   }
 
   return resources.map(resource => {
-    // Get the file extension
-    const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
-    // Only allow view for certain types
-    const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
-    const fileUrl = `${API_BASE_URL.replace('/api', '')}/${resource.filePath?.replace(/\\/g, '/')}`;
+  // Only get extension if originalName exists
+  const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
+  // Only build fileUrl if filePath exists
+  const fileUrl = resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '';
 
-    // Check if resource is a video file
-    const isVideoFile = ['mp4', 'webm', 'ogg'].includes(ext);
+  // Only allow view for certain types
+  const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
 
-    // Check if resource is a YouTube link
-    let isYouTube = false;
-    let youTubeEmbed = '';
-    if (resource.link && resource.link.includes('youtube.com')) {
-      isYouTube = true;
-      // Extract YouTube video ID and create embed link
-      const match = resource.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/);
-      if (match && match[1]) {
-        youTubeEmbed = `<iframe width="420" height="236" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen></iframe>`;
-      }
+  // Check if resource is a video file
+  const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
+
+  // Check if resource is a YouTube link
+  let isYouTube = false;
+  let youTubeEmbed = '';
+  if (resource.link && resource.link.includes('youtube.com')) {
+    isYouTube = true;
+    const match = resource.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/);
+    if (match && match[1]) {
+      youTubeEmbed = `<iframe width="420" height="236" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen></iframe>`;
     }
+  }
 
-    return `
-      <div class="resource-item">
-        <h4>${resource.title}</h4>
-        <p class="resource-meta">Type: ${resource.type} • Added: ${new Date(resource.createdAt).toLocaleDateString()}</p>
-        <p>${resource.description || 'No description'}</p>
-        <div class="resource-actions">
-          ${canView ? `<a href="${fileUrl}" target="_blank" class="primary-button" style="margin-right:8px;">View</a>` : ''}
-          <a href="${API_BASE_URL}/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>
-          <button class="edit-resource" data-id="${resource._id}">Edit</button>
-          <button class="delete-resource" data-id="${resource._id}">Delete</button>
-        </div>
-        ${isVideoFile ? `
-          <video width="420" height="236" controls style="margin-top:10px;">
-            <source src="${fileUrl}" type="video/${ext}">
-            Your browser does not support the video tag.
-          </video>
-        ` : ''}
-        ${isYouTube ? `
-          <div style="margin-top:10px;">
-            ${youTubeEmbed}
-            <div><a href="${resource.link}" target="_blank">Watch on YouTube</a></div>
-          </div>
-        ` : ''}
+  return `
+    <div class="resource-item">
+      <h4>${resource.title}</h4>
+      <p class="resource-meta">Type: ${resource.type} • Added: ${new Date(resource.createdAt).toLocaleDateString()}</p>
+      <p>${resource.description || 'No description'}</p>
+      <div class="resource-actions">
+        ${canView ? `<a href="${fileUrl}" target="_blank" class="primary-button" style="margin-right:8px;">View</a>` : ''}
+        ${resource.filePath ? `<a href="${API_BASE_URL}/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>` : ''}
+        <button class="edit-resource" data-id="${resource._id}">Edit</button>
+        <button class="delete-resource" data-id="${resource._id}">Delete</button>
       </div>
-    `;
-  }).join('');
+      ${isVideoFile ? `
+        <video width="420" height="236" controls style="margin-top:10px;">
+          <source src="${fileUrl}" type="video/${ext}">
+          Your browser does not support the video tag.
+        </video>
+      ` : ''}
+      ${isYouTube ? `
+        <div style="margin-top:10px;">
+          ${youTubeEmbed}
+          <div><a href="${resource.link}" target="_blank">Watch on YouTube</a></div>
+        </div>
+      ` : ''}
+      ${resource.link && !isYouTube ? `
+        <div style="margin-top:10px;">
+          <a href="${resource.link}" target="_blank" style="color:#3182ce;">Visit Link</a>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}).join('');
 }
 
 function renderAssessments(assessments) {
