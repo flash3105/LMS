@@ -1,4 +1,6 @@
 // Register.js
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 async function handleRegister(e) {
     e.preventDefault();
 
@@ -12,7 +14,7 @@ async function handleRegister(e) {
     const feedbackElement = document.querySelector('#registerFeedback');
 
     try {
-        const res = await fetch('http://localhost:5000/api/auth/register', {
+        const res = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, surname, email, password, role, level }),

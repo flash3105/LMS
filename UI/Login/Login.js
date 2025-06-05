@@ -1,3 +1,5 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 document.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
   
@@ -19,7 +21,7 @@ document.querySelector('form').addEventListener('submit', async (e) => {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Logging in...';
   
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -39,31 +41,31 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         console.log('Login successful, user:', data.user);
         
         // Add delay to see logs before redirect
-// Navigate based on user role
-      if (data.user.role === 'Intern') {
-        setTimeout(() => {
-          window.location.href = 'Dashboard/InternDashboard.html';
-        }, 1000);
-      } else if (data.user.role === 'Admin') {
-        setTimeout(() => {
-          window.location.href = 'Dashboard/AdminDashboard/AdminDashboard.html';
-        }, 1000);
+        // Navigate based on user role
+        if (data.user.role === 'Intern') {
+          setTimeout(() => {
+            window.location.href = 'Dashboard/InternDashboard.html';
+          }, 1000);
+        } else if (data.user.role === 'Admin') {
+          setTimeout(() => {
+            window.location.href = 'Dashboard/AdminDashboard/AdminDashboard.html';
+          }, 1000);
+        } else {
+          alert('Unknown role. Please contact support.');
+        }
       } else {
-        alert('Unknown role. Please contact support.');
+        console.error('Login error:', data.error);
+        alert(data.error || 'Login failed. Please try again.');
       }
-    } else {
-      console.error('Login error:', data.error);
-      alert(data.error || 'Login failed. Please try again.');
+    } catch (err) {
+      console.error('Network error:', err);
+      alert('Unable to connect to server. Please try again later.');
+    } finally {
+      // Reset button state
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Login';
+      }
     }
-  } catch (err) {
-    console.error('Network error:', err);
-    alert('Unable to connect to server. Please try again later.');
-  } finally {
-    // Reset button state
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Login';
-    }
-  }
 });
