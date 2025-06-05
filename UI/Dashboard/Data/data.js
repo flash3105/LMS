@@ -3,10 +3,13 @@ export let courses = [];
 export let userData = {};
 export let messages = [];
 
+// Base URL for the API (from environment variable or fallback)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 // Fetch courses from the database
 export async function fetchCourses() {
   try {
-    const response = await fetch('http://localhost:5000/api/courses/all'); // Replace with your API endpoint
+    const response = await fetch(`${API_BASE_URL}/courses/all`);
     if (!response.ok) {
       throw new Error('Failed to fetch courses');
     }
@@ -30,7 +33,7 @@ export async function fetchCourses() {
 // Fetch user data from the database
 export async function fetchUserData(userId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/user/${userId}`); // Replace with your API endpoint
+    const response = await fetch(`${API_BASE_URL}/user/${userId}`);
     if (!response.ok) {
       throw new Error('Failed to fetch user data');
     }
@@ -54,7 +57,7 @@ export async function fetchUserData(userId) {
 // Fetch messages from the database
 export async function fetchMessages(userId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/messages?userId=${userId}`); // Replace with your API endpoint
+    const response = await fetch(`${API_BASE_URL}/messages?userId=${userId}`);
     if (!response.ok) {
       throw new Error('Failed to fetch messages');
     }
@@ -75,10 +78,10 @@ export async function fetchMessages(userId) {
   }
 }
 
-// data.js
+// Fetch course details/resources
 export async function fetchCourseDetails(courseId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/courses/${courseId}/resources`);
+    const response = await fetch(`${API_BASE_URL}/courses/${courseId}/resources`);
     if (!response.ok) {
       throw new Error('Failed to fetch course details');
     }
@@ -92,7 +95,7 @@ export async function fetchCourseDetails(courseId) {
 // Fetch assessments for a course from the database
 export async function fetchAssessments(courseId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/courses/${courseId}/assessments`);
+    const response = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
     if (!response.ok) {
       throw new Error('Failed to fetch assessments');
     }
@@ -106,7 +109,7 @@ export async function fetchAssessments(courseId) {
 // Fetch all assessments from the database
 export async function fetchAllAssessments() {
   try {
-    const response = await fetch('http://localhost:5000/api/assessments');
+    const response = await fetch(`${API_BASE_URL}/assessments`);
     if (!response.ok) throw new Error('Failed to fetch all assessments');
     return await response.json();
   } catch (error) {
@@ -118,7 +121,7 @@ export async function fetchAllAssessments() {
 // Fetch all quizzes from the database
 export async function fetchAllQuizzes() {
   try {
-    const response = await fetch('http://localhost:5000/api/quizzes/all');
+    const response = await fetch(`${API_BASE_URL}/quizzes/all`);
     if (!response.ok) throw new Error('Failed to fetch all quizzes');
     return await response.json();
   } catch (error) {
