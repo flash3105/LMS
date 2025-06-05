@@ -72,7 +72,8 @@ router.post('/courses/:courseId/resources', upload.single('file'), async (req, r
 router.get('/courses/:courseId/resources', async (req, res) => {
   try {
     const { courseId } = req.params;
-    const resources = await Resource.find({ course: courseId });
+    // Select all fields, including 'link'
+    const resources = await Resource.find({ course: courseId }).select('-__v');
     res.status(200).json(resources);
   } catch (error) {
     console.error('Error fetching resources:', error);
