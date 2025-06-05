@@ -44,11 +44,11 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         // Navigate based on user role
         if (data.user.role === 'Intern') {
           setTimeout(() => {
-            window.location.href = './Dashboard/InternDashboard.html';
+            window.location.href = '/Dashboard/InternDashboard.html';
           }, 1000);
         } else if (data.user.role === 'Admin') {
           setTimeout(() => {
-            window.location.href = './Dashboard/AdminDashboard/AdminDashboard.html';
+            window.location.href = '/Dashboard/AdminDashboard/AdminDashboard.html';
           }, 1000);
         } else {
           alert('Unknown role. Please contact support.');
