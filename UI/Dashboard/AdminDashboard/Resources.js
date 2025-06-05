@@ -165,6 +165,20 @@ export function renderResources(container, course) {
         fileGroup.style.display = '';
         linkGroup.style.display = 'none';
         alert('Resource added!');
+
+        // If it's a YouTube link, render it in the resources list area
+        if (type === 'link' && link && (link.includes('youtube.com') || link.includes('youtu.be'))) {
+          const resourcesList = document.getElementById('resourcesList');
+          const match = link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/);
+          if (resourcesList && match && match[1]) {
+            resourcesList.innerHTML = `
+              <div style="margin:20px 0;">
+                <iframe width="420" height="236" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen></iframe>
+                <div><a href="${link}" target="_blank">Watch on YouTube</a></div>
+              </div>
+            ` + resourcesList.innerHTML;
+          }
+        }
       } catch (err) {
         alert('Error: ' + err.message);
       }
