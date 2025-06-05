@@ -165,7 +165,7 @@ export function renderResources(container, course) {
         fileGroup.style.display = '';
         linkGroup.style.display = 'none';
         alert('Resource added!');
-
+        
         // If it's a YouTube link, render it in the resources list area
         if (type === 'link' && link && (link.includes('youtube.com') || link.includes('youtu.be'))) {
           const resourcesList = document.getElementById('resourcesList');
@@ -205,7 +205,7 @@ async function loadCourseResources(courseId) {
       // Only allow view for certain types
       const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
       const fileUrl = resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '#';
-
+      console.log(fileUrl);
       // Check if resource is a video file
       const isVideoFile = ['mp4', 'webm', 'ogg'].includes(ext);
 
