@@ -1,8 +1,11 @@
 import { fetchAllAssessments, fetchAllQuizzes } from './Data/data.js';
 
+// Use API_BASE_URL from .env or fallback
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 // Helper to fetch grades for the user
 async function fetchUserGrades(email) {
-  const res = await fetch(`http://localhost:5000/api/grades/user/${email}/course/all`);
+  const res = await fetch(`${API_BASE_URL}/grades/user/${email}/course/all`);
   if (!res.ok) throw new Error('Failed to fetch grades');
   return await res.json();
 }

@@ -1,5 +1,7 @@
 import { fetchCourses, courses } from '../Data/data.js';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 function loadCSS() {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
@@ -123,7 +125,7 @@ export async function renderSetAssessment(container) {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}/assessments`, {
+      const response = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`, {
         method: 'POST',
         body: formData
       });
@@ -152,7 +154,7 @@ export async function renderSetAssessment(container) {
     }
     tableDiv.innerHTML = '<p>Loading assessments...</p>';
     try {
-      const res = await fetch(`http://localhost:5000/api/courses/${courseId}/assessments`);
+      const res = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
       const assessments = await res.json();
       if (!Array.isArray(assessments) || assessments.length === 0) {
         tableDiv.innerHTML = '<div class="empty-message">No assessments for this course.</div>';
@@ -176,7 +178,7 @@ export async function renderSetAssessment(container) {
                   <td>${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : ''}</td>
                   <td>${a.description || ''}</td>
                   <td>
-                    ${a.filePath ? `<a href="http://localhost:5000/${a.filePath.replace(/\\/g, '/')}" target="_blank">View</a>` : '—'}
+                    ${a.filePath ? `<a href="${API_BASE_URL.replace('/api', '')}/${a.filePath.replace(/\\/g, '/')}" target="_blank">View</a>` : '—'}
                   </td>
                 </tr>
               `).join('')}
@@ -253,7 +255,7 @@ export async function renderSetAssessment(container) {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/quizzes', {
+      const res = await fetch(`${API_BASE_URL}/quizzes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -290,7 +292,7 @@ export async function renderSetAssessment(container) {
     }
     tableDiv.innerHTML = '<p>Loading quizzes...</p>';
     try {
-      const res = await fetch(`http://localhost:5000/api/courses/${courseId}/quizzes`);
+      const res = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
       const quizzes = await res.json();
       if (!Array.isArray(quizzes) || quizzes.length === 0) {
         tableDiv.innerHTML = '<div class="empty-message">No quizzes for this course.</div>';
@@ -372,8 +374,8 @@ export async function renderSetAssessment(container) {
     try {
       const [grades, assessmentsRes, quizzesRes] = await Promise.all([
         fetchGradesForCourse(courseId),
-        fetch(`http://localhost:5000/api/courses/${courseId}/assessments`).then(r => r.json()),
-        fetch(`http://localhost:5000/api/courses/${courseId}/quizzes`).then(r => r.json())
+        fetch(`${API_BASE_URL}/courses/${courseId}/assessments`).then(r => r.json()),
+        fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`).then(r => r.json())
       ]);
       // Render the grades table
       let gradesTableDiv = container.querySelector('#courseGradesTable');
@@ -398,7 +400,7 @@ export async function renderSetAssessment(container) {
   renderQuizQuestions();
 
   async function fetchGradesForCourse(courseId) {
-    const res = await fetch(`http://localhost:5000/api/grades/course/${courseId}`);
+    const res = await fetch(`${API_BASE_URL}/grades/course/${courseId}`);
     if (!res.ok) throw new Error('Failed to fetch grades');
     return await res.json();
   }

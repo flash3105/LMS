@@ -1,6 +1,8 @@
 // Courses.js
 import { fetchCourseDetails, fetchAssessments ,userData} from '../Data/data.js';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 export async function renderCourseDetails(contentArea, course) {
   // Show loading state
   contentArea.innerHTML = `
@@ -111,7 +113,7 @@ export async function renderCourseDetails(contentArea, course) {
       formData.append('submittedAt', submitTime);
 
       try {
-        const res = await fetch(`http://localhost:5000/api/assessments/${assessmentId}/submit`, {
+        const res = await fetch(`${API_BASE_URL}/assessments/${assessmentId}/submit`, {
           method: 'POST',
           body: formData
         });
@@ -142,7 +144,7 @@ export async function renderCourseDetails(contentArea, course) {
     quizzesContainer.innerHTML = '<p>Loading quizzes...</p>';
 
     try {
-      const res = await fetch(`http://localhost:5000/api/courses/${courseId}/quizzes`);
+      const res = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
       const quizzes = await res.json();
       if (!Array.isArray(quizzes) || quizzes.length === 0) {
         quizzesContainer.innerHTML = '<div class="empty-message">No quizzes for this course.</div>';
@@ -223,7 +225,7 @@ export async function renderCourseDetails(contentArea, course) {
  const { email } = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : currentUser;      // student's email
           try {
             // Updated submission path and payload
-            const res = await fetch(`http://localhost:5000/api/quizzes/${quizId}/submit`, {
+            const res = await fetch(`${API_BASE_URL}/quizzes/${quizId}/submit`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -240,7 +242,7 @@ export async function renderCourseDetails(contentArea, course) {
             // Auto-marking logic
             try {
               // Fetch quiz data to get correct answers
-              const quizRes = await fetch(`http://localhost:5000/api/courses/${courseId}/quizzes`);
+              const quizRes = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
               const quizzesList = await quizRes.json();
               const submittedQuiz = quizzesList.find(q => q._id === quizId);
 
@@ -258,7 +260,7 @@ export async function renderCourseDetails(contentArea, course) {
                 console.log(`Quiz ${quizId} graded: ${correctCount}/${total} (${grade}%)`);
                 form.querySelector('.quiz-submit-message').innerHTML += `<br><span style="color:blue;">Grade: ${grade}% (${correctCount}/${total})</span>`;
                 // Save grade via Grades API
-                await fetch('http://localhost:5000/api/grades', {
+                await fetch(`${API_BASE_URL}/grades`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
@@ -316,7 +318,7 @@ function renderResources(resources) {
     const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
     // Only allow view for certain types
     const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
-    const fileUrl = resource.filePath ? `http://localhost:5000/${resource.filePath.replace(/\\/g, '/')}` : '#';
+    const fileUrl = `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}`;
 
     return `
       <div class="resource-item">
@@ -325,7 +327,7 @@ function renderResources(resources) {
         <p>${resource.description || 'No description'}</p>
         <div class="resource-actions">
           ${canView ? `<a href="${fileUrl}" target="_blank" class="primary-button" style="margin-right:8px;">View</a>` : ''}
-          <a href="http://localhost:5000/api/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>
+          <a href="${API_BASE_URL}/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>
           <button class="edit-resource" data-id="${resource._id}">Edit</button>
           <button class="delete-resource" data-id="${resource._id}">Delete</button>
         </div>
@@ -365,7 +367,7 @@ function renderAssessments(assessments) {
         // Show file link if filePath exists
         let fileLink = '';
         if (assessment.filePath) {
-          const fileUrl = `http://localhost:5000/${assessment.filePath.replace(/\\/g, '/')}`;
+          const fileUrl = `${API_BASE_URL.replace('/api', '')}/${assessment.filePath.replace(/\\/g, '/')}`;
           // Only allow view for certain types
           const ext = assessment.originalName ? assessment.originalName.split('.').pop().toLowerCase() : '';
           const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
