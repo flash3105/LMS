@@ -39,22 +39,31 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         console.log('Login successful, user:', data.user);
         
         // Add delay to see logs before redirect
-  setTimeout(() => {
-    window.location.href = 'Dashboard/InternDashboard.html';
-  }, 1000);
+// Navigate based on user role
+      if (data.user.role === 'Intern') {
+        setTimeout(() => {
+          window.location.href = 'Dashboard/InternDashboard.html';
+        }, 1000);
+      } else if (data.user.role === 'Admin') {
+        setTimeout(() => {
+          window.location.href = 'Dashboard/AdminDashboard/AdminDashboard.html';
+        }, 1000);
       } else {
-        console.error('Login error:', data.error);
-        alert(data.error || 'Login failed. Please try again.');
+        alert('Unknown role. Please contact support.');
       }
-    } catch (err) {
-      console.error('Network error:', err);
-      alert('Unable to connect to server. Please try again later.');
-    } finally {
-      // Reset button state
-      const submitBtn = e.target.querySelector('button[type="submit"]');
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Login';
-      }
+    } else {
+      console.error('Login error:', data.error);
+      alert(data.error || 'Login failed. Please try again.');
     }
-  });
+  } catch (err) {
+    console.error('Network error:', err);
+    alert('Unable to connect to server. Please try again later.');
+  } finally {
+    // Reset button state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Login';
+    }
+  }
+});

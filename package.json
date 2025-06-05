@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@fullcalendar/core": "^6.1.17",
+    "@fullcalendar/daygrid": "^6.1.17",
     "live-server": "^1.2.2"
   }
 }

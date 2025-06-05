@@ -5,56 +5,121 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NETWORKCO LMS</title> 
     <link rel="stylesheet" href="index.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-...your_integrity_hash..." crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
+
 <body>
     <!-- Header -->
     <header class="header">
-        <a class="navbar-brand" href="#"><img src="images/networkco.logo.png"  class="img-fluid Nav-logo" alt="logo"></a>
+        <a class="navbar-brand" href="#"><img src="./images/networkco.logo.png"  class="img-fluid Nav-logo" alt="logo"></a>
         <div class="nav-links">
             <button onclick="showLogin()">SIGN IN</button>
             <button onclick="showRegister()">REGISTER</button>
-
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
-        <h1>Welcome to the NETWORKCO LMS</h1>
-        <p>Broaden your reach by broadening your knowledge</p>
-        <button class="login-btn-main" onclick="showLogin()">LOGIN ➔</button>
-    </main>
+  <div class="slideshow-wrapper">
+    <div class="slide" style="background-image: url('./images/4.jpg');"></div>
+    <div class="slide" style="background-image: url('./images/5.jpg');"></div>
+    <div class="slide" style="background-image: url('./images/3.jpg');"></div>
+  </div>
 
-    <!-- Reviews Section -->
-    <section class="reviews">
-        <div class="review-card">
-            <div class="stars">★★★★★</div>
-            <h3>Review title</h3>
-            <p>Review body</p>
-            <div class="reviewer">
-                <img src="https://via.placeholder.com/30" alt="Reviewer">
-                <span>Reviewer name<br>Date</span>
-            </div>
-        </div>
-        <div class="review-card">
-            <div class="stars">★★★★★</div>
-            <h3>Review title</h3>
-            <p>Review body</p>
-            <div class="reviewer">
-                <img src="https://via.placeholder.com/30" alt="Reviewer">
-                <span>Reviewer name<br>Date</span>
-            </div>
-        </div>
-        <div class="review-card">
-            <div class="stars">★★★★★</div>
-            <h3>Review title</h3>
-            <p>Review body</p>
-            <div class="reviewer">
-                <img src="https://via.placeholder.com/30" alt="Reviewer">
-                <span>Reviewer name<br>Date</span>
-            </div>
-        </div>
-    </section>
+  <div class="text-content">
+    <h1>Welcome to the NETWORKCO LMS</h1>
+    <p>Broaden your reach by broadening your knowledge</p>
+    <button id="mainLoginBtn" class="login-btn-main" onclick="showLogin()">LOGIN ➔</button>
 
+  </div>
+</main>
+
+
+    <section class="popular-courses container">
+        <h2>Popular Courses</h2>
+        <div class="horizontal-cards">
+          <div class="course-card">
+            <img src="./images/1.jpg" alt="Course 1">
+            <div class="course-info">
+              <h3>Full-Stack Web Development</h3>
+              <p>Master HTML, CSS, JavaScript, React, Node.js and more.</p>
+            </div>
+          </div>
+          <div class="course-card">
+            <img src="./images/2.jpg" alt="Course 2">
+            <div class="course-info">
+              <h3>Introduction to AI</h3>
+              <p>Learn the foundations of Artificial Intelligence and its business use.</p>
+            </div>
+          </div>
+          <div class="course-card">
+            <img src="./images/3.jpg" alt="Course 3">
+            <div class="course-info">
+              <h3>Cybersecurity Essentials</h3>
+              <p>Protect digital infrastructure with hands-on security skills.</p>
+            </div>
+          </div>
+          <div class="course-card">
+            <img src="./images/5.jpg" alt="Course 4">
+            <div class="course-info">
+              <h3>Data Analysis with Python</h3>
+              <p>Clean, analyze, and visualize data using Python libraries.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    
+      <section class="how-it-works container">
+        <h2>How The NetworkCo LMS Works</h2>
+        <div class="steps">
+          <div class="step">
+            <h3>1. Sign Up</h3>
+            <p>Create your account to access premium learning tools tailored for teams.</p>
+          </div>
+          <div class="step">
+            <h3>2. Enroll in Courses</h3>
+            <p>Select from our top-rated courses built by industry experts.</p>
+          </div>
+          <div class="step">
+            <h3>3. Track Progress</h3>
+            <p>Monitor your learning journey and complete certifications.</p>
+          </div>
+          <div class="step">
+            <h3>4. Apply Skills</h3>
+            <p>Take your new knowledge to your team and projects confidently.</p>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="why-choose-us container">
+        <h2 class="section-title">Why Choose Us?</h2>
+        <div class="features">
+          <div class="feature-card">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <h3>Expert-Led Content</h3>
+            <p>Learn from experienced instructors and professionals who bring real-world insight into every lesson.</p>
+          </div>
+          <div class="feature-card">
+            <i class="fas fa-clock"></i>
+            <h3>Flexible Learning</h3>
+            <p>Study anytime, anywhere. Access materials on your schedule with mobile-friendly, self-paced courses.</p>
+          </div>
+          <div class="feature-card">
+            <i class="fas fa-tools"></i>
+            <h3>Real-World Projects</h3>
+            <p>Apply your knowledge to practical projects that simulate on-the-job challenges and boost your portfolio.</p>
+          </div>
+          <div class="feature-card">
+            <i class="fas fa-layer-group"></i>
+            <h3>Structured Learning Paths</h3>
+            <p>Follow guided learning paths designed to take you from beginner to job-ready in a logical sequence.</p>
+          </div>
+        </div>
+      </section>
+      
+      
+      
     <!-- Login Popup -->
     <div class="login-overlay" id="loginOverlay">
         <div class="login-container">
@@ -74,6 +139,7 @@
             </form>
         </div>
     </div>
+
 <!-- Register Popup -->
 <div class="login-overlay" id="registerOverlay">
     <div class="login-container">
@@ -100,18 +166,18 @@
                 <label for="regRole">Role</label>
                 <select id="regRole" name="role" required>
                     <option value="" disabled selected>Select Role</option>
-                    <option value="intern">Intern</option>
-                    <option value="admin">Admin</option>
-                    <option value="employee">Employee</option>
+                    <option value="Intern">Intern</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Instructor">Instructor</option>
                 </select>
             </div>
             <div class="form-group">
                 <label for="regLevel">Level</label>
                 <select id="regLevel" name="level" required>
                     <option value="" disabled selected>Select Level</option>
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="expert">Expert</option>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Expert">Expert</option>
                 </select>
             </div>
             <button type="submit" class="login-btn">Register</button>
@@ -125,34 +191,31 @@
 </div>
 
 
-    <script>
-        function showLogin() {
-            document.getElementById('loginOverlay').style.display = 'flex';
-        }
-
-        function hideLogin() {
-            document.getElementById('loginOverlay').style.display = 'none';
-        }
-
-        function showLogin() {
+<script>
+    function showLogin() {
         document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('mainLoginBtn').style.display = 'none'; // 👈 hide the button
     }
 
     function hideLogin() {
         document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainLoginBtn').style.display = 'inline-block'; // 👈 show it again if needed
     }
 
     function showRegister() {
         document.getElementById('registerOverlay').style.display = 'flex';
+        document.getElementById('mainLoginBtn').style.display = 'none';
     }
 
     function hideRegister() {
         document.getElementById('registerOverlay').style.display = 'none';
+        document.getElementById('mainLoginBtn').style.display = 'inline-block';
     }
-        
-    </script>
-   
-    <script src="Login/Login.js"></script>        
-    <script src="Login/Register.js"></script>
+
+
+</script>
+
+<script src="Login/Login.js"></script>
+<script src="Login/Register.js"></script>
 </body>
 </html>

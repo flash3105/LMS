@@ -1,0 +1,218 @@
+/* Resources.css */
+.resources-admin-container {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 6px 32px rgba(44, 62, 80, 0.10);
+    padding: 36px 32px 28px 32px;
+    max-width: 900px;
+    margin: 36px auto;
+    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+    transition: box-shadow 0.2s;
+    margin-top: 350px;
+}
+
+.resources-admin-container:hover {
+    box-shadow: 0 10px 40px rgba(44, 62, 80, 0.13);
+}
+
+/* Header */
+.resources-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.resources-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+  letter-spacing: -1px;
+}
+.back-button {
+  background: none;
+  border: none;
+  color: #3182ce;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 7px 18px;
+  border-radius: 7px;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+.back-button:hover {
+  background: #e6f0fa;
+}
+
+/* Tabs */
+.resources-tabs {
+  margin-top: 10px;
+}
+.tabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.tab-button {
+  background: #f7fafc;
+  border: none;
+  padding: 12px 34px;
+  border-radius: 8px 8px 0 0;
+  font-size: 1.05rem;
+  color: #4a5568;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+  outline: none;
+}
+.tab-button.active, .tab-button:hover {
+  background: #3182ce;
+  color: #fff;
+}
+
+/* Tab Content */
+.tab-content {
+  display: none;
+  background: #f7fafc;
+  border-radius: 0 0 12px 12px;
+  padding: 28px 22px 18px 22px;
+  min-height: 220px;
+}
+.tab-content.active {
+  display: block;
+}
+
+/* Existing Resources/Assessments */
+.existing-resources, .existing-assessments {
+  margin-bottom: 28px;
+}
+.resources-list, .assessments-list {
+  margin-top: 10px;
+}
+.resource-item, .assessment-item {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 10px rgba(49,130,206,0.06);
+  transition: box-shadow 0.2s;
+}
+.resource-item:hover, .assessment-item:hover {
+  box-shadow: 0 6px 18px rgba(49,130,206,0.13);
+}
+.resource-item h4 {
+  margin: 0 0 7px 0;
+  font-size: 1.15rem;
+  color: #2b6cb0;
+}
+.resource-meta {
+  font-size: 0.97rem;
+  color: #718096;
+  margin-bottom: 8px;
+}
+.resource-actions {
+  margin-top: 12px;
+}
+.edit-resource, .delete-resource {
+  background: #edf2f7;
+  border: none;
+  color: #2b6cb0;
+  padding: 7px 18px;
+  border-radius: 6px;
+  margin-right: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s, color 0.2s;
+}
+.edit-resource:hover {
+  background: #bee3f8;
+  color: #234e74;
+}
+.delete-resource {
+  color: #e53e3e;
+}
+.delete-resource:hover {
+  background: #fed7d7;
+  color: #9b2c2c;
+}
+
+/* Add Resource/Assessment Form */
+.add-resource, .add-assessment {
+  background: #f0f4f8;
+  border-radius: 10px;
+  padding: 22px 18px 14px 18px;
+  margin-top: 18px;
+}
+.add-resource h3, .add-assessment h3 {
+  margin-top: 0;
+  font-size: 1.13rem;
+  color: #2d3748;
+}
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #4a5568;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: #fff;
+  color: #2d3748;
+  transition: border 0.2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #3182ce;
+  outline: none;
+}
+.primary-button {
+  background: #3182ce;
+  color: #fff;
+  border: none;
+  padding: 10px 26px;
+  border-radius: 7px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.primary-button:hover {
+  background: #225ea8;
+}
+.error-message {
+  color: #e53e3e;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 12px;
+}
+.empty-message {
+  color: #718096;
+  font-style: italic;
+  margin: 14px 0;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .resources-admin-container {
+    padding: 14px 2vw;
+  }
+  .tab-content {
+    padding: 14px 4px;
+  }
+  .add-resource, .add-assessment {
+    padding: 10px 4px;
+  }
+}
