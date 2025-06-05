@@ -48,7 +48,7 @@ document.querySelector('form').addEventListener('submit', async (e) => {
           }, 1000);
         } else if (data.user.role === 'Admin') {
           setTimeout(() => {
-            window.location.href = '/Dashboard/AdminDashboard/AdminDashboard.html';
+            window.location.href = '/Dashboard/AdminDashboard/Admindashboard.html';
           }, 1000);
         } else {
           alert('Unknown role. Please contact support.');
