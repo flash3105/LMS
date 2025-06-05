@@ -14,7 +14,7 @@ async function handleRegister(e) {
     const feedbackElement = document.querySelector('#registerFeedback');
 
     try {
-        const res = await fetch(`${API_BASE_URL}/auth/register`, {
+        const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, surname, email, password, role, level }),
