@@ -27,21 +27,34 @@ const upload = multer({ storage: storage });
 // Route: Add a new resource to a course
 router.post('/courses/:courseId/resources', upload.single('file'), async (req, res) => {
   try {
-    const { title, type, description } = req.body;
+    const { title, type, description, link } = req.body;
     const { courseId } = req.params;
-    if (!req.file) {
+
+    // If type is not 'link', require a file
+    if (type !== 'link' && !req.file) {
       return res.status(400).json({ message: 'File is required.' });
+    }
+    // If type is 'link', require a link
+    if (type === 'link' && (!link || link.trim() === '')) {
+      return res.status(400).json({ message: 'Link is required for external link resources.' });
     }
 
     // Create resource document
-    const resource = new Resource({
+    const resourceData = {
       title,
       type,
       description,
-      filePath: req.file.path,
-      originalName: req.file.originalname,
       course: courseId
-    });
+    };
+
+    if (type === 'link') {
+      resourceData.link = link;
+    } else {
+      resourceData.filePath = req.file.path;
+      resourceData.originalName = req.file.originalname;
+    }
+
+    const resource = new Resource(resourceData);
     await resource.save();
 
     // Optionally, add resource to course's resources array
