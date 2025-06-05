@@ -200,16 +200,13 @@ async function loadCourseResources(courseId) {
     }
     
     resourcesList.innerHTML = resources.map(resource => {
-      // Get the file extension
       const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
-      // Only allow view for certain types
-      const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
-      const fileUrl = resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '#';
-      console.log(fileUrl);
-      // Check if resource is a video file
-      const isVideoFile = ['mp4', 'webm', 'ogg'].includes(ext);
+      const fileUrl = resource.type === 'link'
+        ? resource.link
+        : (resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '#');
+      const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
+      const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
 
-      // Check if resource is a YouTube or external link
       let isYouTube = false;
       let youTubeEmbed = '';
       if (resource.link && resource.link.includes('youtube.com')) {
@@ -223,11 +220,11 @@ async function loadCourseResources(courseId) {
       return `
         <div class="resource-item">
           <h4>${resource.title}</h4>
-          <p class="resource-meta">Type: ${resource.type} • Added: ${new Date(resource.createdAt).toLocaleDateString()}</p>
+          <p class="resource-meta">Type: ${resource.type} • Added: ${resource.createdAt ? new Date(resource.createdAt).toLocaleDateString() : ''}</p>
           <p>${resource.description || 'No description'}</p>
           <div class="resource-actions">
             ${canView ? `<a href="${fileUrl}" target="_blank" class="primary-button" style="margin-right:8px;">View</a>` : ''}
-            <a href="${API_BASE_URL}/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>
+            ${resource.filePath && resource.type !== 'link' ? `<a href="${API_BASE_URL}/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>` : ''}
             <button class="edit-resource" data-id="${resource._id}">Edit</button>
             <button class="delete-resource" data-id="${resource._id}">Delete</button>
           </div>
@@ -242,7 +239,7 @@ async function loadCourseResources(courseId) {
               ${youTubeEmbed}
               <div><a href="${resource.link}" target="_blank">Watch on YouTube</a></div>
             </div>
-          ` : (resource.link ? `
+          ` : (resource.link && resource.type === 'link' ? `
             <div style="margin-top:10px;">
               <a href="${resource.link}" target="_blank" style="color:#3182ce;">Visit Link</a>
             </div>
