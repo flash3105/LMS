@@ -318,7 +318,22 @@ function renderResources(resources) {
     const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
     // Only allow view for certain types
     const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
-    const fileUrl = `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}`;
+    const fileUrl = `${API_BASE_URL.replace('/api', '')}/${resource.filePath?.replace(/\\/g, '/')}`;
+
+    // Check if resource is a video file
+    const isVideoFile = ['mp4', 'webm', 'ogg'].includes(ext);
+
+    // Check if resource is a YouTube link
+    let isYouTube = false;
+    let youTubeEmbed = '';
+    if (resource.link && resource.link.includes('youtube.com')) {
+      isYouTube = true;
+      // Extract YouTube video ID and create embed link
+      const match = resource.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/);
+      if (match && match[1]) {
+        youTubeEmbed = `<iframe width="420" height="236" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen></iframe>`;
+      }
+    }
 
     return `
       <div class="resource-item">
@@ -331,6 +346,18 @@ function renderResources(resources) {
           <button class="edit-resource" data-id="${resource._id}">Edit</button>
           <button class="delete-resource" data-id="${resource._id}">Delete</button>
         </div>
+        ${isVideoFile ? `
+          <video width="420" height="236" controls style="margin-top:10px;">
+            <source src="${fileUrl}" type="video/${ext}">
+            Your browser does not support the video tag.
+          </video>
+        ` : ''}
+        ${isYouTube ? `
+          <div style="margin-top:10px;">
+            ${youTubeEmbed}
+            <div><a href="${resource.link}" target="_blank">Watch on YouTube</a></div>
+          </div>
+        ` : ''}
       </div>
     `;
   }).join('');
