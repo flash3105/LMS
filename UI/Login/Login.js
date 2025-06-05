@@ -21,7 +21,7 @@ document.querySelector('form').addEventListener('submit', async (e) => {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Logging in...';
   
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
