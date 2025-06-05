@@ -247,7 +247,27 @@ async function loadCourseResources(courseId) {
         </div>
       `;
     }).join('');
-    
+
+    // Add delete event listeners
+    resourcesList.querySelectorAll('.delete-resource').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const resourceId = btn.getAttribute('data-id');
+        if (confirm('Are you sure you want to delete this resource?')) {
+          try {
+            const res = await fetch(`${API_BASE_URL}/resources/${resourceId}`, {
+              method: 'DELETE'
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to delete resource');
+            alert('Resource deleted!');
+            loadCourseResources(courseId);
+          } catch (err) {
+            alert('Error deleting resource: ' + err.message);
+          }
+        }
+      });
+    });
+
   } catch (error) {
     console.error('Error loading resources:', error);
     document.getElementById('resourcesList').innerHTML = `
