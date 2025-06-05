@@ -204,6 +204,7 @@ async function loadCourseResources(courseId) {
       const fileUrl = resource.type === 'link'
         ? resource.link
         : (resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '#');
+      console.log('File URL:', fileUrl);
       const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
       const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
 
