@@ -26,6 +26,9 @@ app.use('/api/mycourses', require('./routes/MyCourses'));
 app.use('/api', require('./routes/Assessment'));
 app.use('/api', require('./routes/Resource'));
 app.use('/api', require('./routes/Submit'));
+app.use('/api', require('./routes/Quiz'));
+app.use('/api/quizzes', require('./routes/QuizSubmit')); 
+app.use('/api/grades', require('./routes/Grades')); 
 // Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

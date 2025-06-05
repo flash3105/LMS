@@ -211,41 +211,118 @@
   font-size: 0.9rem;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* --- Quiz Creation UI Styles --- */
+
+#quizQuestionsArea {
+  margin-bottom: 1.5rem;
 }
 
-/* Responsive layout */
-@media (max-width: 900px) {
+.quiz-question-block {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(49, 130, 206, 0.06);
+  animation: fadeIn 0.4s;
+}
+
+.quiz-question-block label {
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.3rem;
+  display: block;
+}
+
+.quiz-question-block input[type="text"] {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: #fff;
+  color: #2d3748;
+  transition: border 0.2s;
+}
+
+.quiz-question-block input[type="text"]:focus {
+  border-color: #3182ce;
+  outline: none;
+}
+
+.quiz-question-block select.quiz-correct {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 1rem;
+  background: #fff;
+  color: #2d3748;
+}
+
+.quiz-question-block .remove-quiz-question {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: #e53e3e;
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.quiz-question-block .remove-quiz-question:hover {
+  background: #ffe5e5;
+}
+
+#addQuizQuestion {
+  margin-bottom: 1rem;
+}
+
+#quizMessage {
+  margin-top: 1rem;
+}
+
+/* Place quizzes table below assessments table on desktop and mobile */
+@media (min-width: 900px) {
   .assessment-container {
     flex-direction: column;
   }
   .form-section, .table-section {
     width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .table-section {
+    margin-top: 0;
   }
 }
-@media (max-width: 768px) {
+
+/* Ensure quizzes table is visually separated */
+#currentQuizzes {
+  margin-top: 2rem;
+}
+
+/* Responsive for quiz UI */
+@media (max-width: 900px) {
+  .quiz-question-block {
+    padding: 0.7rem;
+  }
   .assessment-set-container {
-    padding: 1.5rem;
-    margin: 1.5rem;
-    border-radius: 12px;
+    padding: 1.2rem;
   }
-  .assessment-set-container h2 {
-    font-size: 1.5rem;
-  }
-  .table-responsive {
-    border-radius: 8px;
-  }
-  .table th, .table td {
-    padding: 0.75rem;
-    font-size: 0.9rem;
-  }
-  .primary-button {
-    width: 100%;
-    padding: 0.75rem;
-  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Extra: Loading spinner for async actions */

@@ -115,3 +115,15 @@ export async function fetchAllAssessments() {
   }
 }
 
+// Fetch all quizzes from the database
+export async function fetchAllQuizzes() {
+  try {
+    const response = await fetch('http://localhost:5000/api/quizzes/all');
+    if (!response.ok) throw new Error('Failed to fetch all quizzes');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching all quizzes:', error);
+    throw error;
+  }
+}
+
