@@ -93,4 +93,28 @@ router.get('/resources/:resourceId/download', async (req, res) => {
   }
 });
 
+// Route: Delete a resource
+router.delete('/resources/:resourceId', async (req, res) => {
+  try {
+    const resource = await Resource.findById(req.params.resourceId);
+    if (!resource) return res.status(404).json({ message: 'Resource not found' });
+
+    // Remove file from disk if not a link
+    if (resource.type !== 'link' && resource.filePath && fs.existsSync(resource.filePath)) {
+      fs.unlinkSync(resource.filePath);
+    }
+
+    // Remove from course's resources array
+    await Course.findByIdAndUpdate(resource.course, { $pull: { resources: resource._id } });
+
+    // Delete resource from DB
+    await Resource.findByIdAndDelete(req.params.resourceId);
+
+    res.status(200).json({ message: 'Resource deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting resource:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;
