@@ -59,4 +59,21 @@ router.get('/all', async (req, res) => {
   }
 });
 
+// Route to delete a course by ID
+router.delete('/:id', async (req, res) => {
+  try {
+    const deletedCourse = await Course.findByIdAndDelete(req.params.id);
+    if (!deletedCourse) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    res.status(200).json({ message: 'Course deleted successfully', course: deletedCourse });
+  } catch (error) {
+    console.error('Error deleting course:', error);
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;
