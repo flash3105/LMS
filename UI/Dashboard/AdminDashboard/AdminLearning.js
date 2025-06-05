@@ -1,6 +1,9 @@
 import { fetchCourses } from '../Data/data.js';
 import { courses } from '../Data/data.js';
 import { renderResources } from './Resources.js';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 function loadCSS() {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
@@ -164,7 +167,7 @@ async function handleCourseSubmit(event) {
 
   if (courseName && courseCode && authorEmail && courseDescription) {
     try {
-      const response = await fetch('http://localhost:5000/api/courses/add', {
+      const response = await fetch(`${API_BASE_URL}/courses/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -224,7 +227,7 @@ async function handleDeleteCourse(event) {
   const courseId = event.target.dataset.id;
   if (confirm('Are you sure you want to delete this course?')) {
     try {
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
+      const response = await fetch(`${API_BASE_URL}/courses/${courseId}`, {
         method: 'DELETE'
       });
 

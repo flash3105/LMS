@@ -1,10 +1,12 @@
 // assessments.js
 
+// Use API_BASE_URL from .env or fallback
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 // Fetch assessments from the API
 async function fetchAssessments() {
   try {
-    const response = await fetch('http://localhost:5000/api/assessments'); // Replace with your API endpoint
+    const response = await fetch(`${API_BASE_URL}/assessments`);
     if (!response.ok) {
       throw new Error('Failed to fetch assessments');
     }
