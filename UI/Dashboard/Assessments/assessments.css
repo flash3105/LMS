@@ -1,0 +1,341 @@
+/* Container - Enhanced with subtle gradient and hover effect */
+
+
+
+/* Main container for side-by-side layout */
+.assessment-container {
+  display: flex;
+  gap: 2rem;
+  max-width: 1500px;
+  margin: 2rem auto;
+  
+}
+
+/* Each section takes equal width */
+.form-section, .table-section {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Assessment container styling */
+.assessment-set-container {
+  background: linear-gradient(to bottom, #ffffff, #f9fbfd);
+  border-radius: 14px;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.08);
+  padding: 2.5rem;
+  max-width: 750px;
+  margin: 3rem auto 2rem auto;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', Arial, sans-serif;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+.assessment-set-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Heading - With gradient text for modern look */
+.assessment-set-container h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(90deg, #3182ce, #4f46e5);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+.assessment-set-container h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, #3182ce, #4f46e5);
+  border-radius: 2px;
+}
+
+/* Form styles */
+.assessment-form .form-group {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+.assessment-form label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #4a5568;
+  transition: all 0.2s ease;
+}
+.assessment-form input[type="text"],
+.assessment-form input[type="date"],
+.assessment-form select,
+.assessment-form textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #fff;
+  color: #2d3748;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.assessment-form input:focus,
+.assessment-form select:focus,
+.assessment-form textarea:focus {
+  border-color: #3182ce;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2);
+}
+.assessment-form input[type="file"] {
+  margin-top: 0.5rem;
+}
+
+/* Button - Modern gradient button with hover animation */
+.primary-button {
+  background: linear-gradient(135deg, #3182ce, #4f46e5);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(49, 130, 206, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+.primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(49, 130, 206, 0.25);
+}
+.primary-button:active {
+  transform: translateY(0);
+}
+.primary-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+.primary-button:hover::before {
+  left: 100%;
+}
+
+/* Messages - Animated alerts */
+.success-message {
+  color: #276749;
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  animation: fadeIn 0.5s ease;
+}
+.error-message {
+  color: #e53e3e;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  animation: fadeIn 0.5s ease;
+}
+.empty-message {
+  color: #718096;
+  font-style: italic;
+  margin: 1.5rem 0;
+  text-align: center;
+  padding: 1rem;
+}
+
+/* Table - Modern card-like table */
+.table-responsive {
+  margin-top: 2rem;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.table {
+  width: 70%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border-radius: 12px;
+  margin-top: 1rem;
+}
+.table th, .table td {
+  padding: 1rem;
+  border-bottom: 1px solid #edf2f7;
+  text-align: left;
+}
+.table th {
+  background: #f8fafc;
+  color: #2d3748;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+.table-striped tbody tr:nth-child(odd) {
+  background: #f8fafc;
+}
+.table-striped tbody tr:nth-child(even) {
+  background: #fff;
+}
+.table tr:last-child td {
+  border-bottom: none;
+}
+.table a {
+  color: #3182ce;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+.table a:hover {
+  color: #225ea8;
+  text-decoration: underline;
+}
+.table a i {
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* --- Quiz Creation UI Styles --- */
+
+#quizQuestionsArea {
+  margin-bottom: 1.5rem;
+}
+
+.quiz-question-block {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(49, 130, 206, 0.06);
+  animation: fadeIn 0.4s;
+}
+
+.quiz-question-block label {
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.3rem;
+  display: block;
+}
+
+.quiz-question-block input[type="text"] {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: #fff;
+  color: #2d3748;
+  transition: border 0.2s;
+}
+
+.quiz-question-block input[type="text"]:focus {
+  border-color: #3182ce;
+  outline: none;
+}
+
+.quiz-question-block select.quiz-correct {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 1rem;
+  background: #fff;
+  color: #2d3748;
+}
+
+.quiz-question-block .remove-quiz-question {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: #e53e3e;
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.quiz-question-block .remove-quiz-question:hover {
+  background: #ffe5e5;
+}
+
+#addQuizQuestion {
+  margin-bottom: 1rem;
+}
+
+#quizMessage {
+  margin-top: 1rem;
+}
+
+/* Place quizzes table below assessments table on desktop and mobile */
+@media (min-width: 900px) {
+  .assessment-container {
+    flex-direction: column;
+  }
+  .form-section, .table-section {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .table-section {
+    margin-top: 0;
+  }
+}
+
+/* Ensure quizzes table is visually separated */
+#currentQuizzes {
+  margin-top: 2rem;
+}
+
+/* Responsive for quiz UI */
+@media (max-width: 900px) {
+  .quiz-question-block {
+    padding: 0.7rem;
+  }
+  .assessment-set-container {
+    padding: 1.2rem;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Extra: Loading spinner for async actions */
+.loading-spinner {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 0.5rem;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
