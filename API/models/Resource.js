@@ -19,6 +19,9 @@ const ResourceSchema = new mongoose.Schema({
   originalName: {
     type: String,
   },
+  link: {
+    type: String,
+  },
   course: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Course",
