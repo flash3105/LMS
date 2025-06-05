@@ -1,3 +1,5 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 function loadCSS() {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
@@ -136,10 +138,10 @@ export function renderResources(container, course) {
       formData.append('file', file);
 
       try {
-        const response = await fetch(`http://localhost:5000/api/courses/${course._id}/resources`, {
-          method: 'POST',
-          body: formData
-        });
+       const response = await fetch(`${API_BASE_URL}/courses/${course._id}/resources`, {
+       method: 'POST',
+       body: formData
+      });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Failed to add resource');
         // Reload resources
@@ -155,7 +157,7 @@ export function renderResources(container, course) {
 
 async function loadCourseResources(courseId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/courses/${courseId}/resources`);
+    const response = await fetch(`${API_BASE_URL}/courses/${courseId}/resources`);
     if (!response.ok) throw new Error('Failed to load resources');
     
     const resources = await response.json();
@@ -171,7 +173,7 @@ async function loadCourseResources(courseId) {
       const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
       // Only allow view for certain types
       const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
-      const fileUrl = resource.filePath ? `http://localhost:5000/${resource.filePath.replace(/\\/g, '/')}` : '#';
+      const fileUrl = resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '#';
 
       return `
         <div class="resource-item">
@@ -180,7 +182,7 @@ async function loadCourseResources(courseId) {
           <p>${resource.description || 'No description'}</p>
           <div class="resource-actions">
             ${canView ? `<a href="${fileUrl}" target="_blank" class="primary-button" style="margin-right:8px;">View</a>` : ''}
-            <a href="http://localhost:5000/api/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>
+            <a href="${API_BASE_URL}/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>
             <button class="edit-resource" data-id="${resource._id}">Edit</button>
             <button class="delete-resource" data-id="${resource._id}">Delete</button>
           </div>

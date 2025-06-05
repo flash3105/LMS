@@ -2,6 +2,11 @@ import { fetchCourses, courses, userData } from '../Data/data.js';
 import { renderCourseDetails } from '../Courses/Courses.js';
 import { renderResources } from '../AdminDashboard/Resources.js';
 
+import.meta.env; // Ensure Vite env is loaded
+
+// Use API_BASE_URL from .env or fallback
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 export async function renderLearningTab(contentArea) {
   contentArea.innerHTML = `
     <div class="welcome">
@@ -88,7 +93,7 @@ async function fetchEnrolledCourses() {
   }
 
   try {
-    const response = await fetch(`http://localhost:5000/api/mycourses/${email}`);
+    const response = await fetch(`${API_BASE_URL}/mycourses/${email}`);
     if (!response.ok) {
       throw new Error("Failed to fetch enrolled courses");
     }
@@ -107,25 +112,10 @@ async function fetchEnrolledCourses() {
   }
 }
 
-function renderEmptyState(containerId, message) {
-  const container = document.getElementById(containerId);
-  if (!container) {
-    console.error(`Container with ID "${containerId}" not found.`);
-    return;
-  }
-
-  container.innerHTML = `
-    <div class="empty-state">
-      <p>${message}</p>
-    </div>
-  `;
-}
-
 // Handle enroll button click
 async function handleEnrollClick(event) {
   event.stopPropagation(); // Prevent triggering the card click event
   const courseId = event.target.dataset.courseId;
-  console.log(localStorage.getItem('user'));
   // Get user details (example: from userData or session)
   const currentUser = userData.currentUser || {};
   const { name, email } = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : currentUser;
@@ -136,7 +126,7 @@ async function handleEnrollClick(event) {
   }
 
   try {
-    const response = await fetch('http://localhost:5000/api/mycourses/enroll', {
+    const response = await fetch(`${API_BASE_URL}/mycourses/enroll`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -156,4 +146,18 @@ async function handleEnrollClick(event) {
     console.error('Error enrolling in course:', error);
     alert(error.message || 'Failed to enroll in the course');
   }
+}
+
+function renderEmptyState(containerId, message) {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.error(`Container with ID "${containerId}" not found.`);
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="empty-state">
+      <p>${message}</p>
+    </div>
+  `;
 }
