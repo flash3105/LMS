@@ -5,6 +5,7 @@ const Analytics = require('../models/Analytics');
 // Route: Log an analytics action
 router.post('/analytics', async (req, res) => {
   try {
+    console.log('Analytics received:', req.body); // <-- Add this line
     const analytics = new Analytics(req.body);
     await analytics.save();
     res.status(201).json({ message: 'Analytics logged', analytics });

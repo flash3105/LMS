@@ -508,15 +508,17 @@ function getAssessmentBadgeClass(status) {
 
 async function trackAction(eventType, data) {
   try {
-    await fetch(`${API_BASE_URL}/track`, {
+    const payload = {
+      action: eventType,
+      userId: userData._id || userData.email,
+      timestamp: new Date().toISOString(),
+      ...data
+    };
+    console.log('Sending analytics:', payload); // <-- Add this
+    await fetch(`${API_BASE_URL}/analytics`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: eventType,
-        userId: userData.email, // Or from localStorage
-        timestamp: new Date().toISOString(),
-        ...data
-      })
+      body: JSON.stringify(payload)
     });
   } catch (err) {
     console.error('Tracking failed:', err);
