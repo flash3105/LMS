@@ -189,6 +189,11 @@ export async function renderCourseDetails(contentArea, course) {
       quizzesContainer.querySelectorAll('.start-quiz-btn').forEach(btn => {
         btn.addEventListener('click', function() {
           const quizId = btn.getAttribute('data-quiz-id');
+          // Track quiz start
+          trackAction('quiz_start', { 
+            courseId: course._id, 
+            quizId: quizId 
+          });
           const formArea = document.getElementById(`quiz-form-area-${quizId}`);
           formArea.style.display = 'block';
           btn.style.display = 'none';
@@ -302,6 +307,34 @@ export async function renderCourseDetails(contentArea, course) {
 
   // Call this after rendering assessments in renderCourseDetails:
   await renderQuizzes(course._id);
+
+  // After rendering resources
+  setTimeout(() => {
+    document.querySelectorAll('.resource-actions a.primary-button').forEach(btn => {
+      btn.addEventListener('click', function () {
+        let actionType = 'resource_action';
+        const text = btn.textContent.trim().toLowerCase();
+        if (text.includes('view')) actionType = 'resource_view';
+        else if (text.includes('download')) actionType = 'resource_download';
+        else if (text.includes('open link') || text.includes('visit link')) actionType = 'resource_link_open';
+
+        // Find the resource title for context
+        const resourceItem = btn.closest('.resource-item');
+        const title = resourceItem ? resourceItem.querySelector('h4').textContent : '';
+        trackAction(actionType, { resourceTitle: title, resourceUrl: btn.href, courseId: course._id });
+      });
+    });
+  }, 0);
+
+  let startTime = new Date();
+  window.addEventListener('beforeunload', () => {
+    const endTime = new Date();
+    const timeSpent = (endTime - startTime) / 1000; // seconds
+    trackAction('time_spent', {
+      courseId: course._id,
+      seconds: timeSpent
+    });
+  });
 }
 
 function renderResources(resources) {
@@ -470,5 +503,22 @@ function getAssessmentBadgeClass(status) {
     case 'pending': return 'bg-secondary';
     case 'overdue': return 'bg-danger';
     default: return 'bg-secondary';
+  }
+}
+
+async function trackAction(eventType, data) {
+  try {
+    await fetch(`${API_BASE_URL}/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: eventType,
+        userId: userData.email, // Or from localStorage
+        timestamp: new Date().toISOString(),
+        ...data
+      })
+    });
+  } catch (err) {
+    console.error('Tracking failed:', err);
   }
 }
