@@ -42,9 +42,10 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         
         // Add delay to see logs before redirect
         // Navigate based on user role
+        //change it back to /Dashboard/InternDashboard
         if (data.user.role === 'Intern') {
           setTimeout(() => {
-            window.location.href = '/Dashboard/InternDashboard.html';
+            window.location.href = 'Dashboard/InternDashboard.html'; 
           }, 1000);
         } else if (data.user.role === 'Admin') {
           setTimeout(() => {
