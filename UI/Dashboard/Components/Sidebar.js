@@ -13,7 +13,10 @@ export function renderSidebar() {
     <div class="sidebar">
       <div class="sidebar-header">
         <a class="navbar-brand" href="#">
-          <img src="/UI/images/networkco.logo.png" class="img-fluid Nav-logo" alt="logo">
+          <span style="display: flex; align-items: center;">
+            <i class="fas fa-graduation-cap" style="font-size: 2rem; color: #1e88e5; margin-right: 0.5rem;"></i>
+            <span style="font-size: 1.5rem; font-weight: bold; letter-spacing: 2px; color: white;">THUTO</span>
+          </span>
         </a>
       </div>
       <div class="sidebar-menu">

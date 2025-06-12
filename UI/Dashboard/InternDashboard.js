@@ -9,6 +9,11 @@ import{ renderCalendarTab } from './Calendar/calendar.js';
 import { renderAssessmentPage } from './AssessmentPage.js';
 import { renderAssistTab } from './Assist/assist.js';
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
+function getInitials(name) {
+  if (!name) return "US";
+  const names = name.split(" ");
+  return (names[0][0] + (names[1] ? names[1][0] : "")).toUpperCase();
+}
 let currentTab = "home";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -16,7 +21,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (sidebarContainer) sidebarContainer.innerHTML = renderSidebar();
 
   const userNameEl = document.getElementById("userName");
+  const initialsEl = document.getElementById("userInitials"); // Added this
+  
   if (userNameEl) userNameEl.textContent = currentUser.name;
+  if (initialsEl) initialsEl.textContent = getInitials(currentUser.name); 
 
   renderContent("home");
   setupSidebarNavigation();

@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('Messages:', messages);
 });
 
+let enrolledCoursesFromAPI = [];
+
 export function renderHomeTab(contentArea, currentUser) {
   // Safely access userProgress
   const userProgress = userData[currentUser.email] || {
@@ -138,7 +140,7 @@ export function renderHomeTab(contentArea, currentUser) {
         <div class="stats-grid">
           <div class="stat-card">
             <h4>Courses Enrolled</h4>
-            <p>${userProgress.enrolledCourses.length}</p>
+            <p id="coursesEnrolledStat"></p>
           </div>
           <div class="stat-card">
             <h4>Courses Completed</h4>
@@ -148,7 +150,7 @@ export function renderHomeTab(contentArea, currentUser) {
             <h4>Assessments Due</h4>
             <p>${
               enrolledCourses.flatMap(course =>
-                course.assessments.filter(a => a.status === 'Upcoming')
+                course.assessments?.filter(a => a.status === 'Upcoming') || []
               ).length
             }</p>
           </div>
@@ -304,10 +306,15 @@ async function fetchEnrolledCourses() {
     console.log("Fetched user for enrolled courses:", user);
 
     if (user.enrolledCourses && user.enrolledCourses.length > 0) {
+      enrolledCoursesFromAPI = user.enrolledCourses; // <-- store globally
       renderCourses(user.enrolledCourses, "enrolledCoursesContainer");
     } else {
+      enrolledCoursesFromAPI = [];
       renderEmptyState("enrolledCoursesContainer", "You have not enrolled in any courses.");
     }
+
+    // After rendering, update the stats
+    updateEnrolledCoursesStat();
   } catch (error) {
     console.error("Error fetching enrolled courses:", error);
     renderEmptyState("enrolledCoursesContainer", "Failed to load enrolled courses.");
@@ -379,11 +386,61 @@ async function loadTodos() {
     todos.forEach(todo => {
       const taskItem = document.createElement('div');
       taskItem.className = 'task-item';
-      // ...populate taskItem.innerHTML using todo fields...
+
+      // Format date for display
+      const formattedDate = todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : 'No due date';
+
+      taskItem.innerHTML = `
+        <div class="task-content">
+          <input type="checkbox" class="task-checkbox" ${todo.status === 'done' ? 'checked' : ''}>
+          <span class="task-text">${todo.task}</span>
+          <div class="task-meta">
+            <span class="task-meta-item"><i class="fas fa-user"></i> ${todo.assignee || ''}</span>
+            <span class="task-meta-item"><i class="fas fa-calendar-alt"></i> ${formattedDate}</span>
+            <span class="task-meta-item priority-${todo.priority}">${todo.priority}</span>
+            <span class="task-meta-item status-${todo.status}">${todo.status}</span>
+            ${todo.course ? `<span class="task-meta-item"><i class="fas fa-book"></i> ${todo.course}</span>` : ''}
+          </div>
+        </div>
+        <button class="delete-task"><i class="fas fa-trash"></i></button>
+      `;
+
+      // Optionally add event listeners for delete and checkbox
+      taskItem.querySelector('.delete-task').addEventListener('click', () => {
+        taskItem.remove();
+        // Optionally: send DELETE request to API here
+      });
+
+      const checkbox = taskItem.querySelector('.task-checkbox');
+      checkbox.addEventListener('change', (e) => {
+        if (e.target.checked) {
+          taskItem.style.opacity = '0.6';
+          taskItem.querySelector('.task-text').style.textDecoration = 'line-through';
+          const statusBadge = taskItem.querySelector('.status-done, .status-at-risk, .status-on-track');
+          if (statusBadge) {
+            statusBadge.className = 'task-meta-item status-done';
+            statusBadge.textContent = 'done';
+          }
+        } else {
+          taskItem.style.opacity = '1';
+          taskItem.querySelector('.task-text').style.textDecoration = 'none';
+        }
+        // Optionally: send PATCH/PUT request to API to update status
+      });
+
       taskList.appendChild(taskItem);
     });
   } catch (err) {
     console.error('Failed to load todos:', err);
+  }
+}
+function updateEnrolledCoursesStat() {
+  document.getElementById('coursesEnrolledStat').textContent = enrolledCoursesFromAPI.length;
+}
+function renderEmptyState(containerId, message) {
+  const container = document.getElementById(containerId);
+  if (container) {
+    container.innerHTML = `<div class="empty-state">${message}</div>`;
   }
 }
 
