@@ -31,13 +31,81 @@ export function renderHomeTab(contentArea, currentUser) {
   // Render the content
   contentArea.innerHTML = `
     <div class="welcome">
-      <h2 class="fw-bold">Welcome to your LMS Dashboard, ${currentUser.name}! 👋</h2>
+      <h2 class="fw-bold">Hello ${currentUser.name}!  Set your plan for the day. </h2>
       <p class="text-muted">Track your learning, manage your tasks, and stay up to date.</p>
     </div>
-    <div class="home-section">
-      <div class="ongoing-courses">
-        <h2>Ongoing Courses</h2>
-        <div class="grid">
+ <br>
+
+      
+    <div class="todo-section">
+    <div class="todo-header">
+      <h3>To-Do</h3>
+      <button class="add-task-btn">
+        <i class="fas fa-plus"></i> Add Task
+      </button>
+    </div>
+    
+    <div class="todo-form" style="display:none;">
+      <input type="text" class="task-input" placeholder="Task name">
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Assignee</label>
+          <select class="assignee-select">
+            <option value="${currentUser.name}">Me (${currentUser.name})</option>
+            <option value="Team">Team</option>
+            <option value="Unassigned">Unassigned</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" class="due-date-input">
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Priority</label>
+          <select class="priority-select">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Status</label>
+          <select class="status-select">
+            <option value="on-track">On track</option>
+            <option value="at-risk">At risk</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="course-selection">
+        <label>Course</label>
+        <select class="course-select">
+          <option value="">None</option>
+          <option value="Mathematics">Mathematics</option>
+          <option value="Physics">Physics</option>
+          <option value="Life Sciences">Life Sciences</option>
+          ${enrolledCourses.map(course => 
+            `<option value="${course.title}">${course.title}</option>`
+          ).join('')}
+        </select>
+      </div>
+      
+      <button class="submit-task-btn">Set</button>
+    </div>
+    
+    <div class="task-list">
+      <!-- Tasks will appear here dynamically -->
+    </div>
+  </div>
+
+   
           ${
             enrolledCourses.length > 0
               ? enrolledCourses
@@ -60,7 +128,7 @@ export function renderHomeTab(contentArea, currentUser) {
             `
                   )
                   .join('')
-              : '<p>No ongoing courses. Enroll in a course to get started!</p>'
+              : '<p></p>'
           }
         </div>
       </div>
@@ -124,4 +192,87 @@ export function renderHomeTab(contentArea, currentUser) {
       </div>
     </div>
   `;
+  // Initialize To-Do functionality
+  setupTodoFunctionality();
+}
+
+function setupTodoFunctionality() {
+
+  const addBtn = document.querySelector('.add-task-btn');
+  const todoForm = document.querySelector('.todo-form');
+  const submitBtn = document.querySelector('.submit-task-btn');
+  const taskList = document.querySelector('.task-list');
+
+  // Make sure we found the elements
+  if (!addBtn || !todoForm || !submitBtn || !taskList) {
+    console.error("Couldn't find all required elements!");
+    return;
+  }
+
+  // Toggle form visibility 
+  addBtn.addEventListener('click', (e) => {
+    e.preventDefault(); 
+    todoForm.style.display = todoForm.style.display === 'none' ? 'block' : 'none';
+  });
+
+  submitBtn.addEventListener('click', () => {
+    const taskInput = document.querySelector('.task-input');
+    const assignee = document.querySelector('.assignee-select').value;
+    const dueDate = document.querySelector('.due-date-input').value;
+    const priority = document.querySelector('.priority-select').value;
+    const status = document.querySelector('.status-select').value;
+    const course = document.querySelector('.course-select').value;
+
+    if (taskInput.value.trim()) {
+      const taskItem = document.createElement('div');
+      taskItem.className = 'task-item';
+      
+      // Format date for display
+      const formattedDate = dueDate ? new Date(dueDate).toLocaleDateString() : 'No due date';
+      
+      taskItem.innerHTML = `
+        <div class="task-content">
+          <input type="checkbox" class="task-checkbox">
+          <span class="task-text">${taskInput.value.trim()}</span>
+          <div class="task-meta">
+            <span class="task-meta-item"><i class="fas fa-user"></i> ${assignee}</span>
+            <span class="task-meta-item"><i class="fas fa-calendar-alt"></i> ${formattedDate}</span>
+            <span class="task-meta-item priority-${priority}">${priority}</span>
+            <span class="task-meta-item status-${status}">${status}</span>
+            ${course ? `<span class="task-meta-item"><i class="fas fa-book"></i> ${course}</span>` : ''}
+          </div>
+        </div>
+        <button class="delete-task"><i class="fas fa-trash"></i></button>
+      `;
+
+      taskList.appendChild(taskItem);
+      
+      // Clear form
+      taskInput.value = '';
+      document.querySelector('.due-date-input').value = '';
+      todoForm.style.display = 'none';
+
+      // Add event listeners
+      taskItem.querySelector('.delete-task').addEventListener('click', () => {
+        taskItem.remove();
+      });
+
+      const checkbox = taskItem.querySelector('.task-checkbox');
+      checkbox.addEventListener('change', (e) => {
+        if (e.target.checked) {
+          taskItem.style.opacity = '0.6';
+          taskItem.querySelector('.task-text').style.textDecoration = 'line-through';
+          // Auto-set status to Done when checked
+          const statusBadge = taskItem.querySelector('.status-done, .status-at-risk, .status-on-track');
+          if (statusBadge) {
+            statusBadge.className = 'task-meta-item status-done';
+            statusBadge.textContent = 'done';
+          }
+        } else {
+          taskItem.style.opacity = '1';
+          taskItem.querySelector('.task-text').style.textDecoration = 'none';
+        }
+      });
+    }
+  });
 }

@@ -7,14 +7,23 @@ import { renderAssessmentsTab } from './Components/Assessment.js';
 import { renderMessagesTab } from './Messages/messages.js';
 
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
+function getInitials(name) {
+  if (!name) return "US";
+  const names = name.split(" ");
+  return (names[0][0] + (names[1] ? names[1][0] : "")).toUpperCase();
+}
 let currentTab = "home";
 
 document.addEventListener("DOMContentLoaded", () => {
   const sidebarContainer = document.getElementById("sidebarContainer");
   if (sidebarContainer) sidebarContainer.innerHTML = renderSidebar();
 
+  // Update this section - replace the userNameEl part with:
   const userNameEl = document.getElementById("userName");
+  const initialsEl = document.getElementById("userInitials"); // Added this
+  
   if (userNameEl) userNameEl.textContent = currentUser.name;
+  if (initialsEl) initialsEl.textContent = getInitials(currentUser.name); // Added this
 
   renderContent("home");
   setupSidebarNavigation();
@@ -96,3 +105,4 @@ function searchGlobal() {
     alert(`Searching for: ${query}`);
   }
 }
+
