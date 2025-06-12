@@ -177,7 +177,10 @@ export function renderHomeTab(contentArea, currentUser) {
 
   // Call fetchEnrolledCourses to populate the enrolled courses section
   fetchEnrolledCourses();
-setupTodoFunctionality();
+  setupTodoFunctionality();
+
+  // Call loadTodos to fetch and display todos from the API
+  loadTodos();
 }
 
 function setupTodoFunctionality() {
