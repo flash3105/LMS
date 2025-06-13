@@ -312,7 +312,7 @@ async function fetchEnrolledCourses() {
 
     const user = await response.json();
     console.log("Fetched user for enrolled courses:", user);
-
+    localStorage.setItem('user', JSON.stringify(user));
     if (user.enrolledCourses && user.enrolledCourses.length > 0) {
       enrolledCoursesFromAPI = user.enrolledCourses; // <-- store globally
       renderCourses(user.enrolledCourses, "enrolledCoursesContainer");

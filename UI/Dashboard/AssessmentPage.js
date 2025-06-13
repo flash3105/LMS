@@ -1,4 +1,4 @@
-import { fetchAllAssessments, fetchAllQuizzes } from './Data/data.js';
+import { fetchAssessments, fetchAllQuizzes, fetchCourseDetails } from './Data/data.js';
 
 // Use API_BASE_URL from .env or fallback
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
@@ -10,6 +10,7 @@ async function fetchUserGrades(email) {
   return await res.json();
 }
 
+
 function loadAssessmentPageCSS() {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
@@ -18,10 +19,9 @@ function loadAssessmentPageCSS() {
 }
 
 export async function renderAssessmentPage(contentArea) {
-  // Get user email from localStorage or global user object
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : (typeof currentUser !== 'undefined' ? currentUser : null);
   const userEmail = user && user.email ? user.email : null;
-
+  const my_courses = user && user.enrolledCourses ? user.enrolledCourses : [];
   if (!userEmail) {
     contentArea.innerHTML = `<div class="error-message">User not logged in.</div>`;
     return;
@@ -39,11 +39,33 @@ export async function renderAssessmentPage(contentArea) {
   `;
 
   try {
-    const [assessments, quizzes, grades] = await Promise.all([
-      fetchAllAssessments(),
+    // Fetch all assessments for each course in parallel
+    const assessmentsArrays = [];
+    for (const course of my_courses) {
+      const courseId = typeof course === 'string' ? course : course._id;
+      if (courseId) {
+        const assessments = await fetchAssessments(courseId);
+        assessmentsArrays.push(assessments);
+      }
+    }
+    const assessments = assessmentsArrays.flat();
+
+    // Optionally, fetch course details if you want to display course names
+    // const courseDetailsArr = await Promise.all(my_courses.map(id => fetchCourseDetails(id)));
+    // const courseMap = Object.fromEntries(courseDetailsArr.map(c => [c._id, c.title]));
+
+    const [quizzes, grades] = await Promise.all([
       fetchAllQuizzes(),
       fetchUserGrades(userEmail)
     ]);
+
+    // Get course IDs as strings for comparison
+    const courseIds = my_courses.map(c => typeof c === 'string' ? c : c._id);
+
+    // Filter quizzes to only those for enrolled courses
+    const filteredQuizzes = quizzes.filter(q =>
+      courseIds.includes(q.courseId?.toString())
+    );
 
     // Merge grades and feedback into assessments and quizzes
     const assessmentsWithGrades = assessments.map(a => {
@@ -56,7 +78,7 @@ export async function renderAssessmentPage(contentArea) {
       };
     });
 
-    const quizzesWithGrades = quizzes.map(q => {
+    const quizzesWithGrades = filteredQuizzes.map(q => {
       const gradeObj = grades.find(g => g.type === 'quiz' && (g.refId === q._id || g.refId === q.id));
       return {
         ...q,

@@ -346,60 +346,82 @@ function renderResources(resources) {
     `;
   }
 
-  return resources.map(resource => {
-  // Only get extension if originalName exists
-  const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
-  // Only build fileUrl if filePath exists
-  const fileUrl = resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '';
-
-  // Only allow view for certain types
-  const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
-
-  // Check if resource is a video file
-  const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
-
-  // Check if resource is a YouTube link
-  let isYouTube = false;
-  let youTubeEmbed = '';
-  if (resource.link && resource.link.includes('youtube.com')) {
-    isYouTube = true;
-    const match = resource.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/);
-    if (match && match[1]) {
-      youTubeEmbed = `<iframe width="420" height="236" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen></iframe>`;
-    }
-  }
-
   return `
-    <div class="resource-item">
-      <h4>${resource.title}</h4>
-      <p class="resource-meta">Type: ${resource.type} • Added: ${new Date(resource.createdAt).toLocaleDateString()}</p>
-      <p>${resource.description || 'No description'}</p>
-      <div class="resource-actions">
-        ${canView ? `<a href="${fileUrl}" target="_blank" class="primary-button" style="margin-right:8px;">View</a>` : ''}
-        ${resource.filePath ? `<a href="${API_BASE_URL}/resources/${resource._id}/download" class="primary-button" style="background:#4a5568;margin-right:8px;">Download</a>` : ''}
-        <button class="edit-resource" data-id="${resource._id}">Edit</button>
-        <button class="delete-resource" data-id="${resource._id}">Delete</button>
-      </div>
-      ${isVideoFile ? `
-        <video width="420" height="236" controls style="margin-top:10px;">
-          <source src="${fileUrl}" type="video/${ext}">
-          Your browser does not support the video tag.
-        </video>
-      ` : ''}
-      ${isYouTube ? `
-        <div style="margin-top:10px;">
-          ${youTubeEmbed}
-          <div><a href="${resource.link}" target="_blank">Watch on YouTube</a></div>
-        </div>
-      ` : ''}
-      ${resource.link && !isYouTube ? `
-        <div style="margin-top:10px;">
-          <a href="${resource.link}" target="_blank" style="color:#3182ce;">Visit Link</a>
-        </div>
-      ` : ''}
+    <div class="resource-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+      ${resources.map(resource => {
+        const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
+        const fileUrl = resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '';
+        const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
+        const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
+
+        // YouTube
+        let isYouTube = false;
+        let youTubeEmbed = '';
+        if (resource.link && resource.link.includes('youtube.com')) {
+          isYouTube = true;
+          const match = resource.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/);
+          if (match && match[1]) {
+            youTubeEmbed = `<iframe width="100%" height="200" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen style="border-radius:8px;"></iframe>`;
+          }
+        }
+
+        return `
+          <div class="resource-card" style="
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(30,136,229,0.07);
+            padding: 1.5rem 1.2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 260px;
+            position: relative;
+            ">
+            <div>
+              <h4 style="margin-bottom: 0.5rem; color: #1e88e5; font-weight: 600;">${resource.title}</h4>
+              <p class="resource-meta" style="font-size: 0.95rem; color: #666; margin-bottom: 0.5rem;">
+                <span style="margin-right: 12px;"><i class="fas fa-tag"></i> ${resource.type}</span>
+                <span><i class="fas fa-calendar-alt"></i> ${new Date(resource.createdAt).toLocaleDateString()}</span>
+              </p>
+              <p style="font-size: 1rem; color: #333; margin-bottom: 1rem;">${resource.description || '<span style="color:#bbb;">No description</span>'}</p>
+            </div>
+            <div class="resource-actions" style="margin-bottom: 0.7rem;">
+              ${canView ? `<a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm" style="margin-right:8px;">View</a>` : ''}
+              ${
+                resource.filePath && !(isYouTube)
+                  ? `<a href="${API_BASE_URL}/resources/${resource._id}/download" class="btn btn-outline-secondary btn-sm" style="margin-right:8px;">Download</a>`
+                  : ''
+              }
+            </div>
+            ${
+             ext === 'pdf'
+              ? `<div style="margin-top:10px;">
+               <iframe src="${fileUrl}" width="100%" height="300" style="border-radius:8px; border:1px solid #eee;"></iframe>
+               </div>`
+               : ''
+               }
+            ${isVideoFile ? `
+              <video width="100%" height="200" controls style="margin-top:10px; border-radius:8px;">
+                <source src="${fileUrl}" type="video/${ext}">
+                Your browser does not support the video tag.
+              </video>
+            ` : ''}
+            ${isYouTube ? `
+              <div style="margin-top:10px;">
+                ${youTubeEmbed}
+               
+              </div>
+            ` : ''}
+            ${resource.link && !isYouTube ? `
+              <div style="margin-top:10px;">
+                <a href="${resource.link}" target="_blank" style="color:#3182ce;">Visit Link</a>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('')}
     </div>
   `;
-}).join('');
 }
 
 function renderAssessments(assessments) {
