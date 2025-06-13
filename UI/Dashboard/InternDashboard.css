@@ -835,3 +835,279 @@ body {
   margin-right: 5px;
   font-size: 0.7rem;
 }
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9f9;
+}
+
+/* Welcome Section */
+.welcome {
+  text-align: center;
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.welcome h2 {
+  font-size: 2rem;
+  color: #1e88e5;
+  margin-bottom: 10px;
+}
+
+.welcome p {
+  font-size: 1rem;
+  color: #666;
+}
+
+/* Section Title */
+.section-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  margin: 20px 0;
+  padding-left: 10px;
+  border-left: 4px solid #1e88e5;
+}
+
+/* Card Container */
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Course Card */
+.course-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.course-card h5 {
+  font-size: 1.2rem;
+  color: #1e88e5;
+  margin-bottom: 10px;
+}
+
+.course-card p {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 15px;
+}
+
+/* Enrol Button */
+.enrol-button {
+  background-color: #28a745;
+  color: #ffffff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.enrol-button:hover {
+  background-color: #218838;
+}
+
+.enrol-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+
+/* Profile Grid Layout */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Profile Card Styles */
+.profile-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.profile-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #1e88e5;
+}
+
+/* Account Details Styles */
+.detail-item {
+  margin-bottom: 10px;
+  display: flex;
+}
+
+.detail-label {
+  font-weight: bold;
+  width: 120px;
+  color: #555;
+}
+
+.detail-value {
+  flex: 1;
+  color: #333;
+}
+
+.bio .detail-value {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+/* Milestones & Achievements Styles */
+.milestones-list, .achievements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.milestone-item, .achievement-item {
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.milestone-item:last-child, .achievement-item:last-child {
+  border-bottom: none;
+}
+
+.milestone-item i {
+  color: #4caf50;
+  margin-right: 10px;
+}
+
+.achievement-item i {
+  color: #ff9800;
+  margin-right: 10px;
+}
+
+/* Goals Section Styles */
+.goals-list {
+  margin-top: 10px;
+}
+
+.goal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  transition: all 0.2s;
+}
+
+.goal-item:hover {
+  background-color: #e9ecef;
+}
+
+.goal-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.goal-checkbox {
+  margin-right: 10px;
+}
+
+.goal-text {
+  flex: 1;
+}
+
+.delete-goal {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.delete-goal:hover {
+  color: #c82333;
+}
+
+/* Form Styles */
+.goal-form {
+  margin-bottom: 15px;
+}
+
+.goal-input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.submit-goal-btn {
+  background-color: #1e88e5;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.submit-goal-btn:hover {
+  background-color: #1976d2;
+}
+
+/* Button Styles */
+.edit-btn, .add-goal-btn {
+  background-color: transparent;
+  border: 1px solid #1e88e5;
+  color: #1e88e5;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.edit-btn:hover, .add-goal-btn:hover {
+  background-color: #1e88e5;
+  color: white;
+}
+
+.edit-btn i, .add-goal-btn i {
+  margin-right: 5px;
+}
