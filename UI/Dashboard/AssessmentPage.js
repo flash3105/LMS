@@ -124,15 +124,23 @@ function renderAssessmentsTable(items) {
           </tr>
         </thead>
         <tbody>
-          ${items.map(a => `
-            <tr>
-              <td>${a.type || 'N/A'}</td>
-              <td>${a.title || 'N/A'}</td>
-              <td>${a.grade !== undefined ? a.grade : 'N/A'}</td>
-              <td>${a.feedback || '—'}</td>
-              <td>${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : 'N/A'}</td>
-            </tr>
-          `).join('')}
+          ${items.map(a => {
+            const isQuiz = a.type === 'Quiz';
+            // Normalize dates to midnight for fair comparison
+            const duePassed = a.dueDate && new Date(new Date(a.dueDate).setHours(0,0,0,0)) < new Date(new Date().setHours(0,0,0,0));
+            // Consider 'N/A' as no grade
+            const noGrade = a.grade === undefined || a.grade === null || a.grade === '' || a.grade === 'N/A';
+            const highlight = isQuiz && duePassed && noGrade ? 'style="background:#ffeaea;color:#b71c1c;"' : '';
+            return `
+              <tr ${highlight}>
+                <td>${a.type || 'N/A'}</td>
+                <td>${a.title || 'N/A'}</td>
+                <td>${a.grade !== undefined && a.grade !== null && a.grade !== '' ? a.grade : 'N/A'}</td>
+                <td>${a.feedback || '—'}</td>
+                <td>${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : 'N/A'}</td>
+              </tr>
+            `;
+          }).join('')}
         </tbody>
       </table>
     </div>
