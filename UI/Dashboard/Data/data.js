@@ -130,3 +130,27 @@ export async function fetchAllQuizzes() {
   }
 }
 
+// Fetch assessments for a specific user from the database
+export async function fetchUserAssessments(userId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/${userId}/assessments`);
+    if (!response.ok) throw new Error('Failed to fetch user assessments');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching user assessments:', error);
+    throw error;
+  }
+}
+
+// Fetch quizzes for a specific user from the database
+export async function fetchUserQuizzes(userId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/${userId}/quizzes`);
+    if (!response.ok) throw new Error('Failed to fetch user quizzes');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching user quizzes:', error);
+    throw error;
+  }
+}
+
