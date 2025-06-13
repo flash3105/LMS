@@ -39,39 +39,41 @@ body {
 /* --- Sidebar --- */
 .sidebar {
   width: 250px;
-  background-color: #2c3e50;
-  color: #333;
+  background-color: #2c3e50; /* Primary blue */
+  color: white; /* Text color */
   padding: 20px 0;
   position: fixed;
   height: 100vh;
-  border-right: 1px solid #ccc;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+  border-right: none; 
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   transition: transform 0.3s ease;
 }
 
 .sidebar a {
-  color: #555;
+  color: rgba(255, 255, 255, 0.9); /* Semi-transparent white */
   display: flex;
   align-items: center;
   padding: 15px 20px;
   text-decoration: none;
   font-size: 1rem;
   font-weight: 500;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
   border-left: 4px solid transparent;
 }
 
 .sidebar a i {
   margin-right: 10px;
   font-size: 1.1rem;
+  color: white; /* Ensure icons are white */
 }
 
+/* Hover & Active States */
 .sidebar a:hover,
 .sidebar a.active {
-  background-color: #f0f0f0;
-  color: #1e88e5;
-  border-left-color: #1e88e5;
+  background-color: rgba(255, 255, 255, 0.15); /* Light white overlay */
+  color: white;
+  border-left-color: white;
 }
 
 /* --- Main Content --- */
