@@ -23,4 +23,30 @@ router.get('/todos/:email', async (req, res) => {
   }
 });
 
+// PATCH: Update status of a to-do by ID
+router.patch('/todos/:id', async (req, res) => {
+  try {
+    const todo = await Todo.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    if (!todo) return res.status(404).json({ error: 'Todo not found' });
+    res.json(todo);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE: Remove a to-do by ID
+router.delete('/todos/:id', async (req, res) => {
+  try {
+    const todo = await Todo.findByIdAndDelete(req.params.id);
+    if (!todo) return res.status(404).json({ error: 'Todo not found' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

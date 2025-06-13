@@ -1,14 +1,14 @@
 import { fetchCourses, fetchUserData, fetchMessages, courses, userData, messages } from '../Data/data.js';
 document.addEventListener('DOMContentLoaded', async () => {
-  const userId = JSON.parse(localStorage.getItem('user')).email; // Get user ID from localStorage
+  const user = JSON.parse(localStorage.getItem('user'));
+  const userId = user.email;
 
-  await fetchCourses(); // Fetch courses
-  await fetchUserData(userId); // Fetch user data
-  await fetchMessages(userId); // Fetch messages
+  await fetchCourses(); // Wait for courses to load
+  await fetchUserData(userId); // Wait for user data to load
+  await fetchMessages(userId);
 
-  console.log('Courses:', courses);
-  console.log('User Data:', userData);
-  console.log('Messages:', messages);
+  // Now render, when data is ready
+  renderHomeTab(document.getElementById('contentArea'), user);
 });
 
 let enrolledCoursesFromAPI = [];
@@ -89,11 +89,8 @@ export function renderHomeTab(contentArea, currentUser) {
         <label>Course</label>
         <select class="course-select">
           <option value="">None</option>
-          <option value="Mathematics">Mathematics</option>
-          <option value="Physics">Physics</option>
-          <option value="Life Sciences">Life Sciences</option>
-          ${enrolledCourses.map(course => 
-            `<option value="${course.title}">${course.title}</option>`
+          ${enrolledCoursesFromAPI.map(course => 
+            `<option value="${course.title || course.courseName}">${course.title || course.courseName}</option>`
           ).join('')}
         </select>
       </div>
@@ -269,11 +266,11 @@ function setupTodoFunctionality() {
       });
 
       const checkbox = taskItem.querySelector('.task-checkbox');
-      checkbox.addEventListener('change', (e) => {
+      checkbox.addEventListener('change', async (e) => {
+        const newStatus = e.target.checked ? 'done' : 'on-track'; // or keep previous status if you want
         if (e.target.checked) {
           taskItem.style.opacity = '0.6';
           taskItem.querySelector('.task-text').style.textDecoration = 'line-through';
-          // Auto-set status to Done when checked
           const statusBadge = taskItem.querySelector('.status-done, .status-at-risk, .status-on-track');
           if (statusBadge) {
             statusBadge.className = 'task-meta-item status-done';
@@ -282,6 +279,17 @@ function setupTodoFunctionality() {
         } else {
           taskItem.style.opacity = '1';
           taskItem.querySelector('.task-text').style.textDecoration = 'none';
+        }
+
+        // Send PATCH/PUT request to API to update status
+        try {
+          await fetch(`${API_BASE_URL}/todos/${todo._id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+        } catch (err) {
+          console.error('Failed to update todo status:', err);
         }
       });
     }
@@ -384,6 +392,8 @@ async function loadTodos() {
     const taskList = document.querySelector('.task-list');
     taskList.innerHTML = '';
     todos.forEach(todo => {
+      if (todo.status === 'done') return; // Skip done todos
+
       const taskItem = document.createElement('div');
       taskItem.className = 'task-item';
 
@@ -405,14 +415,22 @@ async function loadTodos() {
         <button class="delete-task"><i class="fas fa-trash"></i></button>
       `;
 
-      // Optionally add event listeners for delete and checkbox
-      taskItem.querySelector('.delete-task').addEventListener('click', () => {
-        taskItem.remove();
-        // Optionally: send DELETE request to API here
+      // DELETE functionality
+      taskItem.querySelector('.delete-task').addEventListener('click', async () => {
+        try {
+          await fetch(`${API_BASE_URL}/todos/${todo._id}`, {
+            method: 'DELETE'
+          });
+          taskItem.remove();
+        } catch (err) {
+          console.error('Failed to delete todo:', err);
+        }
       });
 
+      // Checkbox (status) functionality
       const checkbox = taskItem.querySelector('.task-checkbox');
-      checkbox.addEventListener('change', (e) => {
+      checkbox.addEventListener('change', async (e) => {
+        const newStatus = e.target.checked ? 'done' : 'on-track';
         if (e.target.checked) {
           taskItem.style.opacity = '0.6';
           taskItem.querySelector('.task-text').style.textDecoration = 'line-through';
@@ -425,7 +443,19 @@ async function loadTodos() {
           taskItem.style.opacity = '1';
           taskItem.querySelector('.task-text').style.textDecoration = 'none';
         }
-        // Optionally: send PATCH/PUT request to API to update status
+
+        // Update status in DB
+        try {
+          await fetch(`${API_BASE_URL}/todos/${todo._id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+          // Optionally, remove from UI if marked as done
+          if (newStatus === 'done') taskItem.remove();
+        } catch (err) {
+          console.error('Failed to update todo status:', err);
+        }
       });
 
       taskList.appendChild(taskItem);
