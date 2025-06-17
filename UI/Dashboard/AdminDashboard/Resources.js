@@ -20,7 +20,8 @@ export function renderResources(container, course) {
       <div class="resources-tabs">
         <div class="tabs">
           <button class="tab-button active" data-tab="resources">Resources</button>
-          <button class="tab-button" data-tab="assessments">Assessments</button>
+          <!-- Remove or comment out this line -->
+          <!-- <button class="tab-button" data-tab="assessments">Assessments</button> -->
         </div>
         
         <div class="tab-content active" id="resources-tab">
