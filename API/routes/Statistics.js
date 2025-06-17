@@ -5,7 +5,8 @@ const User = require("../models/User");
 const Course = require("../models/Course");
 const Assessment = require("../models/Assessment");
 const Quiz = require("../models/Quiz");
-const Grade = require("../models/Grade"); // each grade has: learnerEmail, courseId, grade, assessmentTitle, etc.
+const Grade = require("../models/Grades"); // each grade has: learnerEmail, courseId, grade, assessmentTitle, etc.
+const Grades = require('../models/Grades');
 
 
 router.get('/', async (req, res) => {
@@ -15,7 +16,7 @@ router.get('/', async (req, res) => {
       Course.find(),
       Assessment.find(),
       Quiz.find(),
-      Grade.find()
+      Grades.find()
     ]);
 
     const today = new Date();
