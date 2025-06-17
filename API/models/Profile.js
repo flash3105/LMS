@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const AchievementSchema = new mongoose.Schema({
   title: String,
-  certificateUrl: String, // Link to certificate file or image
+  certificateUrl: String,
   issuedBy: String,
   date: Date,
 });
@@ -21,7 +21,7 @@ const GoalSchema = new mongoose.Schema({
 });
 
 const ProfileSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+  email: { type: String, required: true, unique: true }, // Use email as unique ID
   achievements: [AchievementSchema],
   milestones: [MilestoneSchema],
   goals: [GoalSchema],
