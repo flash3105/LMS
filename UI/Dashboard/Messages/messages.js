@@ -3,7 +3,8 @@ let messages = [];
 try {
   const stored = localStorage.getItem('messages');
   if (stored) {
-    messages = JSON.parse(stored);
+    const parsed = JSON.parse(stored);
+    messages = Array.isArray(parsed) ? parsed : [];
   }
 } catch (e) {
   messages = [];
