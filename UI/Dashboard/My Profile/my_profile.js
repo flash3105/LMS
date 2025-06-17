@@ -1,4 +1,5 @@
 import { userData } from '../Data/data.js';
+import { fetchUserProfile, addGoal } from '../Profile/profileApi.js';
 
 export function renderProfileTab(contentArea, currentUser) {
   // Safely access userProgress
@@ -192,4 +193,41 @@ function editProfile() {
     document.getElementById("userName").textContent = currentUser.name;
     renderProfileTab(document.getElementById("contentArea"), currentUser);
   }
+}
+
+// Example: Load and display profile data
+async function loadProfile(userId) {
+  try {
+    const profile = await fetchUserProfile(userId);
+    // Render achievements, milestones, and goals in your UI
+    renderAchievements(profile.achievements);
+    renderMilestones(profile.milestones);
+    renderGoals(profile.goals);
+  } catch (err) {
+    console.error('Failed to load profile:', err);
+    // Show error message in UI if needed
+  }
+}
+
+// Example: Add a new goal from a form
+async function handleAddGoal(userId, goalData) {
+  try {
+    const updatedProfile = await addGoal(userId, goalData);
+    // Optionally re-render goals or the whole profile
+    renderGoals(updatedProfile.goals);
+  } catch (err) {
+    console.error('Failed to add goal:', err);
+    // Show error message in UI if needed
+  }
+}
+
+// Example render functions (implement as needed)
+function renderAchievements(achievements) {
+  // Render achievements in the DOM
+}
+function renderMilestones(milestones) {
+  // Render milestones in the DOM
+}
+function renderGoals(goals) {
+  // Render goals in the DOM
 }
