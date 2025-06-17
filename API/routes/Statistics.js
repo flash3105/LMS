@@ -5,18 +5,16 @@ const User = require("../models/User");
 const Course = require("../models/Course");
 const Assessment = require("../models/Assessment");
 const Quiz = require("../models/Quiz");
-const Message = require("../models/Message");
 const Grade = require("../models/Grade"); // each grade has: learnerEmail, courseId, grade, assessmentTitle, etc.
 
 
 router.get('/', async (req, res) => {
   try {
-    const [users, courses, assessments, quizzes, messages, grades] = await Promise.all([
+    const [users, courses, assessments, quizzes, grades] = await Promise.all([
       User.find(),
       Course.find(),
       Assessment.find(),
       Quiz.find(),
-      Message.find(),
       Grade.find()
     ]);
 
@@ -82,7 +80,6 @@ router.get('/', async (req, res) => {
       totalCourses,
       totalAssessments: assessments.length,
       totalQuizzes: quizzes.length,
-      totalMessages: messages.length,
       activeUsers,
       newUsers,
       newCourses
