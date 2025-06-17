@@ -5,8 +5,10 @@ const Profile = require('../models/Profile');
 // Get a user's profile by email
 router.get('/:email', async (req, res) => {
   try {
-    const profile = await Profile.findOne({ email: req.params.email });
-    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+    let profile = await Profile.findOne({ email: req.params.email });
+    if (!profile) {
+      profile = await Profile.create({ email: req.params.email, achievements: [], milestones: [], goals: [] });
+    }
     res.json(profile);
   } catch (err) {
     res.status(500).json({ error: err.message });
