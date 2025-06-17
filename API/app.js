@@ -35,6 +35,7 @@ app.use('/api/quizzes', require('./routes/QuizSubmit'));
 app.use('/api/grades', require('./routes/Grades')); 
 app.use('/api', require('./routes/Analytics'));
 app.use('/api', require('./routes/Todos'));
+app.use('/api', require('./routes/Profile'));
 // Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

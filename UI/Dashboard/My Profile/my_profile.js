@@ -1,5 +1,5 @@
 import { userData } from '../Data/data.js';
-import { fetchUserProfile, addGoal } from '../Profile/profileApi.js';
+const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 export function renderProfileTab(contentArea, currentUser) {
   // Safely access userProgress
@@ -115,7 +115,8 @@ export function renderProfileTab(contentArea, currentUser) {
         </div>
         <div class="card-body">
           <div class="goals-list">
-            <!-- Goals will appear here dynamically -->
+            <!-- Goals will be loaded here from database -->
+            <div class="loading-goals">Loading goals...</div>
           </div>
         </div>
       </div>
@@ -123,14 +124,17 @@ export function renderProfileTab(contentArea, currentUser) {
   `;
 
   // Initialize goals functionality
-  setupGoalsFunctionality();
+  setupGoalsFunctionality(currentUser);
 }
 
-function setupGoalsFunctionality() {
+async function setupGoalsFunctionality(currentUser) {
   const addGoalBtn = document.querySelector('.add-goal-btn');
   const goalForm = document.querySelector('.goal-form');
   const submitGoalBtn = document.querySelector('.submit-goal-btn');
   const goalsList = document.querySelector('.goals-list');
+
+  // First load existing goals from database
+  await fetchGoals(currentUser.email, goalsList);
 
   if (addGoalBtn && goalForm && submitGoalBtn && goalsList) {
     // Toggle form visibility
@@ -140,33 +144,75 @@ function setupGoalsFunctionality() {
     });
 
     // Handle goal submission
-    submitGoalBtn.addEventListener('click', () => {
+    submitGoalBtn.addEventListener('click', async () => {
       const goalInput = document.querySelector('.goal-input');
       if (goalInput.value.trim()) {
-        const goalItem = document.createElement('div');
-        goalItem.className = 'goal-item';
-        
-        goalItem.innerHTML = `
-          <div class="goal-content">
-            <input type="checkbox" class="goal-checkbox">
-            <span class="goal-text">${goalInput.value.trim()}</span>
-          </div>
-          <button class="delete-goal"><i class="fas fa-trash"></i></button>
-        `;
+        try {
+          await saveGoalToDatabase(currentUser.email, goalInput.value.trim());
+          // Reload goals after adding new one
+          await fetchGoals(currentUser.email, goalsList);
+          
+          // Clear form
+          goalInput.value = '';
+          goalForm.style.display = 'none';
+        } catch (error) {
+          console.error('Error saving goal:', error);
+          alert('Failed to save goal. Please try again.');
+        }
+      }
+    });
+  }
+}
 
-        goalsList.appendChild(goalItem);
-        
-        // Clear form
-        goalInput.value = '';
-        goalForm.style.display = 'none';
+async function fetchGoals(userEmail, goalsList) {
+  try {
+    // Replace with your actual API endpoint
+    const response = await fetch(`${API_BASE_URL}/profile/${userEmail}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch goals');
+    }
+    
+    const goals = await response.json();
+    
+    // Clear loading message
+    goalsList.innerHTML = '';
+    
+    if (goals.length === 0) {
+      goalsList.innerHTML = '<p class="no-goals">No goals set yet. Add your first goal!</p>';
+      return;
+    }
+    
+    // Render each goal
+    goals.forEach(goal => {
+      const goalItem = document.createElement('div');
+      goalItem.className = 'goal-item';
+      goalItem.dataset.goalId = goal.id;
+      
+      goalItem.innerHTML = `
+        <div class="goal-content">
+          <input type="checkbox" class="goal-checkbox" ${goal.completed ? 'checked' : ''}>
+          <span class="goal-text">${goal.text}</span>
+        </div>
+        <button class="delete-goal"><i class="fas fa-trash"></i></button>
+      `;
 
-        // Add event listeners
-        goalItem.querySelector('.delete-goal').addEventListener('click', () => {
+      goalsList.appendChild(goalItem);
+      
+      // Add event listeners
+      goalItem.querySelector('.delete-goal').addEventListener('click', async () => {
+        try {
+          await deleteGoalFromDatabase(goal.id);
           goalItem.remove();
-        });
+        } catch (error) {
+          console.error('Error deleting goal:', error);
+          alert('Failed to delete goal. Please try again.');
+        }
+      });
 
-        const checkbox = goalItem.querySelector('.goal-checkbox');
-        checkbox.addEventListener('change', (e) => {
+      const checkbox = goalItem.querySelector('.goal-checkbox');
+      checkbox.addEventListener('change', async (e) => {
+        try {
+          await updateGoalStatus(goal.id, e.target.checked);
           if (e.target.checked) {
             goalItem.style.opacity = '0.6';
             goalItem.querySelector('.goal-text').style.textDecoration = 'line-through';
@@ -174,9 +220,55 @@ function setupGoalsFunctionality() {
             goalItem.style.opacity = '1';
             goalItem.querySelector('.goal-text').style.textDecoration = 'none';
           }
-        });
-      }
+        } catch (error) {
+          console.error('Error updating goal status:', error);
+          // Revert the checkbox if update fails
+          e.target.checked = !e.target.checked;
+        }
+      });
     });
+  } catch (error) {
+    console.error('Error fetching goals:', error);
+    goalsList.innerHTML = '<p class="error-message">Failed to load goals. Please try again later.</p>';
+  }
+}
+
+  
+  async function saveGoalToDatabase(userId, goal) {
+  const res = await fetch(`${API_BASE_URL}/profile/${userId}/goals`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(goal)
+  });
+  if (!res.ok) throw new Error('Failed to add goal');
+  return await res.json();
+}
+
+async function deleteGoalFromDatabase(goalId) {
+  // Replace with your actual API endpoint
+  const response = await fetch(`/api/goals/${goalId}`, {
+    method: 'DELETE'
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to delete goal');
+  }
+}
+
+async function updateGoalStatus(goalId, completed) {
+  // Replace with your actual API endpoint
+  const response = await fetch(`/api/goals/${goalId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      completed: completed
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to update goal status');
   }
 }
 
@@ -193,41 +285,4 @@ function editProfile() {
     document.getElementById("userName").textContent = currentUser.name;
     renderProfileTab(document.getElementById("contentArea"), currentUser);
   }
-}
-
-// Example: Load and display profile data
-async function loadProfile(userId) {
-  try {
-    const profile = await fetchUserProfile(userId);
-    // Render achievements, milestones, and goals in your UI
-    renderAchievements(profile.achievements);
-    renderMilestones(profile.milestones);
-    renderGoals(profile.goals);
-  } catch (err) {
-    console.error('Failed to load profile:', err);
-    // Show error message in UI if needed
-  }
-}
-
-// Example: Add a new goal from a form
-async function handleAddGoal(userId, goalData) {
-  try {
-    const updatedProfile = await addGoal(userId, goalData);
-    // Optionally re-render goals or the whole profile
-    renderGoals(updatedProfile.goals);
-  } catch (err) {
-    console.error('Failed to add goal:', err);
-    // Show error message in UI if needed
-  }
-}
-
-// Example render functions (implement as needed)
-function renderAchievements(achievements) {
-  // Render achievements in the DOM
-}
-function renderMilestones(milestones) {
-  // Render milestones in the DOM
-}
-function renderGoals(goals) {
-  // Render goals in the DOM
 }
