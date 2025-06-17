@@ -39,7 +39,7 @@ function renderQuickLinks(currentUser) {
 // Component: Statistics with Real Data
 async function renderStatistics() {
   try {
-    const response = await fetch(`${API_BASE_URL}/stats`);
+    const response = await fetch(`${API_BASE_URL}/Statistics`);
     if (!response.ok) throw new Error('Failed to fetch statistics');
     const stats = await response.json();
 
