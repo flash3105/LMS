@@ -44,8 +44,18 @@ function renderCourses(courseList, containerId) {
     return;
   }
 
+  // Get user's enrolled courses (array of course IDs)
+  let enrolledIds = [];
+  const enrolledData = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : {};
+  if (enrolledData.enrolledCourses) {
+    // Support both array of objects or array of IDs
+    enrolledIds = enrolledData.enrolledCourses.map(c => typeof c === 'string' ? c : c._id);
+  }
+
   container.innerHTML = ""; // Clear the container
   courseList.forEach(course => {
+    const isEnrolled = enrolledIds.includes(course._id);
+
     const card = document.createElement("div");
     card.className = "course-card";
     card.innerHTML = `
@@ -55,23 +65,21 @@ function renderCourses(courseList, containerId) {
         <p><strong>Author:</strong> ${course.authorEmail}</p>
         <p><strong>Course Code:</strong> ${course.courseCode}</p>
       </div>
-      <button class="btn btn-primary enroll-btn" data-course-id="${course._id}">Enroll</button>
+      ${!isEnrolled ? `<button class="btn btn-primary enroll-btn" data-course-id="${course._id}">Enroll</button>` : ''}
       <button class="btn btn-outline-secondary view-btn" data-course-id="${course._id}">View Details</button>
     `;
-    
+
     // Add click handler for the entire card (excluding buttons)
     card.querySelector('.course-card-content').addEventListener("click", () => {
       renderCourseDetails(document.getElementById("contentArea"), course);
     });
-    
+
     // Add click handler for the view details button
     card.querySelector('.view-btn').addEventListener('click', (e) => {
-
-      
       e.stopPropagation();
       renderCourseDetails(document.getElementById("contentArea"), course);
     });
-    
+
     container.appendChild(card);
   });
 
