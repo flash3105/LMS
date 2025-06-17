@@ -83,7 +83,7 @@ export async function renderadminLearning(container, query = '') {
         
 
         <!-- Course List -->
-        <div id="courseList" class="course-list">
+        <div id="courseList" class="course-grid">  <!-- Changed class to course-grid -->
           ${filteredCourses.length > 0 ? `
             <h3>${filteredCourses.length} ${filteredCourses.length === 1 ? 'Course' : 'Courses'}</h3>
             ${filteredCourses.map(course => `
