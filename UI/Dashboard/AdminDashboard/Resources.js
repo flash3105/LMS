@@ -70,23 +70,8 @@ export function renderResources(container, course) {
           </div>
         </div>
         
-        <div class="tab-content" id="assessments-tab">
-          <div class="existing-assessments">
-            <h3>Existing Assessments</h3>
-            <div class="assessments-list" id="assessmentsList">
-              <!-- Assessments will be loaded here -->
-            </div>
-          </div>
-          
-          <div class="add-assessment">
-            <h3>Add New Assessment</h3>
-            <form id="assessmentForm">
-              <!-- Assessment form fields -->
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+      
+    
   `;
 
   // Add event listeners

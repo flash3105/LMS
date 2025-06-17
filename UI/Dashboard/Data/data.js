@@ -61,19 +61,18 @@ export async function fetchMessages(userId) {
     if (!response.ok) {
       throw new Error('Failed to fetch messages');
     }
-    messages = await response.json();
-
-    // Optionally, store messages in localStorage for offline access
+    const result = await response.json();
+    messages = Array.isArray(result) ? result : [];
     localStorage.setItem('messages', JSON.stringify(messages));
-    console.log('Messages fetched and stored globally:', messages);
   } catch (error) {
     console.error('Error fetching messages:', error);
-
     // Fallback to localStorage if API fails
     const storedMessages = localStorage.getItem('messages');
     if (storedMessages) {
-      messages = JSON.parse(storedMessages);
-      console.log('Loaded messages from localStorage:', messages);
+      const parsed = JSON.parse(storedMessages);
+      messages = Array.isArray(parsed) ? parsed : [];
+    } else {
+      messages = [];
     }
   }
 }

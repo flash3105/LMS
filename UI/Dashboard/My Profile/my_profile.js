@@ -52,10 +52,7 @@ export function renderProfileTab(contentArea, currentUser) {
             <span class="detail-label">Department:</span>
             <span class="detail-value">${currentUser.department || 'N/A'}</span>
           </div>
-          <div class="detail-item">
-            <span class="detail-label">Internship Start:</span>
-            <span class="detail-value">${currentUser.startDate || 'N/A'}</span>
-          </div>
+         
           <div class="detail-item">
             <span class="detail-label">Role:</span>
             <span class="detail-value">${currentUser.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : 'N/A'}</span>
