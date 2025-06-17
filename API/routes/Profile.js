@@ -1,95 +1,99 @@
 const express = require('express');
 const router = express.Router();
 const Profile = require('../models/Profile');
+const User = require('../models/User'); // Import User model at top level
 
-// Get a user's profile by email instead of userId
+// Enhanced GET profile endpoint
 router.get('/:email', async (req, res) => {
   try {
-    // Find the user by email
-    const user = await require('../models/User').findOne({ email: req.params.email });
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    const user = await User.findOne({ email: req.params.email });
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'User not found',
+        suggestion: 'Please check the email or register first'
+      });
+    }
 
-    // Find the profile by user._id
-    const profile = await Profile.findOne({ user: user._id });
-    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+    // Create profile if doesn't exist
+    let profile = await Profile.findOne({ user: user._id });
+    if (!profile) {
+      profile = await Profile.create({ 
+        user: user._id,
+        goals: [],
+        achievements: [],
+        milestones: []
+      });
+    }
+
     res.json(profile);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Profile fetch error:', err);
+    res.status(500).json({ 
+      error: 'Server error',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
-// Create or update a user's profile
-router.post('/:userId', async (req, res) => {
-  try {
-    const profile = await Profile.findOneAndUpdate(
-      { user: req.params.userId },
-      { $set: req.body },
-      { new: true, upsert: true }
-    );
-    res.json(profile);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Add an achievement
-router.post('/:userId/achievements', async (req, res) => {
-  try {
-    const profile = await Profile.findOneAndUpdate(
-      { user: req.params.userId },
-      { $push: { achievements: req.body } },
-      { new: true, upsert: true }
-    );
-    res.json(profile);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Add a milestone
-router.post('/:userId/milestones', async (req, res) => {
-  try {
-    const profile = await Profile.findOneAndUpdate(
-      { user: req.params.userId },
-      { $push: { milestones: req.body } },
-      { new: true, upsert: true }
-    );
-    res.json(profile);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Add a goal
-router.post('/:userId/goals', async (req, res) => {
-  try {
-    const profile = await Profile.findOneAndUpdate(
-      { user: req.params.userId },
-      { $push: { goals: req.body } },
-      { new: true, upsert: true }
-    );
-    res.json(profile);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Add a goal using user's email
+// Enhanced goal addition endpoint
 router.post('/:email/goals', async (req, res) => {
   try {
-    // Find the user by email
-    const user = await require('../models/User').findOne({ email: req.params.email });
+    // Validate request body
+    if (!req.body.text) {
+      return res.status(400).json({ error: 'Goal text is required' });
+    }
+
+    const user = await User.findOne({ email: req.params.email });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Add the goal to the user's profile
+    const goalData = {
+      text: req.body.text,
+      completed: req.body.completed || false,
+      createdAt: new Date(),
+      _id: new mongoose.Types.ObjectId() // Generate ID upfront
+    };
+
     const profile = await Profile.findOneAndUpdate(
       { user: user._id },
-      { $push: { goals: req.body } },
+      { $push: { goals: goalData } },
       { new: true, upsert: true }
     );
-    res.json(profile);
+
+    res.json({
+      success: true,
+      goal: goalData,
+      profile: profile
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Goal addition error:', err);
+    res.status(500).json({ 
+      error: 'Failed to add goal',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+});
+
+// Add this new endpoint for goal deletion
+router.delete('/:email/goals/:goalId', async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.params.email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const profile = await Profile.findOneAndUpdate(
+      { user: user._id },
+      { $pull: { goals: { _id: req.params.goalId } } },
+      { new: true }
+    );
+
+    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+
+    res.json({
+      success: true,
+      message: 'Goal deleted successfully'
+    });
+  } catch (err) {
+    console.error('Goal deletion error:', err);
+    res.status(500).json({ error: 'Failed to delete goal' });
   }
 });
 
