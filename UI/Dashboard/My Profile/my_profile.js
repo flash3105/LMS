@@ -167,7 +167,7 @@ async function setupGoalsFunctionality(currentUser) {
 async function fetchGoals(userEmail, goalsList) {
   try {
     // Replace with your actual API endpoint
-    const response = await fetch(`${API_BASE_URL}/Profile/${  userEmail}`);
+    const response = await fetch(`${API_BASE_URL}/Profile/${ userEmail}`);
     if (!response.ok) {
       throw new Error('Failed to fetch goals');
     }
@@ -234,14 +234,24 @@ async function fetchGoals(userEmail, goalsList) {
 }
 
   
-  async function saveGoalToDatabase(userId, goal) {
- const res= await fetch(`${API_BASE_URL}/Profile/${userId}/goals`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(goal)
-  });
-  if (!res.ok) throw new Error('Failed to add goal');
-  return await res.json();
+  async function saveGoalToDatabase(email, goal) {
+  try {
+    // Only send the required and relevant fields
+    const payload = {
+      title: goal.title, // required
+      description: goal.description || '', // optional
+      targetDate: goal.targetDate || ''   // optional
+    };
+    const res = await fetch(`${API_BASE_URL}/Profile/${email}/goals`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed to add goal');
+    return await res.json();
+  } catch (err) {
+    throw err;
+  }
 }
 
 async function deleteGoalFromDatabase(goalId) {
