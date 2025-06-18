@@ -17,6 +17,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const userNameEl = document.getElementById("userName");
   if (userNameEl) userNameEl.textContent = currentUser.name;
+   const userInitialsEl = document.querySelector(".user-initials");
+  if (userInitialsEl && currentUser.name) {
+    // Get initials from the name
+    const initials = currentUser.name.split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+    userInitialsEl.textContent = initials;
+  }
 
   renderContent("home");
   setupSidebarNavigation();
