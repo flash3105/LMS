@@ -43,13 +43,14 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         // Add delay to see logs before redirect
         // Navigate based on user role
         //change it back to /Dashboard/InternDashboard
+        // change it back to /Dashboard/AdminDashboard/Admindashboard.html
         if (data.user.role === 'Intern') {
           setTimeout(() => {
             window.location.href = 'Dashboard/InternDashboard.html'; 
           }, 1000);
         } else if (data.user.role === 'Admin') {
           setTimeout(() => {
-            window.location.href = '/Dashboard/AdminDashboard/Admindashboard.html';
+            window.location.href = 'Dashboard/AdminDashboard/Admindashboard.html';
           }, 1000);
         } else {
           alert('Unknown role. Please contact support.');

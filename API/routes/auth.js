@@ -57,4 +57,26 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Route: Get total registered users and their emails
+router.get('/registered-users', async (req, res) => {
+  try {
+const users = await User.find({}, 'email name role'); 
+ // Fetch all users
+    const totalUsers = users.length;
+
+    res.status(200).json({
+      totalUsers,
+      users: users.map(user => ({
+        email: user.email,
+        name: user.name || 'N/A',
+        role: user.role || 'N/A'
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching registered users:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+
 module.exports = router;
