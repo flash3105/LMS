@@ -38,6 +38,7 @@ app.use('/api', require('./routes/Todos'));
 app.use('/api', require('./routes/Profile'));
 app.use('/api', require('./routes/User'));
 app.use('/api', require('./routes/Statistics'));
+app.use('/api/messages', require('./routes/Message'));
 // Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
