@@ -15,10 +15,13 @@ loadCSS();
 
 export async function renderadminLearning(container, query = '') {
   try {
-    // Fetch courses from API (with localStorage fallback)
-    await fetchCourses();
+    // Get current user from localStorage (same as learner dashboard)
+    const currentUser = JSON.parse(localStorage.getItem("user")) || {
+      name: "Admin User",
+      email: "admin@example.com"
+    };
 
-    // Get courses from the global variable (populated by fetchCourses)
+    await fetchCourses();
     const allCourses = courses || [];
     const filteredCourses = allCourses.filter(course =>
       course.courseName.toLowerCase().includes(query.toLowerCase()) ||
