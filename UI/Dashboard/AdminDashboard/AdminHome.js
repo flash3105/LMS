@@ -4,11 +4,9 @@ const API_BASE_URL = window.API_BASE_URL || 'https://lms-cav9.onrender.com/api';
 // Component: Quick Links with Icons and Event Listeners
 function renderQuickLinks(currentUser) {
   const links = [
-    { id: 'viewUsersLink', text: 'View All Users', icon: 'users', role: 'admin' },
-    { id: 'manageCoursesLink', text: 'Manage Courses', icon: 'book', role: 'admin' },
-    { id: 'viewReportsLink', text: 'View Reports', icon: 'chart-bar', role: 'admin' },
-    { id: 'myProgressLink', text: 'My Progress', icon: 'user', role: 'user' },
-    { id: 'myCoursesLink', text: 'My Courses', icon: 'book-open', role: 'all' }
+    
+    { id: 'viewReportsLink', text: 'View Reports', icon: 'chart-bar', role: 'user' }
+   
   ];
 
   return `
@@ -39,9 +37,15 @@ function renderQuickLinks(currentUser) {
 // Component: Statistics with Real Data
 async function renderStatistics() {
   try {
-    const response = await fetch(`${API_BASE_URL}/Statistics`);
-    if (!response.ok) throw new Error('Failed to fetch statistics');
-    const stats = await response.json();
+    // Fetch total assessments
+    const assessmentsResponse = await fetch(`${API_BASE_URL}/assessments/count`);
+    if (!assessmentsResponse.ok) throw new Error('Failed to fetch assessments count');
+    const assessmentsData = await assessmentsResponse.json();
+
+    // Fetch registered users with emails, names, and roles
+    const usersResponse = await fetch(`${API_BASE_URL}/auth/registered-users`);
+    if (!usersResponse.ok) throw new Error('Failed to fetch registered users');
+    const usersData = await usersResponse.json();
 
     return `
       <div class="statistics card">
@@ -50,34 +54,46 @@ async function renderStatistics() {
         </h2>
         <div class="card-body">
           <div class="stats-grid">
-            <div class="stat-card bg-primary">
-              <i class="fas fa-users"></i>
-              <div>
-                <h3>Total Users</h3>
-                <p>${stats.totalUsers || 0}</p>
-              </div>
-            </div>
-            <div class="stat-card bg-success">
-              <i class="fas fa-user-check"></i>
-              <div>
-                <h3>Active Users</h3>
-                <p>${stats.activeUsers || 0}</p>
-              </div>
-            </div>
-            <div class="stat-card bg-info">
-              <i class="fas fa-book"></i>
-              <div>
-                <h3>Total Courses</h3>
-                <p>${stats.totalCourses || 0}</p>
-              </div>
-            </div>
             <div class="stat-card bg-warning">
               <i class="fas fa-tasks"></i>
               <div>
-                <h3>Pending Assessments</h3>
-                <p>${stats.pendingAssessments || 0}</p>
+                <h3>Total Assessments</h3>
+                <p>${assessmentsData.totalAssessments || 0}</p>
               </div>
             </div>
+            <div class="stat-card bg-primary">
+              <i class="fas fa-users"></i>
+              <div>
+                <h3>Total Registered Users</h3>
+                <p>${usersData.totalUsers || 0}</p>
+                <button class="btn btn-sm btn-outline-secondary view-users-btn">
+                  <i class="fas fa-eye"></i> View Users
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="users-section" style="display: none;">
+            <h3>Registered Users</h3>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Email</th>
+                  <th>Name</th>
+                  <th>Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${usersData.users.map((user, index) => `
+                  <tr>
+                    <td>${index + 1}</td>
+                    <td>${user.email}</td>
+                    <td>${user.name}</td>
+                    <td>${user.role}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
           </div>
           <p class="text-muted update-time">
             Last updated: ${new Date().toLocaleTimeString()}
@@ -99,6 +115,7 @@ async function renderStatistics() {
     `;
   }
 }
+
 
 // Component: Announcements with API Data
 async function renderAnnouncements() {
@@ -262,10 +279,12 @@ function setupDashboardInteractions(currentUser) {
           // Implement course management
           console.log('Manage courses clicked');
           break;
-        case 'viewReportsLink':
-          // Implement reports view
-          console.log('View reports clicked');
-          break;
+       case 'viewReportsLink':
+         console.log('Reports clicked');
+        renderReportsPage(document.getElementById('contentArea'));
+
+        break;
+  
         case 'myProgressLink':
           // View personal progress
           console.log('My progress clicked');
@@ -277,6 +296,18 @@ function setupDashboardInteractions(currentUser) {
       }
     });
   });
+  
+
+  // View Users toggle
+const viewUsersBtn = document.querySelector('.view-users-btn');
+if (viewUsersBtn) {
+  viewUsersBtn.addEventListener('click', () => {
+    const usersSection = document.querySelector('.users-section');
+    if (usersSection) {
+      usersSection.style.display = usersSection.style.display === 'none' ? 'block' : 'none';
+    }
+  });
+}
 
   // Statistics refresh button
   const refreshBtn = document.querySelector('.refresh-stats');
@@ -302,6 +333,7 @@ function setupDashboardInteractions(currentUser) {
             <i class="fas fa-sync-alt"></i> Refresh
           </button>
         `;
+
         setupDashboardInteractions(currentUser); // Rebind event listeners
       } catch (error) {
         statsContainer.innerHTML = originalContent;
@@ -355,4 +387,50 @@ function setupDashboardInteractions(currentUser) {
       }
     });
   }
+
+  // View emails button in statistics
+  const viewEmailsBtn = document.querySelector('.view-emails-btn');
+  if (viewEmailsBtn) {
+    viewEmailsBtn.addEventListener('click', () => {
+      const emailsSection = document.querySelector('.emails-section');
+      const isVisible = emailsSection.style.display === 'block';
+      emailsSection.style.display = isVisible ? 'none' : 'block';
+      viewEmailsBtn.innerHTML = isVisible ? '<i class="fas fa-eye"></i> View Emails' : '<i class="fas fa-eye-slash"></i> Hide Emails';
+    });
+  }
+
+  
+}
+async function renderReportsPage(container) {
+  container.innerHTML = `
+    <div class="reports-page card">
+      <h2 class="card-header">
+        <i class="fas fa-chart-line"></i> LMS Reports & Analytics
+      </h2>
+      <div class="card-body">
+        <button id="backButton" class="btn btn-secondary mb-3">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+
+        <p>This section will include reports such as:</p>
+        <ul>
+          <li>User progress over time</li>
+          <li>Top-performing courses</li>
+          <li>Engagement rates</li>
+          <li>Assessment results and trends</li>
+          <li>Active vs inactive users</li>
+          <li>Custom filters: date range, course, user role</li>
+        </ul>
+
+        <div class="text-muted mt-3">
+          <i class="fas fa-spinner fa-spin"></i> More analytics coming soon...
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add click listener for back button
+  document.getElementById('backButton').addEventListener('click', () => {
+    renderHomeTab(container,"user");  // Replace with your actual function to render dashboard home
+  });
 }

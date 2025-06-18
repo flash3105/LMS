@@ -8,7 +8,7 @@ const Course = require('../models/Course');
 
 // Ensure upload directory exists
 const uploadDir = 'uploads/assessments';
-if (!fs.existsSync(uploadDir)){
+if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
@@ -46,9 +46,6 @@ router.post('/courses/:courseId/assessments', upload.single('file'), async (req,
     });
     await assessment.save();
 
-    // Optionally, add assessment to course's assessments array
-    // await Course.findByIdAndUpdate(courseId, { $push: { assessments: assessment._id } });
-
     res.status(201).json({ message: 'Assessment created successfully', assessment });
   } catch (error) {
     console.error('Error adding assessment:', error);
@@ -75,6 +72,17 @@ router.get('/assessments', async (req, res) => {
     res.status(200).json(assessments);
   } catch (error) {
     console.error('Error fetching all assessments:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Route: Get the total number of assessments
+router.get('/assessments/count', async (req, res) => {
+  try {
+    const totalAssessments = await Assessment.countDocuments();
+    res.status(200).json({ totalAssessments });
+  } catch (error) {
+    console.error('Error counting assessments:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
