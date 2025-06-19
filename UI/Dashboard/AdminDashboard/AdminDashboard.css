@@ -720,42 +720,6 @@ body {
 .main .quick-links li::before {
   display: none;
 }
-/* Profile Tab */
-.profile-section {
-  background-color: #ffffff;
-  border: 2px solid #d1d5db;
-  border-radius: 10px;
-  padding: 20px;
-}
-
-.profile-section h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 15px;
-  color: #1e88e5;
-}
-
-.profile-section p {
-  font-size: 1rem;
-  color: #6b7280;
-  margin-bottom: 10px;
-}
-
-.profile-section .settings-item {
-  padding: 10px 0;
-  border-bottom: 1px solid #d1d5db;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.profile-section .settings-item:hover {
-  background-color: #f1f3f5;
-}
-
-.profile-section .settings-item p {
-  margin: 0;
-  color: #1a202c;
-}
 
 
 /* Messages Tab */
@@ -825,4 +789,186 @@ body {
   color: white;
   font-weight: bold;
   cursor: pointer;
+}
+
+
+/* Profile Grid Layout */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Profile Card Styles */
+.profile-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.profile-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #1e88e5;
+}
+
+/* Account Details Styles */
+.detail-item {
+  margin-bottom: 10px;
+  display: flex;
+}
+
+.detail-label {
+  font-weight: bold;
+  width: 120px;
+  color: #555;
+}
+
+.detail-value {
+  flex: 1;
+  color: #333;
+}
+
+.bio .detail-value {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+/* Milestones & Achievements Styles */
+.milestones-list, .achievements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.milestone-item, .achievement-item {
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.milestone-item:last-child, .achievement-item:last-child {
+  border-bottom: none;
+}
+
+.milestone-item i {
+  color: #4caf50;
+  margin-right: 10px;
+}
+
+.achievement-item i {
+  color: #ff9800;
+  margin-right: 10px;
+}
+
+/* Goals Section Styles */
+.goals-list {
+  margin-top: 10px;
+}
+
+.goal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  transition: all 0.2s;
+}
+
+.goal-item:hover {
+  background-color: #e9ecef;
+}
+
+.goal-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.goal-checkbox {
+  margin-right: 10px;
+}
+
+.goal-text {
+  flex: 1;
+}
+
+.delete-goal {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.delete-goal:hover {
+  color: #c82333;
+}
+
+/* Form Styles */
+.goal-form {
+  margin-bottom: 15px;
+}
+
+.goal-input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.submit-goal-btn {
+  background-color: #1e88e5;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.submit-goal-btn:hover {
+  background-color: #1976d2;
+}
+
+/* Button Styles */
+.edit-btn, .add-goal-btn {
+  background-color: transparent;
+  border: 1px solid #1e88e5;
+  color: #1e88e5;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.edit-btn:hover, .add-goal-btn:hover {
+  background-color: #1e88e5;
+  color: white;
+}
+
+.edit-btn i, .add-goal-btn i {
+  margin-right: 5px;
 }

@@ -10,18 +10,12 @@ export function renderProfileTab(contentArea, currentUser) {
 
   // Sample milestones data - you can replace with real data
   const milestones = [
-    "Passed Physics 1",
-    "Completed 5 courses",
-    "Reached 100 study hours",
-    "Earned Bronze Badge"
+   "The system will render your milestones when you achieve them "
   ];
 
   // Sample achievements data
   const achievements = [
-    "Certificate of Completion: Physics Fundamentals",
-    "Advanced Mathematics Certification",
-    "Top Performer Award",
-    "Perfect Attendance"
+     "The system will render your milestones when you achieve them "
   ];
 
   contentArea.innerHTML = `
@@ -35,9 +29,7 @@ export function renderProfileTab(contentArea, currentUser) {
       <div class="profile-card">
         <div class="card-header">
           <h3>Account Details</h3>
-          <button class="edit-btn" onclick="editProfile()">
-            <i class="fas fa-edit"></i> Edit
-          </button>
+          
         </div>
         <div class="card-body">
           <div class="detail-item">

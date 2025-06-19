@@ -10,6 +10,12 @@ async function fetchUserGrades(email) {
   return await res.json();
 }
 
+async function fetchAssessmentsGrades(email){
+  const res = await fetch (`${API_BASE_URL}/graded/${email}/all`);
+  if(!res.ok) throw new Error('Failed to fetch grades');
+  return await res.json();
+}
+
 
 function loadAssessmentPageCSS() {
   const link = document.createElement('link');
@@ -54,10 +60,12 @@ export async function renderAssessmentPage(contentArea) {
     // const courseDetailsArr = await Promise.all(my_courses.map(id => fetchCourseDetails(id)));
     // const courseMap = Object.fromEntries(courseDetailsArr.map(c => [c._id, c.title]));
 
-    const [quizzes, grades] = await Promise.all([
+    const [quizzes, grades,ASSgrades] = await Promise.all([
       fetchAllQuizzes(),
-      fetchUserGrades(userEmail)
+      fetchUserGrades(userEmail),
+      fetchAssessmentsGrades(userEmail)
     ]);
+    console.log('feched:',ASSgrades);
 
     // Get course IDs as strings for comparison
     const courseIds = my_courses.map(c => typeof c === 'string' ? c : c._id);
@@ -69,7 +77,7 @@ export async function renderAssessmentPage(contentArea) {
 
     // Merge grades and feedback into assessments and quizzes
     const assessmentsWithGrades = assessments.map(a => {
-      const gradeObj = grades.find(g => g.type === 'assignment' && (g.refId === a._id || g.refId === a.id));
+      const gradeObj = ASSgrades.find(g => (g.assessmentId === a._id || g.assessmentId === a.id));
       return {
         ...a,
         grade: gradeObj ? gradeObj.grade : undefined,

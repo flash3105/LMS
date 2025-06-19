@@ -38,7 +38,6 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        console.log('Login successful, user:', data.user);
         
         // Add delay to see logs before redirect
         // Navigate based on user role
