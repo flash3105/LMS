@@ -17,6 +17,9 @@ export async function renderCourseDetails(contentArea, course) {
     // Fetch assessments for this course
     const assessments = await fetchAssessments(course._id);
 
+   
+
+
     // Render the course details page
     contentArea.innerHTML = `
       <div class="course-details-container">
@@ -97,7 +100,10 @@ export async function renderCourseDetails(contentArea, course) {
       const assessmentItem = form.closest('.assessment-item');
       const assessmentId = assessmentItem.getAttribute('data-assessment-id');
       const courseId = assessmentItem.getAttribute('data-course-id') || course._id; // fallback to current course
-      const username = userData.email || 'Unknown'; 
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const email = user.email || 'Unknown'; 
+      const username = user.name || 'Anonymous';
+
       const submitTime = new Date().toISOString();
 
       if (!fileInput.files.length) {
@@ -107,7 +113,8 @@ export async function renderCourseDetails(contentArea, course) {
       const formData = new FormData();
       formData.append('file', fileInput.files[0]);
       formData.append('comment', comment);
-      formData.append('email', username);
+      formData.append('username', username);
+      formData.append('email', email);
       formData.append('courseId', courseId);
       formData.append('assessmentId', assessmentId);
       formData.append('submittedAt', submitTime);
@@ -124,7 +131,7 @@ export async function renderCourseDetails(contentArea, course) {
         setTimeout(() => {
           parent.style.display = 'none';
           parent.querySelector('.submit-message').innerHTML = '';
-        }, 1200);
+        }, 3000);
       } catch (err) {
         parent.querySelector('.submit-message').innerHTML = '<span style="color:red;">Submission failed.</span>';
       }
@@ -546,3 +553,5 @@ async function trackAction(eventType, data) {
     console.error('Tracking failed:', err);
   }
 }
+
+

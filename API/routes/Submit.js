@@ -61,4 +61,71 @@ router.post('/assessments/:assessmentId/submit', upload.single('file'), async (r
   }
 });
 
+
+router.get('/course/:courseId', async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const submissions = await AssessmentSubmission.find({ courseId });
+    console.log('Fetched submissions for course:', courseId, 'Count:', submissions.length);
+    res.status(200).json(submissions);
+  } catch (err) {
+    console.error('Error fetching submissions:', err);
+    res.status(500).json({ error: 'Failed to fetch submissions' });
+  }
+});
+
+// PUT /api/submissions/:submissionId/grade
+router.put('/submissions/:submissionId/grade', async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { grade, feedback } = req.body;
+
+    if (grade == null) {
+      return res.status(400).json({ error: 'Grade is required' });
+    }
+
+    // Build update object dynamically
+    const updateData = { grade };
+    if (feedback !== undefined) {
+      updateData.feedback = feedback;
+    }
+
+    const updated = await AssessmentSubmission.findByIdAndUpdate(
+      submissionId,
+      updateData,
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
+
+    res.status(200).json({ message: 'Grade and feedback updated successfully', updated });
+  } catch (err) {
+    console.error('Error updating grade and feedback:', err);
+    res.status(500).json({ error: 'Failed to update grade and feedback' });
+  }
+});
+
+
+// GET /api/submissions/:courseId/:email
+router.get('/graded/:email/all', async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    const submissions = await AssessmentSubmission.find({
+      email
+    });
+
+    console.log(`Fetched ${submissions.length} submissions for student ${email} `);
+
+    res.status(200).json(submissions);
+  } catch (err) {
+    console.error('Error fetching student submissions:', err);
+    res.status(500).json({ error: 'Failed to fetch student submissions' });
+  }
+});
+
+
+
 module.exports = router;

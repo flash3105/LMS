@@ -5,7 +5,7 @@ const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 function loadCSS() {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = '../Assessments/assessments.css'; 
+  link.href = '../Assessments/assessments.css';
   document.head.appendChild(link);
 }
 
@@ -17,6 +17,7 @@ export async function renderSetAssessment(container) {
 
   container.innerHTML = `
     <div class="assessment-container">
+      <!-- Set Assessment Section -->
       <div class="form-section">
         <div class="assessment-set-container">
           <h2>Set an Assessment</h2>
@@ -51,7 +52,8 @@ export async function renderSetAssessment(container) {
           <div id="assessmentMessage"></div>
         </div>
       </div>
-      
+
+      <!-- Set Quiz Section -->
       <div class="form-section" style="margin-top:2rem;">
         <div class="assessment-set-container">
           <h2>Set a Quiz</h2>
@@ -81,6 +83,26 @@ export async function renderSetAssessment(container) {
         </div>
       </div>
 
+      <!-- View Submissions Section -->
+      <div class="form-section" style="margin-top:2rem;">
+        <div class="assessment-set-container">
+          <h2>View Submissions</h2>
+          <div class="form-group">
+            <label for="submissionCourse">Select Course*</label>
+            <select id="submissionCourse">
+              <option value="">Select a course</option>
+              ${allCourses.map(course => `
+                <option value="${course._id}">${course.courseName} (${course.courseCode})</option>
+              `).join('')}
+            </select>
+          </div>
+          <div id="submissionsContent" style="margin-top: 1rem;">
+            <div class="empty-message">Select a course to view submissions</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assessments Table Section -->
       <div class="table-section">
         <div class="assessment-set-container">
           <h2>Current Assessments</h2>
@@ -89,6 +111,8 @@ export async function renderSetAssessment(container) {
           </div>
         </div>
       </div>
+
+      <!-- Quizzes Table Section -->
       <div class="table-section">
         <div class="assessment-set-container">
           <h2>Current Quizzes</h2>
@@ -97,8 +121,15 @@ export async function renderSetAssessment(container) {
           </div>
         </div>
       </div>
+
+      <!-- Grades Table -->
+      <div id="courseGradesTable"></div>
     </div>
   `;
+
+
+
+
 
   // Form submission handler remains the same
   const form = container.querySelector('#setAssessmentForm');
@@ -190,6 +221,156 @@ export async function renderSetAssessment(container) {
       tableDiv.innerHTML = '<div class="error-message">Failed to load assessments.</div>';
     }
   }
+const submissionCourseSelect = container.querySelector('#submissionCourse');
+  submissionCourseSelect.addEventListener('change', async () => {
+    const courseId = submissionCourseSelect.value;
+    if (!courseId) {
+      container.querySelector('#submissionsContent').innerHTML = '<div class="empty-message">Select a course to view submissions</div>';
+      return;
+    }
+    await renderSubmissions(courseId);
+  });
+
+    async function renderSubmissions(courseId) {
+  const submissionsContent = container.querySelector('#submissionsContent');
+  submissionsContent.innerHTML = '<p>Loading submissions...</p>';
+
+  try {
+    // Fetch assessments and submissions for this course
+    const [assessments, submissions] = await Promise.all([
+      fetch(`${API_BASE_URL}/courses/${courseId}/assessments`).then(r => r.json()),
+      fetch(`${API_BASE_URL}/course/${courseId}`).then(r => r.json())
+    ]);
+    
+    console.log('submissions', submissions);
+
+    if ((!assessments || assessments.length === 0)) {
+      submissionsContent.innerHTML = '<div class="empty-message">No assessments for this course.</div>';
+      return;
+    }
+
+    // Mark assessments with type
+    const allItems = [
+      ...assessments.map(a => ({ ...a, type: 'assessment' }))
+    ];
+
+    // Group submissions by assessmentId
+    const groupedSubmissions = {};
+    submissions.forEach(sub => {
+      if (!groupedSubmissions[sub.assessmentId]) {
+        groupedSubmissions[sub.assessmentId] = [];
+      }
+      groupedSubmissions[sub.assessmentId].push(sub);
+    });
+
+    submissionsContent.innerHTML = `
+      <div class="submissions-container">
+        ${allItems.map(item => {
+          const itemSubmissions = groupedSubmissions[item._id] || [];
+          return `
+            <div class="submission-item">
+              <h3>${item.title} (${item.type === 'assessment' ? 'Assignment' : 'Quiz'})</h3>
+              ${itemSubmissions.length > 0 ? `
+                <table class="submissions-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Submitted At</th>
+                      <th>File</th>
+                      <th>Grade</th>
+                      <th>Feedback</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${itemSubmissions.map(sub => `
+                      <tr>
+                        <td>${sub.email}</td>
+                        <td>${new Date(sub.submittedAt).toLocaleString()}</td>
+                        <td>
+                          ${sub.filePath ? `
+                            <a href="${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}" 
+                               download="${sub.email}_${item.title.replace(/[^a-z0-9]/gi, '_')}.${sub.filePath.split('.').pop()}" 
+                               class="download-link">
+                              Download
+                            </a>
+                          ` : 'No file'}
+                        </td>
+                        <td>
+                          <input type="text" 
+                                 class="grade-input" 
+                                 data-submission-id="${sub._id}"
+                                 value="${sub.grade || ''}" 
+                                 placeholder="Enter grade" 
+                                 style="width:60px;">
+                        </td>
+                        <td>
+                          <textarea class="feedback-input" 
+                                    data-submission-id="${sub._id}" 
+                                    placeholder="Enter feedback"
+                                    rows="2"
+                                    style="width:150px;">${sub.feedback || ''}</textarea>
+                        </td>
+                        <td>
+                          <button class="save-grade-btn" data-submission-id="${sub._id}">Save</button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              ` : `
+                <div class="empty-message">No submissions for this ${item.type === 'assessment' ? 'assignment' : 'quiz'}</div>
+              `}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    // Add event listeners for save buttons
+    submissionsContent.querySelectorAll('.save-grade-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const submissionId = btn.getAttribute('data-submission-id');
+        const gradeInput = submissionsContent.querySelector(`.grade-input[data-submission-id="${submissionId}"]`);
+        const feedbackInput = submissionsContent.querySelector(`.feedback-input[data-submission-id="${submissionId}"]`);
+        const grade = gradeInput.value.trim();
+        const feedback = feedbackInput.value.trim();
+
+        if (!grade) {
+          alert('Please enter a grade');
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/submissions/${submissionId}/grade`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ grade, feedback })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to save grade and feedback');
+          }
+
+          alert('Grade and feedback saved successfully!');
+        } catch (error) {
+          console.error('Error saving grade and feedback:', error);
+          alert('Error saving grade and feedback: ' + error.message);
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('Error loading submissions:', error);
+    submissionsContent.innerHTML = '<div class="error-message">Failed to load submissions. Please try again.</div>';
+  }
+}
+
+  
+
+
 
   // --- QUIZ UI LOGIC ---
   const quizQuestionsArea = container.querySelector('#quizQuestionsArea');
@@ -372,7 +553,8 @@ export async function renderSetAssessment(container) {
 
     // Fetch grades, assessments, and quizzes for the course
     try {
-      const [grades, assessmentsRes, quizzesRes] = await Promise.all([
+      const [subResults,grades, assessmentsRes, quizzesRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/course/${courseId}`).then(r => r.json()),
         fetchGradesForCourse(courseId),
         fetch(`${API_BASE_URL}/courses/${courseId}/assessments`).then(r => r.json()),
         fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`).then(r => r.json())
@@ -384,7 +566,7 @@ export async function renderSetAssessment(container) {
         gradesTableDiv.id = 'courseGradesTable';
         container.appendChild(gradesTableDiv);
       }
-      gradesTableDiv.innerHTML = `<h2>All Student Grades</h2>${renderCourseGradesTable(grades, assessmentsRes, quizzesRes)}`;
+      gradesTableDiv.innerHTML = `<h2>All Student Grades</h2>${renderCourseGradesTable(subResults,grades, assessmentsRes, quizzesRes)}`;
     } catch (err) {
       // Optionally show error
     }
@@ -404,39 +586,60 @@ export async function renderSetAssessment(container) {
     if (!res.ok) throw new Error('Failed to fetch grades');
     return await res.json();
   }
+async function fetchAssessmentsGrades(email){
+  const res = await fetch (`${API_BASE_URL}/graded/${email}/all`);
+  if(!res.ok) throw new Error('Failed to fetch grades');
+  return await res.json();
+}
+function renderCourseGradesTable(subResults, grades, assessments, quizzes) {
+  const items = [
+    ...assessments.map(a => ({ id: a._id, title: a.title, type: 'Assignment' })),
+    ...quizzes.map(q => ({ id: q._id, title: q.title, type: 'Quiz' }))
+  ];
 
-  function renderCourseGradesTable(grades, assessments, quizzes, students) {
-    // Combine all assessment and quiz IDs for this course
-    const items = [
-      ...assessments.map(a => ({ id: a._id, title: a.title, type: 'Assignment' })),
-      ...quizzes.map(q => ({ id: q._id, title: q.title, type: 'Quiz' }))
-    ];
+  const subEmails = subResults.map(s => s.email);
+  const gradeEmails = grades.map(g => g.email);
+  const studentEmails = [...new Set([...subEmails, ...gradeEmails])];
 
-    // Get unique student emails from grades
-    const studentEmails = [...new Set(grades.map(g => g.email))];
+  return `
+    <div class="table-responsive">
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Student Email</th>
+            ${items.map(item => `<th>${item.title} (${item.type})</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${studentEmails.map(email => {
+            let hasLowGrade = false;
 
-    return `
-      <div class="table-responsive">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Student Email</th>
-              ${items.map(item => `<th>${item.title} (${item.type})</th>`).join('')}
-            </tr>
-          </thead>
-          <tbody>
-            ${studentEmails.map(email => `
-              <tr>
+            const gradeCells = items.map(item => {
+              let grade = null;
+
+              if (item.type === 'Assignment') {
+                const submission = subResults.find(sub => sub.email === email && sub.assessmentId === item.id);
+                grade = submission && submission.grade != null ? Number(submission.grade) : null;
+              } else {
+                const gradeObj = grades.find(g => g.email === email && g.refId === item.id && g.type.toLowerCase() === 'quiz');
+                grade = gradeObj && gradeObj.grade != null ? Number(gradeObj.grade) : null;
+              }
+
+              if (grade != null && grade < 50) hasLowGrade = true;
+
+              return `<td>${grade != null ? grade : '—'}</td>`;
+            }).join('');
+
+            return `
+              <tr style="${hasLowGrade ? 'background-color: #f8d7da;' : ''}">
                 <td>${email}</td>
-                ${items.map(item => {
-                  const gradeObj = grades.find(g => g.email === email && g.refId == item.id && g.type.toLowerCase() === item.type.toLowerCase());
-                  return `<td>${gradeObj ? gradeObj.grade : '—'}</td>`;
-                }).join('')}
+                ${gradeCells}
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
 }
