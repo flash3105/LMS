@@ -7,20 +7,21 @@ const AssessmentSubmission = require('../models/Submit');
 
 // Ensure submissions directory exists
 const submissionsDir = path.join(__dirname, '..', 'uploads', 'submissions');
+
 if (!fs.existsSync(submissionsDir)) {
   fs.mkdirSync(submissionsDir, { recursive: true });
 }
 
-// Multer setup for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/submissions/');
+    cb(null, submissionsDir);  // Use absolute path here!
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + '-' + file.originalname);
   }
 });
+
 const upload = multer({ storage: storage });
 
 // POST /api/assessments/:assessmentId/submit
