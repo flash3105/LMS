@@ -56,10 +56,11 @@ router.post('/assessments/:assessmentId/submit', upload.single('file'), async (r
 
     res.status(201).json({ message: 'Submission successful', submission });
   } catch (err) {
-    console.error('Submission error:', err);
+    console.error('Submission error:', err.stack || err);
     res.status(500).json({ error: 'Submission failed' });
   }
 });
+
 
 
 router.get('/course/:courseId', async (req, res) => {
