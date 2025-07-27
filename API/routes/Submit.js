@@ -24,40 +24,48 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// POST /api/assessments/:assessmentId/submit
 router.post('/assessments/:assessmentId/submit', upload.single('file'), async (req, res) => {
   try {
-    const {
-      username,
-      email,
-      comment,
-      courseId,
-      submittedAt
-    } = req.body;
-
-    const filePath = req.file ? req.file.path : null;
-    const originalFileName = req.file ? req.file.originalname : null;
-
-    if (!filePath) {
+    if (!req.file) {
       return res.status(400).json({ error: 'File is required.' });
     }
+
+    const { username, email, comment, courseId } = req.body;
+    
+    if (!username || !email || !courseId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Convert absolute path to relative path
+    const relativePath = path.relative(
+      path.join(__dirname, '..'), // Base directory (project root)
+      req.file.path              // Full absolute path
+    ).replace(/\\/g, '/');      // Normalize to forward slashes
 
     const submission = new AssessmentSubmission({
       assessmentId: req.params.assessmentId,
       courseId,
       username,
       email,
-      comment,
-      filePath,
-      originalFileName,
-      submittedAt: submittedAt ? new Date(submittedAt) : new Date()
+      comment: comment || '',
+      fileName: req.file.filename,
+      originalFileName: req.file.originalname,
+      filePath: relativePath, // Store relative path
+      submittedAt: new Date()
     });
 
     await submission.save();
 
-    res.status(201).json({ message: 'Submission successful', submission });
+    res.status(201).json({
+      message: 'Submission successful',
+      submission: {
+        id: submission._id,
+        filePath: submission.filePath, // Verify this is relative
+        // ... other fields
+      }
+    });
   } catch (err) {
-    console.error('Submission error:', err.stack || err);
+    console.error('Submission error:', err);
     res.status(500).json({ error: 'Submission failed' });
   }
 });
