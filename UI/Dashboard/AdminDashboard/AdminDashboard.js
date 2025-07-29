@@ -96,7 +96,7 @@ function setupSidebarNavigation() {
     signOut.addEventListener("click", () => {
       try {
         localStorage.clear();
-        window.location.href = "/UI/Login/Login.html";
+        window.location.href = "/UI";
       } catch (err) {
         console.error("Error signing out:", err);
       }
