@@ -364,13 +364,29 @@ function renderResources(resources) {
         // YouTube
         let isYouTube = false;
         let youTubeEmbed = '';
-        if (resource.link && resource.link.includes('youtube.com')) {
-          isYouTube = true;
-          const match = resource.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/);
-          if (match && match[1]) {
-            youTubeEmbed = `<iframe width="100%" height="200" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen style="border-radius:8px;"></iframe>`;
-          }
-        }
+             if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
+  isYouTube = true;
+
+  // Try to extract the YouTube video ID from different URL formats
+  const url = resource.link;
+
+  // Regex to cover 'youtube.com/watch?v=ID', 'youtu.be/ID', 'youtube.com/embed/ID'
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_\-]{11})/
+  );
+
+  if (match && match[1]) {
+    youTubeEmbed = `<iframe 
+      width="100%" 
+      height="200" 
+      src="https://www.youtube.com/embed/${match[1]}" 
+      frameborder="0" 
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+      allowfullscreen 
+      style="border-radius:8px;">
+    </iframe>`;
+  }
+}
 
         return `
           <div class="resource-card" style="
