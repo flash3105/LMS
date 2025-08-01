@@ -28,6 +28,14 @@ const UserSchema = new mongoose.Schema({
     enum: ['Beginner', 'Intermediate', 'Expert'],
     required: true,
   },
-});
+  resetPasswordToken: {
+    type: String,
+    select: false // Hide from queries by default
+  },
+  resetPasswordExpires: {
+    type: Date,
+    select: false 
+  }
+}, { timestamps: true }); // timestamps for better tracking
 
 module.exports = mongoose.model("User", UserSchema);
