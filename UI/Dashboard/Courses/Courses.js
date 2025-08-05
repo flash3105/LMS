@@ -91,52 +91,72 @@ export async function renderCourseDetails(contentArea, course) {
       document.getElementById('assessment-submit-area-' + id).style.display = 'none';
     });
   });
-  document.querySelectorAll('.assessment-submit-form').forEach(form => {
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const parent = form.closest('.assessment-submit-area');
-      const fileInput = form.querySelector('input[type="file"]');
-      const comment = form.querySelector('textarea').value;
-      const assessmentItem = form.closest('.assessment-item');
-      const assessmentId = assessmentItem.getAttribute('data-assessment-id');
-      const courseId = assessmentItem.getAttribute('data-course-id') || course._id; // fallback to current course
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const email = user.email || 'Unknown'; 
+  // Add this to your renderAssessments function or where you set up event listeners
+document.querySelectorAll('.assessment-submit-form').forEach(form => {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const assessmentId = form.closest('.assessment-item').dataset.assessmentId;
+    const messageDiv = form.nextElementSibling;
+    const fileInput = form.querySelector('input[type="file"]');
+    const comment = form.querySelector('textarea').value;
+    const courseId = course._id; // fallback to current course
+     const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const email = user.email || 'Unknown'; 
       const username = user.name || 'Anonymous';
 
-      const submitTime = new Date().toISOString();
+    if (!fileInput.files[0]) {
+      messageDiv.textContent = 'Please select a file to upload';
+      messageDiv.className = 'submit-message text-danger';
+      return;
+    }
 
-      if (!fileInput.files.length) {
-        parent.querySelector('.submit-message').innerHTML = '<span style="color:red;">Please attach a file.</span>';
-        return;
-      }
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-      formData.append('comment', comment);
-      formData.append('username', username);
-      formData.append('email', email);
-      formData.append('courseId', courseId);
-      formData.append('assessmentId', assessmentId);
-      formData.append('submittedAt', submitTime);
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('comment', comment);
+    formData.append('courseId', courseId); // Make sure this is set
+    formData.append('username', username); // From your auth system
+    formData.append('email',email); // From your auth system
 
-      try {
-        const res = await fetch(`${API_BASE_URL}/assessments/${assessmentId}/submit`, {
-          method: 'POST',
-          body: formData
-        });
-        if (!res.ok) throw new Error('Submission failed');
-        parent.querySelector('.submit-message').innerHTML = '<span style="color:green;">Submitted successfully!</span>';
-        form.reset();
-        // Hide the submission area after a short delay
-        setTimeout(() => {
-          parent.style.display = 'none';
-          parent.querySelector('.submit-message').innerHTML = '';
-        }, 3000);
-      } catch (err) {
-        parent.querySelector('.submit-message').innerHTML = '<span style="color:red;">Submission failed.</span>';
+    try {
+      messageDiv.textContent = 'Submitting...';
+      messageDiv.className = 'submit-message text-info';
+
+      const response = await fetch(`${API_BASE_URL}/assessments/${assessmentId}/submit`, {
+        method: 'POST',
+        body: formData // Don't set Content-Type header, let browser handle it
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Submission failed');
       }
-    });
+
+      const data = await response.json();
+      messageDiv.textContent = data.message;
+      messageDiv.className = 'submit-message text-success';
+      
+      // Hide the form after successful submission
+      form.style.display = 'none';
+      
+      // Update UI to show submission status
+      const assessmentItem = form.closest('.assessment-item');
+      assessmentItem.querySelector('.assessment-actions').innerHTML = `
+        <button class="btn btn-success btn-sm" disabled>Submitted</button>
+        <a href="${API_BASE_URL}${data.submission.downloadUrl}" 
+           class="btn btn-outline-info btn-sm ms-2"
+           download="${data.submission.originalFileName}">
+          Download Submission
+        </a>
+      `;
+
+    } catch (err) {
+      messageDiv.textContent = err.message;
+      messageDiv.className = 'submit-message text-danger';
+      console.error('Submission error:', err);
+    }
   });
+});
 
   // Add this function to render quizzes and handle responses
   async function renderQuizzes(courseId) {
@@ -364,7 +384,8 @@ function renderResources(resources) {
         // YouTube
         let isYouTube = false;
         let youTubeEmbed = '';
-             if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
+        if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
+
   isYouTube = true;
 
   // Try to extract the YouTube video ID from different URL formats
@@ -475,19 +496,19 @@ function renderAssessments(assessments) {
           }
         }
 
-        // Show file link if filePath exists
-        let fileLink = '';
-        if (assessment.filePath) {
-          const fileUrl = `${API_BASE_URL.replace('/api', '')}/${assessment.filePath.replace(/\\/g, '/')}`;
-          // Only allow view for certain types
-          const ext = assessment.originalName ? assessment.originalName.split('.').pop().toLowerCase() : '';
-          const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
-          if (canView) {
-            fileLink = `<a href="${fileUrl}" target="_blank" class="btn btn-outline-info btn-sm" style="margin-left:8px;">View Attached File</a>`;
-          } else {
-            fileLink = `<a href="${fileUrl}" download class="btn btn-outline-info btn-sm" style="margin-left:8px;">Download Attached File</a>`;
-          }
-        }
+       
+let fileLink = '';
+if (assessment.filePath) {
+  const fileName = assessment.filePath.split('/').pop(); // Extract just the filename
+  fileLink = `
+    <a href="${API_BASE_URL}/submissions/file/${fileName}" 
+       download="${assessment.originalName || 'assessment_file'}"
+       class="btn btn-outline-info btn-sm ms-2">
+      ${['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(assessment.originalName?.split('.').pop()?.toLowerCase()) 
+        ? 'View' : 'Download'} Attached File
+    </a>
+  `;
+}
 
         return `
           <div class="assessment-item card mb-3" data-assessment-id="${assessment._id}">
