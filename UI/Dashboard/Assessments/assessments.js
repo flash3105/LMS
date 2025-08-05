@@ -177,50 +177,189 @@ export async function renderSetAssessment(container) {
   }
 
   // Render assessments table function remains the same
-  async function renderAssessmentsTable(courseId) {
-    const tableDiv = container.querySelector('#currentAssessments');
-    if (!courseId) {
-      tableDiv.innerHTML = '<div class="empty-message">Select a course to view assessments</div>';
+ async function renderAssessmentsTable(courseId) {
+  const tableDiv = container.querySelector('#currentAssessments');
+  if (!courseId) {
+    tableDiv.innerHTML = '<div class="empty-message">Select a course to view assessments</div>';
+    return;
+  }
+  tableDiv.innerHTML = '<p>Loading assessments...</p>';
+  try {
+    const res = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
+    const assessments = await res.json();
+    if (!Array.isArray(assessments) || assessments.length === 0) {
+      tableDiv.innerHTML = '<div class="empty-message">No assessments for this course.</div>';
       return;
     }
-    tableDiv.innerHTML = '<p>Loading assessments...</p>';
-    try {
-      const res = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
-      const assessments = await res.json();
-      if (!Array.isArray(assessments) || assessments.length === 0) {
-        tableDiv.innerHTML = '<div class="empty-message">No assessments for this course.</div>';
+    tableDiv.innerHTML = `
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Due Date</th>
+              <th>Description</th>
+              <th>Document</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${assessments.map(a => `
+              <tr>
+                <td>${a.title}</td>
+                <td>${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : ''}</td>
+                <td>${a.description || ''}</td>
+                <td>
+                  ${a.filePath ? `<a href="${API_BASE_URL.replace('/api', '')}/${a.filePath.replace(/\\/g, '/')}" target="_blank">View</a>` : '—'}
+                  <button class="btn btn-sm btn-outline-primary ms-2 edit-btn" data-id="${a._id}">Edit</button>
+                  <button class="btn btn-sm btn-outline-danger ms-1 delete-btn" data-id="${a._id}">Delete</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Attach event listeners after DOM update and successful fetch
+    tableDiv.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const assessmentId = btn.getAttribute('data-id');
+        const assessment = assessments.find(a => a._id === assessmentId);
+        if (assessment) {
+          showEditModal(assessment, courseId);
+        }
+      });
+    });
+
+    tableDiv.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const assessmentId = btn.getAttribute('data-id');
+        const confirmed = confirm('Are you sure you want to delete this assessment?');
+        if (confirmed) {
+          try {
+            const res = await fetch(`${API_BASE_URL}/assessments/${assessmentId}`, { method: 'DELETE' });
+            if (res.ok) {
+              alert('Assessment deleted.');
+              renderAssessmentsTable(courseId); // Refresh
+            } else {
+              alert('Failed to delete assessment.');
+            }
+          } catch (err) {
+            alert('Error deleting assessment.');
+            console.error(err);
+          }
+        }
+      });
+    });
+
+  } catch (err) {
+    tableDiv.innerHTML = '<div class="error-message">Failed to load assessments.</div>';
+  }
+}
+
+
+function showEditModal(assessment, courseId) {
+  let modal = document.getElementById('editAssessmentModal');
+
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'editAssessmentModal';
+    modal.className = 'modal fade';
+    modal.tabIndex = -1;
+    modal.innerHTML = `
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form id="editAssessmentForm" enctype="multipart/form-data">
+            <div class="modal-header">
+              <h5 class="modal-title">Edit Assessment</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="editTitle" class="form-label">Title</label>
+                <input type="text" id="editTitle" class="form-control" required />
+              </div>
+
+              <div class="mb-3">
+                <label for="editDueDate" class="form-label">Due Date</label>
+                <input type="date" id="editDueDate" class="form-control" required />
+              </div>
+
+              <div class="mb-3">
+                <label for="editDescription" class="form-label">Description</label>
+                <textarea id="editDescription" class="form-control" rows="3"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="editFile" class="form-label">Replace Document (optional)</label>
+                <input type="file" id="editFile" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar" />
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Bootstrap modal instance (requires Bootstrap 5)
+    const bsModal = new bootstrap.Modal(modal);
+
+    // Form submission logic
+    modal.querySelector('#editAssessmentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = modal.querySelector('#editTitle').value.trim();
+      const dueDate = modal.querySelector('#editDueDate').value;
+      const description = modal.querySelector('#editDescription').value.trim();
+      const fileInput = modal.querySelector('#editFile');
+      const file = fileInput.files[0];
+
+      if (!title || !dueDate) {
+        alert('Title and Due Date are required');
         return;
       }
-      tableDiv.innerHTML = `
-        <div class="table-responsive">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Due Date</th>
-                <th>Description</th>
-                <th>Document</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${assessments.map(a => `
-                <tr>
-                  <td>${a.title}</td>
-                  <td>${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : ''}</td>
-                  <td>${a.description || ''}</td>
-                  <td>
-                    ${a.filePath ? `<a href="${API_BASE_URL.replace('/api', '')}/${a.filePath.replace(/\\/g, '/')}" target="_blank">View</a>` : '—'}
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
-    } catch (err) {
-      tableDiv.innerHTML = '<div class="error-message">Failed to load assessments.</div>';
-    }
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('dueDate', dueDate);
+      formData.append('description', description);
+      if (file) formData.append('file', file);
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/assessments/${assessment._id}`, {
+          method: 'PUT',
+          body: formData
+        });
+
+        if (!res.ok) throw new Error('Failed to update assessment');
+
+        alert('Assessment updated successfully');
+        bsModal.hide();
+        renderAssessmentsTable(courseId);
+      } catch (err) {
+        alert('Error updating assessment: ' + err.message);
+      }
+    });
+
+    // Store modal instance for reuse
+    modal._bsModal = bsModal;
   }
+
+  // Populate fields with assessment data
+  modal.querySelector('#editTitle').value = assessment.title || '';
+  modal.querySelector('#editDueDate').value = assessment.dueDate ? new Date(assessment.dueDate).toISOString().slice(0, 10) : '';
+  modal.querySelector('#editDescription').value = assessment.description || '';
+  modal.querySelector('#editFile').value = ''; // reset file input
+
+  modal._bsModal.show();
+}
+
+
 const submissionCourseSelect = container.querySelector('#submissionCourse');
   submissionCourseSelect.addEventListener('change', async () => {
     const courseId = submissionCourseSelect.value;

@@ -496,19 +496,34 @@ function renderAssessments(assessments) {
           }
         }
 
-       
 let fileLink = '';
 if (assessment.filePath) {
-  const fileName = assessment.filePath.split('/').pop(); // Extract just the filename
+  const normalizedPath = assessment.filePath.replace(/\\/g, '/');
+  const fileName = normalizedPath.split('/').pop(); // Extract just the filename
+  const extension = assessment.originalName?.split('.').pop()?.toLowerCase();
+
+  // Define which file types can be viewed in browser
+  const viewableTypes = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'txt'];
+
   fileLink = `
-    <a href="${API_BASE_URL}/submissions/file/${fileName}" 
+    <a href="${API_BASE_URL}/assessments/${assessment._id}/download"
        download="${assessment.originalName || 'assessment_file'}"
        class="btn btn-outline-info btn-sm ms-2">
-      ${['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(assessment.originalName?.split('.').pop()?.toLowerCase()) 
-        ? 'View' : 'Download'} Attached File
+       Download File
     </a>
+    ${viewableTypes.includes(extension) ? `
+      <a href="${API_BASE_URL}/assessments/${assessment._id}/download"
+         target="_blank"
+         class="btn btn-outline-success btn-sm ms-2">
+         View File
+      </a>
+    ` : ''}
   `;
+
+  console.log('File Path:', assessment.filePath);
 }
+
+
 
         return `
           <div class="assessment-item card mb-3" data-assessment-id="${assessment._id}">
