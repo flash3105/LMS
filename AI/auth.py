@@ -1,2 +1,1 @@
-import os
-os.environ["GOOGLE_API_KEY"] = "AIzaSyAkfkONzGtNSv1x6q3F5JUnOpX7B1ttFC0"
+
