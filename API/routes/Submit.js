@@ -76,6 +76,21 @@ router.get('/course/:courseId', async (req, res) => {
   }
 });
 
+router.get('/course/:courseId/:email', async (req, res) => {
+  try {
+    const { courseId, email } = req.params;
+    const submissions = await AssessmentSubmission.find({ 
+      courseId, 
+      email 
+    });
+    console.log(`Fetched submissions for course ${courseId} and user ${email}:`, submissions.length);
+    res.status(200).json(submissions);
+  } catch (err) {
+    console.error('Error fetching submissions:', err);
+    res.status(500).json({ error: 'Failed to fetch submissions' });
+  }
+});
+
 // PUT /api/submissions/:submissionId/grade
 router.put('/submissions/:submissionId/grade', async (req, res) => {
   try {
