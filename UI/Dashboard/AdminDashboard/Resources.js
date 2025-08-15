@@ -88,7 +88,7 @@ export function renderResources(container, course) {
     });
   });
 
-  // Main tab switching (original functionality)
+  // Main tab switching 
   container.querySelectorAll('.tab-button').forEach(button => {
     button.addEventListener('click', (e) => {
       const tabName = e.target.dataset.tab;
@@ -99,7 +99,7 @@ export function renderResources(container, course) {
     });
   });
 
-  // NEW: Resource category tab switching
+  //Resource category tab switching
   container.querySelectorAll('.category-tab-button').forEach(button => {
     button.addEventListener('click', (e) => {
       const category = e.target.dataset.category;
@@ -192,10 +192,7 @@ export function renderResources(container, course) {
   }
 }
 
-/**
- * Loads and displays course resources with new category tabs
- * @param {string} courseId - The ID of the course to load resources for
- */
+//Loads and displays course resources with new category tabs
 async function loadCourseResources(courseId) {
   try {
     const response = await fetch(`${API_BASE_URL}/courses/${courseId}/resources`);
@@ -226,7 +223,7 @@ async function loadCourseResources(courseId) {
       return createResourceItem(resource, category);
     }).join('');
     
-    // Add delete event listeners to all delete buttons (original functionality)
+    // Add delete event listeners to all delete buttons 
     resourcesList.querySelectorAll('.delete-resource').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const resourceId = btn.getAttribute('data-id');
@@ -254,12 +251,8 @@ async function loadCourseResources(courseId) {
   }
 }
 
-/**
- * Creates HTML for a resource item with category data attribute
- * @param {Object} resource - The resource object to display
- * @param {string} category - The category of the resource (videos/documents/others)
- * @returns {string} HTML string for the resource item
- */
+
+//Creates HTML for a resource item with category data attribute
 function createResourceItem(resource, category) {
   const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
   const fileUrl = resource.type === 'link'
