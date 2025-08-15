@@ -6,7 +6,7 @@ const User = require('../models/User');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const path = require('path'); // Added for serving HTML files
-const Profile = require('../models/Profile');
+
 
 // Email transporter 
 const transporter = nodemailer.createTransport({
@@ -17,50 +17,32 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-async function registerUser(registrationData, contentArea) {
+// Register
+router.post('/register', async (req, res) => {
+  const { email, password, role, name, surname, level } = req.body;
+
+  console.log('Received registration request:', req.body); // Log only
+
   try {
-    // Step 1: Register user
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(registrationData)
-    });
+    let user = await User.findOne({ email });
+    if (user) return res.status(400).json({ error: 'User already exists' });
 
-    const data = await res.json();
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (!res.ok) throw new Error(data.error || 'Registration failed');
+    user = new User({ email, password: hashedPassword, role, name, surname, level });
+    await user.save();
 
-    // Step 2: Fetch the newly created profile
-    const profileRes = await fetch(`${API_BASE_URL}/Profile/${registrationData.email}`);
-    const profile = await profileRes.json();
-
-    // Step 3: Merge user and profile info
-    const currentUser = {
-      email: registrationData.email,
-      name: registrationData.name,
-      surname: registrationData.surname,
-      role: registrationData.role,
-      level: registrationData.level,
-      bio: profile.bio,
-      achievements: profile.achievements,
-      milestones: profile.milestones,
-      goals: profile.goals
-    };
-
-    // Step 4: Render profile tab with all data
-    renderProfileTab(contentArea, currentUser);
-
-  } catch (error) {
-    console.error('Registration error:', error);
-    alert(error.message || 'Registration failed');
+    res.json({ message: 'User registered successfully', token: 'mock-token' }); 
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).send('Server error');
   }
-}
-
+});
 
 // Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-
+  console.log('Received login request:', req.body); // Log only
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -70,33 +52,17 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign({ id: user._id, role: user.role }, 'mysecretkey', { expiresIn: '1h' });
 
-    const Profile = require('../models/Profile');
-    let profile = await Profile.findOne({ email });
-    if (!profile) {
-      // this is optional; usually registration ensures profile exists
-      profile = await Profile.create({
-        email,
-        bio: '',
-        achievements: [],
-        milestones: [],
-        goals: []
-      });
-    }
-
-    const fullUser = {
-      email: user.email,
-      name: user.name,
-      surname: user.surname,
-      role: user.role,
-      level: user.level,
-      bio: profile.bio,
-      achievements: profile.achievements,
-      milestones: profile.milestones,
-      goals: profile.goals
-    };
-
-    res.json({ token, user: fullUser });
-
+    // Send user info along with the token
+    res.json({
+      token,
+      user: {
+        email: user.email,
+        name: user.name,
+        surname: user.surname,
+        role: user.role,
+        level: user.level,
+      },
+    });
   } catch (err) {
     console.error('Server error:', err);
     res.status(500).send('Server error');
