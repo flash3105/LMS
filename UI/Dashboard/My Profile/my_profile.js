@@ -8,14 +8,14 @@ export function renderProfileTab(contentArea, currentUser) {
     completedCourses: [],
   };
 
-  // Sample milestones data - you can replace with real data
+  // Sample milestones data - replace with real data
   const milestones = [
-   "The system will render your milestones when you achieve them "
+    "The system will render your milestones when you achieve them"
   ];
 
   // Sample achievements data
   const achievements = [
-     "The system will render your milestones when you achieve them "
+    "The system will render your achievements when you achieve them"
   ];
 
   contentArea.innerHTML = `
@@ -23,16 +23,15 @@ export function renderProfileTab(contentArea, currentUser) {
       <h2 class="fw-bold">My Profile</h2>
       <p class="text-muted">Manage your account and track your progress.</p>
     </div>
-    
+
     <div class="profile-grid">
       <!-- Card 1: Account Details -->
       <div class="profile-card">
         <div class="card-header">
           <h3>Account Details</h3>
-          <button class="edit-btn"> 
+          <button class="edit-btn">
             <i class="fas fa-plus"></i> Edit
           </button>
-          
         </div>
         <div class="card-body">
           <div class="detail-item">
@@ -47,7 +46,6 @@ export function renderProfileTab(contentArea, currentUser) {
             <span class="detail-label">Department:</span>
             <span class="detail-value">${currentUser.department || 'N/A'}</span>
           </div>
-         
           <div class="detail-item">
             <span class="detail-label">Role:</span>
             <span class="detail-value">${currentUser.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : 'N/A'}</span>
@@ -58,69 +56,93 @@ export function renderProfileTab(contentArea, currentUser) {
           </div>
         </div>
       </div>
-      
+
       <!-- Card 2: Milestones -->
       <div class="profile-card">
-        <div class="card-header">
-          <h3>Milestones</h3>
-        </div>
+        <div class="card-header"><h3>Milestones</h3></div>
         <div class="card-body">
           <ul class="milestones-list">
-            ${milestones.map(milestone => `
-              <li class="milestone-item">
-                <i class="fas fa-check-circle"></i>
-                <span>${milestone}</span>
-              </li>
-            `).join('')}
+            ${milestones.map(m => `<li class="milestone-item"><i class="fas fa-check-circle"></i><span>${m}</span></li>`).join('')}
           </ul>
         </div>
       </div>
-      
+
       <!-- Card 3: Achievements & Certificates -->
       <div class="profile-card">
-        <div class="card-header">
-          <h3>Achievements & Certificates</h3>
-        </div>
+        <div class="card-header"><h3>Achievements & Certificates</h3></div>
         <div class="card-body">
           <ul class="achievements-list">
-            ${achievements.map(achievement => `
-              <li class="achievement-item">
-                <i class="fas fa-trophy"></i>
-                <span>${achievement}</span>
-              </li>
-            `).join('')}
+            ${achievements.map(a => `<li class="achievement-item"><i class="fas fa-trophy"></i><span>${a}</span></li>`).join('')}
           </ul>
         </div>
       </div>
-      
+
       <!-- Card 4: Set Your Goals -->
       <div class="profile-card">
         <div class="card-header">
           <h3>Set Your Goals</h3>
-          <button class="add-goal-btn">
-            <i class="fas fa-plus"></i> Add Goal
-          </button>
+          <button class="add-goal-btn"><i class="fas fa-plus"></i> Add Goal</button>
         </div>
         <div class="goal-form" style="display:none;">
           <input type="text" class="goal-input" placeholder="Enter your goal">
           <button class="submit-goal-btn">Set Goal</button>
         </div>
         <div class="card-body">
-          <div class="goals-list">
-            <!-- Goals will be loaded here from database -->
-            <div class="loading-goals">Loading goals...</div>
-          </div>
+          <div class="goals-list"><div class="loading-goals">Loading goals...</div></div>
         </div>
       </div>
     </div>
   `;
-// Attach edit button for Bio
-const editBtn = contentArea.querySelector('.edit-btn');
-if (editBtn) {
-  editBtn.addEventListener('click', () => startEditingProfile(contentArea, currentUser));
-}
+
+  // Attach edit button for Bio
+  const editBtn = contentArea.querySelector('.edit-btn');
+  if (editBtn) {
+    editBtn.addEventListener('click', () => startEditingProfile(contentArea, currentUser));
+  }
+
   // Initialize goals functionality
   setupGoalsFunctionality(currentUser);
+}
+
+//BIO Editing
+async function startEditingProfile(contentArea, currentUser) {
+  const bioEl = contentArea.querySelector('.detail-item.bio .detail-value');
+  if (!bioEl) return;
+
+  // Replace bio text with textarea
+  const textarea = document.createElement('textarea');
+  textarea.value = currentUser.bio || '';
+  textarea.classList.add('bio-input');
+  bioEl.innerHTML = '';
+  bioEl.appendChild(textarea);
+
+  // Change Edit button to Save
+  const editBtn = contentArea.querySelector('.edit-btn');
+  editBtn.textContent = 'Save';
+  editBtn.replaceWith(editBtn.cloneNode(true)); // remove old listeners
+  const newEditBtn = contentArea.querySelector('.edit-btn');
+
+  newEditBtn.addEventListener('click', async () => {
+    const newBio = textarea.value.trim();
+    try {
+      const res = await fetch(`${API_BASE_URL}/Profile/edit/${currentUser.email}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bio: newBio })
+      });
+      if (!res.ok) throw new Error('Failed to update bio');
+
+      const updatedProfile = await res.json();
+      currentUser.bio = updatedProfile.bio;
+
+      bioEl.textContent = updatedProfile.bio || 'No bio available';
+      newEditBtn.textContent = 'Edit';
+      newEditBtn.addEventListener('click', () => startEditingProfile(contentArea, currentUser));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save bio. Please try again.');
+    }
+  });
 }
 
 async function setupGoalsFunctionality(currentUser) {
@@ -276,64 +298,4 @@ async function updateGoalStatus(goalId, completed) {
   if (!response.ok) {
     throw new Error('Failed to update goal status');
   }
-}
-
-function startEditingProfile(contentArea, currentUser) {
-  const bioEl = contentArea.querySelector('.detail-item.bio .detail-value');
-  if (!bioEl) return;
-
-  // Create textarea pre-filled with DB value
-  const textarea = document.createElement('textarea');
-  textarea.value = currentUser.bio || '';
-  textarea.classList.add('bio-input');
-
-  bioEl.innerHTML = '';
-  bioEl.appendChild(textarea);
-
-  // Change Edit button to Save
-  const editBtn = contentArea.querySelector('.edit-btn');
-  editBtn.innerHTML = `<i class="fas fa-save"></i> Save`;
-
-  editBtn.onclick = async () => {
-    const newBio = textarea.value || '';
-
-    if (!currentUser.email) {
-      alert('User email is missing.');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/Profile/edit/${currentUser.email}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bio: newBio })
-      });
-
-      if (!res.ok) throw new Error('Failed to update bio');
-
-      const updatedProfile = await res.json();
-
-      // Update local state
-      currentUser.bio = updatedProfile.bio;
-
-      // Keep textarea showing latest DB value
-      textarea.value = updatedProfile.bio;
-
-      // Show feedback
-      const savedMsg = document.createElement('span');
-      savedMsg.textContent = 'Saved!';
-      savedMsg.style.marginLeft = '10px';
-      savedMsg.style.color = 'green';
-      bioEl.appendChild(savedMsg);
-      setTimeout(() => savedMsg.remove(), 1500);
-
-      // Change Save button back to Edit
-      editBtn.innerHTML = `<i class="fas fa-plus"></i> Edit`;
-      editBtn.onclick = () => startEditingProfile(contentArea, currentUser);
-
-    } catch (err) {
-      console.error('Error saving bio:', err);
-      alert('Failed to save bio.');
-    }
-  };
 }
