@@ -17,7 +17,7 @@ router.get('/:email', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
+//Edit profile
 router.patch('/edit/:email', async (req, res) => {
   const email = req.params.email;
   const { bio } = req.body;
