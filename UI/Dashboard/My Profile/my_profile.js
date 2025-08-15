@@ -2,18 +2,22 @@ import { userData } from '../Data/data.js';
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 export function renderProfileTab(contentArea, currentUser) {
+  // Restore from localStorage if available
+  const savedUser = JSON.parse(localStorage.getItem('currentUser'));
+  if (savedUser && savedUser.email === currentUser.email) {
+    currentUser = savedUser;
+  }
+
   // Safely access userProgress
   const userProgress = userData[currentUser.email] || {
     enrolledCourses: [],
     completedCourses: [],
   };
 
-  // Sample milestones data - replace with real data
+  // Sample milestones & achievements
   const milestones = [
     "The system will render your milestones when you achieve them"
   ];
-
-  // Sample achievements data
   const achievements = [
     "The system will render your achievements when you achieve them"
   ];
@@ -29,31 +33,14 @@ export function renderProfileTab(contentArea, currentUser) {
       <div class="profile-card">
         <div class="card-header">
           <h3>Account Details</h3>
-          <button class="edit-btn">
-            <i class="fas fa-plus"></i> Edit
-          </button>
+          <button class="edit-btn"><i class="fas fa-plus"></i> Edit</button>
         </div>
         <div class="card-body">
-          <div class="detail-item">
-            <span class="detail-label">Name:</span>
-            <span class="detail-value">${currentUser.name}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Email:</span>
-            <span class="detail-value">${currentUser.email}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Department:</span>
-            <span class="detail-value">${currentUser.department || 'N/A'}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Role:</span>
-            <span class="detail-value">${currentUser.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : 'N/A'}</span>
-          </div>
-          <div class="detail-item bio">
-            <span class="detail-label">Bio:</span>
-            <span class="detail-value">${currentUser.bio || 'No bio available'}</span>
-          </div>
+          <div class="detail-item"><span class="detail-label">Name:</span><span class="detail-value">${currentUser.name}</span></div>
+          <div class="detail-item"><span class="detail-label">Email:</span><span class="detail-value">${currentUser.email}</span></div>
+          <div class="detail-item"><span class="detail-label">Department:</span><span class="detail-value">${currentUser.department || 'N/A'}</span></div>
+          <div class="detail-item"><span class="detail-label">Role:</span><span class="detail-value">${currentUser.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : 'N/A'}</span></div>
+          <div class="detail-item bio"><span class="detail-label">Bio:</span><span class="detail-value">${currentUser.bio || 'No bio available'}</span></div>
         </div>
       </div>
 
@@ -67,7 +54,7 @@ export function renderProfileTab(contentArea, currentUser) {
         </div>
       </div>
 
-      <!-- Card 3: Achievements & Certificates -->
+      <!-- Card 3: Achievements -->
       <div class="profile-card">
         <div class="card-header"><h3>Achievements & Certificates</h3></div>
         <div class="card-body">
@@ -77,7 +64,7 @@ export function renderProfileTab(contentArea, currentUser) {
         </div>
       </div>
 
-      <!-- Card 4: Set Your Goals -->
+      <!-- Card 4: Goals -->
       <div class="profile-card">
         <div class="card-header">
           <h3>Set Your Goals</h3>
@@ -94,35 +81,30 @@ export function renderProfileTab(contentArea, currentUser) {
     </div>
   `;
 
-  // Attach edit button for Bio
+  // Bio edit button
   const editBtn = contentArea.querySelector('.edit-btn');
   if (editBtn) {
-    editBtn.addEventListener('click', () => startEditingProfile(contentArea, currentUser));
+    editBtn.onclick = () => startEditingProfile(contentArea, currentUser);
   }
 
-  // Initialize goals functionality
+  // Goals
   setupGoalsFunctionality(currentUser);
 }
 
-//BIO Editing
+// Editable Bio
 async function startEditingProfile(contentArea, currentUser) {
   const bioEl = contentArea.querySelector('.detail-item.bio .detail-value');
   if (!bioEl) return;
 
-  // Replace bio text with textarea
   const textarea = document.createElement('textarea');
   textarea.value = currentUser.bio || '';
   textarea.classList.add('bio-input');
   bioEl.innerHTML = '';
   bioEl.appendChild(textarea);
 
-  // Change Edit button to Save
   const editBtn = contentArea.querySelector('.edit-btn');
   editBtn.textContent = 'Save';
-  editBtn.replaceWith(editBtn.cloneNode(true)); // remove old listeners
-  const newEditBtn = contentArea.querySelector('.edit-btn');
-
-  newEditBtn.addEventListener('click', async () => {
+  editBtn.onclick = async () => {
     const newBio = textarea.value.trim();
     try {
       const res = await fetch(`${API_BASE_URL}/Profile/edit/${currentUser.email}`, {
@@ -130,47 +112,44 @@ async function startEditingProfile(contentArea, currentUser) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bio: newBio })
       });
-      if (!res.ok) throw new Error('Failed to update bio');
 
+      if (!res.ok) throw new Error('Failed to update bio');
       const updatedProfile = await res.json();
+
       currentUser.bio = updatedProfile.bio;
+      localStorage.setItem('currentUser', JSON.stringify(currentUser)); // persist
 
       bioEl.textContent = updatedProfile.bio || 'No bio available';
-      newEditBtn.textContent = 'Edit';
-      newEditBtn.addEventListener('click', () => startEditingProfile(contentArea, currentUser));
+      editBtn.textContent = 'Edit';
+      editBtn.onclick = () => startEditingProfile(contentArea, currentUser);
     } catch (err) {
       console.error(err);
       alert('Failed to save bio. Please try again.');
     }
-  });
+  };
 }
 
+// Goals functions (unchanged from your original)
 async function setupGoalsFunctionality(currentUser) {
   const addGoalBtn = document.querySelector('.add-goal-btn');
   const goalForm = document.querySelector('.goal-form');
   const submitGoalBtn = document.querySelector('.submit-goal-btn');
   const goalsList = document.querySelector('.goals-list');
 
-  // First load existing goals from database
   await fetchGoals(currentUser.email, goalsList);
 
   if (addGoalBtn && goalForm && submitGoalBtn && goalsList) {
-    // Toggle form visibility
     addGoalBtn.addEventListener('click', (e) => {
       e.preventDefault();
       goalForm.style.display = goalForm.style.display === 'none' ? 'block' : 'none';
     });
 
-    // Handle goal submission
     submitGoalBtn.addEventListener('click', async () => {
       const goalInput = document.querySelector('.goal-input');
       if (goalInput.value.trim()) {
         try {
-          await saveGoalToDatabase(currentUser.email, goalInput.value.trim());
-          // Reload goals after adding new one
+          await saveGoalToDatabase(currentUser.email, { title: goalInput.value.trim() });
           await fetchGoals(currentUser.email, goalsList);
-          
-          // Clear form
           goalInput.value = '';
           goalForm.style.display = 'none';
         } catch (error) {
@@ -184,28 +163,21 @@ async function setupGoalsFunctionality(currentUser) {
 
 async function fetchGoals(userEmail, goalsList) {
   try {
-    // Replace with your actual API endpoint
-    const response = await fetch(`${API_BASE_URL}/Profile/${ userEmail}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch goals');
-    }
-    
+    const response = await fetch(`${API_BASE_URL}/Profile/${userEmail}`);
+    if (!response.ok) throw new Error('Failed to fetch goals');
+
     const goals = await response.json();
-    
-    // Clear loading message
     goalsList.innerHTML = '';
-    
+
     if (goals.length === 0) {
       goalsList.innerHTML = '<p class="no-goals">No goals set yet. Add your first goal!</p>';
       return;
     }
-    
-    // Render each goal
+
     goals.forEach(goal => {
       const goalItem = document.createElement('div');
       goalItem.className = 'goal-item';
       goalItem.dataset.goalId = goal.id;
-      
       goalItem.innerHTML = `
         <div class="goal-content">
           <input type="checkbox" class="goal-checkbox" ${goal.completed ? 'checked' : ''}>
@@ -215,8 +187,7 @@ async function fetchGoals(userEmail, goalsList) {
       `;
 
       goalsList.appendChild(goalItem);
-      
-      // Add event listeners
+
       goalItem.querySelector('.delete-goal').addEventListener('click', async () => {
         try {
           await deleteGoalFromDatabase(goal.id);
@@ -240,7 +211,6 @@ async function fetchGoals(userEmail, goalsList) {
           }
         } catch (error) {
           console.error('Error updating goal status:', error);
-          // Revert the checkbox if update fails
           e.target.checked = !e.target.checked;
         }
       });
@@ -251,51 +221,31 @@ async function fetchGoals(userEmail, goalsList) {
   }
 }
 
-  
-  async function saveGoalToDatabase(email, goal) {
-  try {
-    // Only send the required and relevant fields
-    const payload = {
-      title: goal.title, // required
-      description: goal.description || '', // optional
-      targetDate: goal.targetDate || ''   // optional
-    };
-    const res = await fetch(`${API_BASE_URL}/Profile/${email}/goals`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('Failed to add goal');
-    return await res.json();
-  } catch (err) {
-    throw err;
-  }
+async function saveGoalToDatabase(email, goal) {
+  const payload = {
+    title: goal.title,
+    description: goal.description || '',
+    targetDate: goal.targetDate || ''
+  };
+  const res = await fetch(`${API_BASE_URL}/Profile/${email}/goals`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Failed to add goal');
+  return await res.json();
 }
 
 async function deleteGoalFromDatabase(goalId) {
-  // Replace with your actual API endpoint
-  const response = await fetch(`/api/goals/${goalId}`, {
-    method: 'DELETE'
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to delete goal');
-  }
+  const response = await fetch(`/api/goals/${goalId}`, { method: 'DELETE' });
+  if (!response.ok) throw new Error('Failed to delete goal');
 }
 
 async function updateGoalStatus(goalId, completed) {
-  // Replace with your actual API endpoint
   const response = await fetch(`/api/goals/${goalId}`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      completed: completed
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ completed })
   });
-  
-  if (!response.ok) {
-    throw new Error('Failed to update goal status');
-  }
+  if (!response.ok) throw new Error('Failed to update goal status');
 }
