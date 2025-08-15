@@ -29,6 +29,9 @@ export function renderProfileTab(contentArea, currentUser) {
       <div class="profile-card">
         <div class="card-header">
           <h3>Account Details</h3>
+          <button class="edit-btn"> 
+            <i class="fas fa-plus"></i> Edit
+          </button>
           
         </div>
         <div class="card-body">
@@ -111,7 +114,11 @@ export function renderProfileTab(contentArea, currentUser) {
       </div>
     </div>
   `;
-
+// Attach edit button for Bio
+const editBtn = contentArea.querySelector('.edit-btn');
+if (editBtn) {
+  editBtn.addEventListener('click', () => startEditingProfile(contentArea, currentUser));
+}
   // Initialize goals functionality
   setupGoalsFunctionality(currentUser);
 }
@@ -271,17 +278,62 @@ async function updateGoalStatus(goalId, completed) {
   }
 }
 
-function editProfile() {
-  const newName = prompt("Enter your new name:", currentUser.name);
-  const newBio = prompt("Enter your new bio:", currentUser.bio);
-  if (newName && newBio) {
-    currentUser.name = newName;
-    currentUser.bio = newBio;
-    const userIndex = users.findIndex(u => u.email === currentUser.email);
-    users[userIndex] = currentUser;
-    localStorage.setItem("users", JSON.stringify(users));
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    document.getElementById("userName").textContent = currentUser.name;
-    renderProfileTab(document.getElementById("contentArea"), currentUser);
-  }
+function startEditingProfile(contentArea, currentUser) {
+  const bioEl = contentArea.querySelector('.detail-item.bio .detail-value');
+  if (!bioEl) return;
+
+  // Create textarea pre-filled with DB value
+  const textarea = document.createElement('textarea');
+  textarea.value = currentUser.bio || '';
+  textarea.classList.add('bio-input');
+
+  bioEl.innerHTML = '';
+  bioEl.appendChild(textarea);
+
+  // Change Edit button to Save
+  const editBtn = contentArea.querySelector('.edit-btn');
+  editBtn.innerHTML = `<i class="fas fa-save"></i> Save`;
+
+  editBtn.onclick = async () => {
+    const newBio = textarea.value || '';
+
+    if (!currentUser.email) {
+      alert('User email is missing.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/Profile/edit/${currentUser.email}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bio: newBio })
+      });
+
+      if (!res.ok) throw new Error('Failed to update bio');
+
+      const updatedProfile = await res.json();
+
+      // Update local state
+      currentUser.bio = updatedProfile.bio;
+
+      // Keep textarea showing latest DB value
+      textarea.value = updatedProfile.bio;
+
+      // Show feedback
+      const savedMsg = document.createElement('span');
+      savedMsg.textContent = 'Saved!';
+      savedMsg.style.marginLeft = '10px';
+      savedMsg.style.color = 'green';
+      bioEl.appendChild(savedMsg);
+      setTimeout(() => savedMsg.remove(), 1500);
+
+      // Change Save button back to Edit
+      editBtn.innerHTML = `<i class="fas fa-plus"></i> Edit`;
+      editBtn.onclick = () => startEditingProfile(contentArea, currentUser);
+
+    } catch (err) {
+      console.error('Error saving bio:', err);
+      alert('Failed to save bio.');
+    }
+  };
 }
