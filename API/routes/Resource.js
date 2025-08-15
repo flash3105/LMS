@@ -2,106 +2,169 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const Resource = require('../models/Resource'); // Make sure you have this model
-const Course = require('../models/Course');     // For associating resources with courses
 const fs = require('fs');
+const Resource = require('../models/Resource');
+const Course = require('../models/Course');
 
-// Ensure upload directory exists
-const uploadDir = 'uploads/resources';
-if (!fs.existsSync(uploadDir)){
-    fs.mkdirSync(uploadDir, { recursive: true });
+// Ensure resources directory exists
+const resourcesDir = path.join(__dirname, '..', 'uploads', 'resources');
+
+if (!fs.existsSync(resourcesDir)) {
+  fs.mkdirSync(resourcesDir, { recursive: true });
 }
 
-// Set up multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir); // Use the defined upload directory
+    cb(null, resourcesDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const sanitizedFileName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, uniqueSuffix + '-' + sanitizedFileName);
   }
 });
+
 const upload = multer({ storage: storage });
 
-// Route: Add a new resource to a course
+// POST /api/courses/:courseId/resources
 router.post('/courses/:courseId/resources', upload.single('file'), async (req, res) => {
   try {
     const { title, type, description, link } = req.body;
     const { courseId } = req.params;
 
-    // If type is not 'link', require a file
+    // Validate input
     if (type !== 'link' && !req.file) {
-      return res.status(400).json({ message: 'File is required.' });
+      return res.status(400).json({ error: 'File is required for non-link resources.' });
     }
-    // If type is 'link', require a link
     if (type === 'link' && (!link || link.trim() === '')) {
-      return res.status(400).json({ message: 'Link is required for external link resources.' });
+      return res.status(400).json({ error: 'Link is required for external resources.' });
+    }
+
+    // Convert absolute path to relative path if file exists
+    let filePath = type === 'link' ? link : null;
+    let originalName = null;
+
+    if (req.file) {
+      filePath = path.relative(
+        path.join(__dirname, '..'),
+        req.file.path
+      ).replace(/\\/g, '/');
+      originalName = req.file.originalname;
     }
 
     // Create resource document
-    const resourceData = {
+    const resource = new Resource({
       title,
       type,
       description,
-      course: courseId
-    };
+      course: courseId,
+      filePath,
+      originalName,
+      link: type === 'link' ? link : undefined,
+      createdAt: new Date()
+    });
 
-    if (type === 'link') {
-      resourceData.link = link;
-      resourceData.filePath = link; // Save the link as filePath for consistency
-    } else {
-      resourceData.filePath = req.file.path;
-      resourceData.originalName = req.file.originalname;
-    }
-
-    const resource = new Resource(resourceData);
     await resource.save();
 
-    // Optionally, add resource to course's resources array
+    // Add resource to course's resources array
     await Course.findByIdAndUpdate(courseId, { $push: { resources: resource._id } });
 
-    res.status(201).json({ message: 'Resource added successfully', resource });
+    res.status(201).json({
+      message: 'Resource added successfully',
+      resource: {
+        id: resource._id,
+        title: resource.title,
+        type: resource.type,
+        filePath: resource.filePath,
+        downloadUrl: resource.type !== 'link' ? `/api/resources/file/${path.basename(resource.filePath)}` : null,
+        link: resource.link
+      }
+    });
   } catch (error) {
-    console.error('Error adding resource:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Resource creation error:', error);
+    res.status(500).json({ error: 'Failed to create resource' });
   }
 });
 
-// Route: Get all resources for a course
+// GET /api/resources/file/:filename
+router.get('/file/:filename', (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const filePath = path.join(resourcesDir, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      console.error(`File not found: ${filePath}`);
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    // Get the original filename from the database if available
+    Resource.findOne({ filePath: { $regex: filename } })
+      .then(resource => {
+        const originalFileName = resource?.originalName || filename;
+        
+        // Set headers for file download
+        res.setHeader('Content-Disposition', `attachment; filename="${originalFileName}"`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        
+        // Create read stream and pipe to response
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+        
+        fileStream.on('error', (err) => {
+          console.error('File stream error:', err);
+          res.status(500).json({ error: 'Error streaming file' });
+        });
+      })
+      .catch(err => {
+        console.error('Database lookup error:', err);
+        // Fallback if database lookup fails
+        res.download(filePath, err => {
+          if (err) {
+            console.error('Error downloading file:', err);
+            res.status(500).json({ error: 'Failed to download file' });
+          }
+        });
+      });
+  } catch (err) {
+    console.error('Error serving file:', err);
+    res.status(500).json({ error: 'Failed to serve file' });
+  }
+});
+
+// GET /api/courses/:courseId/resources
 router.get('/courses/:courseId/resources', async (req, res) => {
   try {
     const { courseId } = req.params;
-    // Select all fields, including 'link'
-    const resources = await Resource.find({ course: courseId }).select('-__v');
-    res.status(200).json(resources);
-  } catch (error) {
-    console.error('Error fetching resources:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    const resources = await Resource.find({ course: courseId });
+    
+    // Add download URLs to file resources
+    const resourcesWithUrls = resources.map(resource => ({
+      ...resource.toObject(),
+      downloadUrl: resource.type !== 'link' ? `/api/resources/file/${path.basename(resource.filePath)}` : null
+    }));
+
+    console.log(`Fetched ${resources.length} resources for course ${courseId}`);
+    res.status(200).json(resourcesWithUrls);
+  } catch (err) {
+    console.error('Error fetching resources:', err);
+    res.status(500).json({ error: 'Failed to fetch resources' });
   }
 });
 
-// Route: Download a resource file
-router.get('/resources/:resourceId/download', async (req, res) => {
+// DELETE /api/resources/:resourceId
+router.delete('/:resourceId', async (req, res) => {
   try {
     const resource = await Resource.findById(req.params.resourceId);
-    if (!resource) return res.status(404).json({ message: 'Resource not found' });
-    res.download(resource.filePath, resource.originalName);
-  } catch (error) {
-    console.error('Error downloading resource:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// Route: Delete a resource
-router.delete('/resources/:resourceId', async (req, res) => {
-  try {
-    const resource = await Resource.findById(req.params.resourceId);
-    if (!resource) return res.status(404).json({ message: 'Resource not found' });
+    if (!resource) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
 
     // Remove file from disk if not a link
-    if (resource.type !== 'link' && resource.filePath && fs.existsSync(resource.filePath)) {
-      fs.unlinkSync(resource.filePath);
+    if (resource.type !== 'link' && resource.filePath) {
+      const absolutePath = path.join(__dirname, '..', resource.filePath);
+      if (fs.existsSync(absolutePath)) {
+        fs.unlinkSync(absolutePath);
+      }
     }
 
     // Remove from course's resources array
@@ -111,9 +174,9 @@ router.delete('/resources/:resourceId', async (req, res) => {
     await Resource.findByIdAndDelete(req.params.resourceId);
 
     res.status(200).json({ message: 'Resource deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting resource:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+  } catch (err) {
+    console.error('Error deleting resource:', err);
+    res.status(500).json({ error: 'Failed to delete resource' });
   }
 });
 
