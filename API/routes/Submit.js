@@ -14,11 +14,12 @@ if (!fs.existsSync(submissionsDir)) {
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, submissionsDir);  // Use absolute path here!
+    cb(null, submissionsDir);  // Absolute path for multer operation
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
+    const sanitizedFileName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, uniqueSuffix + '-' + sanitizedFileName);
   }
 });
 
@@ -27,49 +28,103 @@ const upload = multer({ storage: storage });
 // POST /api/assessments/:assessmentId/submit
 router.post('/assessments/:assessmentId/submit', upload.single('file'), async (req, res) => {
   try {
-    const {
-      username,
-      email,
-      comment,
-      courseId,
-      submittedAt
-    } = req.body;
+    const { username, email, comment, courseId, submittedAt } = req.body;
 
-    const filePath = req.file ? req.file.path : null;
-    const originalFileName = req.file ? req.file.originalname : null;
-
-    if (!filePath) {
+    if (!req.file) {
       return res.status(400).json({ error: 'File is required.' });
     }
+
+    // Convert absolute path to relative path
+    const relativePath = path.relative(
+      path.join(__dirname, '..'), // Base directory (project root)
+      req.file.path              // Full absolute path
+    ).replace(/\\/g, '/');      // Normalize to forward slashes
 
     const submission = new AssessmentSubmission({
       assessmentId: req.params.assessmentId,
       courseId,
       username,
       email,
-      comment,
-      filePath,
-      originalFileName,
+      comment: comment || '',
+      fileName: req.file.filename,
+      originalFileName: req.file.originalname,
+      filePath: relativePath, // Store relative path
       submittedAt: submittedAt ? new Date(submittedAt) : new Date()
     });
 
     await submission.save();
 
-    res.status(201).json({ message: 'Submission successful', submission });
+    res.status(201).json({ 
+      message: 'Submission successful',
+      submission: {
+        ...submission.toObject(),
+        downloadUrl: `/api/submissions/file/${req.file.filename}`
+      }
+    });
   } catch (err) {
     console.error('Submission error:', err.stack || err);
     res.status(500).json({ error: 'Submission failed' });
   }
 });
 
+// GET /api/submissions/file/:filename
+router.get('/file/:filename', (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const absolutePath = path.join(submissionsDir, filename);
+    
+    if (!fs.existsSync(absolutePath)) {
+      console.error(`File not found: ${absolutePath}`);
+      return res.status(404).json({ error: 'File not found' });
+    }
 
+    // Get the original filename from the database if available
+    AssessmentSubmission.findOne({ fileName: filename })
+      .then(submission => {
+        const originalFileName = submission?.originalFileName || filename;
+        
+        // Set headers for file download
+        res.setHeader('Content-Disposition', `attachment; filename="${originalFileName}"`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        
+        // Create read stream and pipe to response
+        const fileStream = fs.createReadStream(absolutePath);
+        fileStream.pipe(res);
+        
+        fileStream.on('error', (err) => {
+          console.error('File stream error:', err);
+          res.status(500).json({ error: 'Error streaming file' });
+        });
+      })
+      .catch(err => {
+        console.error('Database lookup error:', err);
+        // Fallback if database lookup fails
+        res.download(absolutePath, err => {
+          if (err) {
+            console.error('Error downloading file:', err);
+            res.status(500).json({ error: 'Failed to download file' });
+          }
+        });
+      });
+  } catch (err) {
+    console.error('Error serving file:', err);
+    res.status(500).json({ error: 'Failed to serve file' });
+  }
+});
 
 router.get('/course/:courseId', async (req, res) => {
   try {
     const { courseId } = req.params;
     const submissions = await AssessmentSubmission.find({ courseId });
+    
+    // Add download URLs to each submission
+    const submissionsWithUrls = submissions.map(sub => ({
+      ...sub.toObject(),
+      downloadUrl: `/api/submissions/file/${sub.fileName}`
+    }));
+
     console.log('Fetched submissions for course:', courseId, 'Count:', submissions.length);
-    res.status(200).json(submissions);
+    res.status(200).json(submissionsWithUrls);
   } catch (err) {
     console.error('Error fetching submissions:', err);
     res.status(500).json({ error: 'Failed to fetch submissions' });
@@ -83,8 +138,15 @@ router.get('/course/:courseId/:email', async (req, res) => {
       courseId, 
       email 
     });
+    
+    // Add download URLs to each submission
+    const submissionsWithUrls = submissions.map(sub => ({
+      ...sub.toObject(),
+      downloadUrl: `/api/submissions/file/${sub.fileName}`
+    }));
+
     console.log(`Fetched submissions for course ${courseId} and user ${email}:`, submissions.length);
-    res.status(200).json(submissions);
+    res.status(200).json(submissionsWithUrls);
   } catch (err) {
     console.error('Error fetching submissions:', err);
     res.status(500).json({ error: 'Failed to fetch submissions' });
@@ -101,7 +163,6 @@ router.put('/submissions/:submissionId/grade', async (req, res) => {
       return res.status(400).json({ error: 'Grade is required' });
     }
 
-    // Build update object dynamically
     const updateData = { grade };
     if (feedback !== undefined) {
       updateData.feedback = feedback;
@@ -117,26 +178,34 @@ router.put('/submissions/:submissionId/grade', async (req, res) => {
       return res.status(404).json({ error: 'Submission not found' });
     }
 
-    res.status(200).json({ message: 'Grade and feedback updated successfully', updated });
+    res.status(200).json({ 
+      message: 'Grade and feedback updated successfully', 
+      updated: {
+        ...updated.toObject(),
+        downloadUrl: `/api/submissions/file/${updated.fileName}`
+      }
+    });
   } catch (err) {
     console.error('Error updating grade and feedback:', err);
     res.status(500).json({ error: 'Failed to update grade and feedback' });
   }
 });
 
-
-// GET /api/submissions/:courseId/:email
+// GET /api/submissions/graded/:email/all
 router.get('/graded/:email/all', async (req, res) => {
   try {
     const { email } = req.params;
 
-    const submissions = await AssessmentSubmission.find({
-      email
-    });
+    const submissions = await AssessmentSubmission.find({ email });
 
-    console.log(`Fetched ${submissions.length} submissions for student ${email} `);
+    // Add download URLs to each submission
+    const submissionsWithUrls = submissions.map(sub => ({
+      ...sub.toObject(),
+      downloadUrl: `/api/submissions/file/${sub.fileName}`
+    }));
 
-    res.status(200).json(submissions);
+    console.log(`Fetched ${submissions.length} submissions for student ${email}`);
+    res.status(200).json(submissionsWithUrls);
   } catch (err) {
     console.error('Error fetching student submissions:', err);
     res.status(500).json({ error: 'Failed to fetch student submissions' });
@@ -144,5 +213,41 @@ router.get('/graded/:email/all', async (req, res) => {
 });
 
 
+// DELETE /api/submissions/:submissionId
+router.delete('/submissions/:submissionId', async (req, res) => {
+  try {
+    const submission = await AssessmentSubmission.findById(req.params.submissionId);
+    
+    if (!submission) {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
+
+    // Delete the file from storage if it exists
+    if (submission.filePath) {
+      const absolutePath = path.join(__dirname, '..', submission.filePath);
+      if (fs.existsSync(absolutePath)) {
+        fs.unlinkSync(absolutePath);
+      }
+    }
+
+    // Delete the submission record from database
+    await AssessmentSubmission.findByIdAndDelete(req.params.submissionId);
+
+    res.status(200).json({ 
+      message: 'Submission deleted successfully',
+      deletedSubmission: {
+        id: submission._id,
+        fileName: submission.fileName
+      }
+    });
+
+  } catch (err) {
+    console.error('Error deleting submission:', err);
+    res.status(500).json({ 
+      error: 'Failed to delete submission',
+      details: err.message 
+    });
+  }
+});
 
 module.exports = router;

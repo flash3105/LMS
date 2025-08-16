@@ -245,7 +245,7 @@ async function renderSubmissions(courseId, contentArea) {
       return;
     }
 
-    // Render submissions table
+    // Render submissions table with delete buttons
     submissionsContainer.innerHTML = `
       <div class="submissions-list">
         <h3>Your Submissions</h3>
@@ -259,23 +259,23 @@ async function renderSubmissions(courseId, contentArea) {
                 <th>Grade</th>
                 <th>Feedback</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               ${submissions.map(sub => {
                 const assessment = assessments.find(a => a._id === sub.assessmentId);
                 const assessmentTitle = assessment ? assessment.title : 'Unknown Assessment';
-                const fileUrl = sub.filePath ? 
-                  `${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}` : 
-                  null;
+                const fileUrl = sub.downloadUrl || 
+                  (sub.filePath ? `${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}` : null);
                 
                 return `
-                  <tr>
+                  <tr data-submission-id="${sub._id}">
                     <td>${assessmentTitle}</td>
                     <td>${new Date(sub.submittedAt).toLocaleString()}</td>
                     <td>
                       ${fileUrl ? 
-                        `<a href="${fileUrl}" download class="btn btn-sm btn-outline-primary">Download</a>` : 
+                        `<a href="${fileUrl}" download="${sub.originalFileName || 'submission'}" class="btn btn-sm btn-outline-primary">Download</a>` : 
                         'No file'}
                     </td>
                     <td>${sub.grade || 'Not graded'}</td>
@@ -285,6 +285,13 @@ async function renderSubmissions(courseId, contentArea) {
                         ${sub.grade ? 'Graded' : 'Submitted'}
                       </span>
                     </td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-danger delete-submission" 
+                              data-submission-id="${sub._id}"
+                              title="Delete submission">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
                   </tr>
                 `;
               }).join('')}
@@ -293,6 +300,38 @@ async function renderSubmissions(courseId, contentArea) {
         </div>
       </div>
     `;
+
+    // Add event listeners for delete buttons
+    submissionsContainer.querySelectorAll('.delete-submission').forEach(button => {
+      button.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const submissionId = button.dataset.submissionId;
+        const row = button.closest('tr');
+        
+        if (confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
+          try {
+            const response = await fetch(`${API_BASE_URL}/submissions/${submissionId}`, {
+              method: 'DELETE'
+            });
+
+            if (response.ok) {
+              row.remove();
+              showToast('Submission deleted successfully', 'success');
+              
+              // If this was the last submission, show empty message
+              if (submissionsContainer.querySelectorAll('tbody tr').length === 0) {
+                submissionsContainer.innerHTML = '<div class="empty-message">You have no submissions for this course yet.</div>';
+              }
+            } else {
+              throw new Error('Failed to delete submission');
+            }
+          } catch (error) {
+            console.error('Error deleting submission:', error);
+            showToast('Failed to delete submission', 'error');
+          }
+        }
+      });
+    });
 
   } catch (error) {
     console.error('Error loading submissions:', error);
@@ -304,6 +343,35 @@ async function renderSubmissions(courseId, contentArea) {
   }
 }
 
+// Helper function to show toast notifications
+function showToast(message, type = 'success') {
+  const toastContainer = document.getElementById('toast-container') || createToastContainer();
+  const toast = document.createElement('div');
+  toast.className = `toast show align-items-center text-white bg-${type}`;
+  toast.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">${message}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  `;
+  toastContainer.appendChild(toast);
+  
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    toast.remove();
+  }, 5000);
+}
+
+function createToastContainer() {
+  const container = document.createElement('div');
+  container.id = 'toast-container';
+  container.style.position = 'fixed';
+  container.style.top = '20px';
+  container.style.right = '20px';
+  container.style.zIndex = '1100';
+  document.body.appendChild(container);
+  return container;
+}
 
 //Renders course resources
 function renderResources(resources) {
@@ -323,16 +391,33 @@ function renderResources(resources) {
         const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
         const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
 
-        // Check for YouTube links
+        // YouTube
         let isYouTube = false;
         let youTubeEmbed = '';
-        if (resource.link && resource.link.includes('youtube.com')) {
-          isYouTube = true;
-          const match = resource.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/);
-          if (match && match[1]) {
-            youTubeEmbed = `<iframe width="100%" height="200" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen style="border-radius:8px;"></iframe>`;
-          }
-        }
+        if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
+
+  isYouTube = true;
+
+  // Try to extract the YouTube video ID from different URL formats
+  const url = resource.link;
+
+  // Regex to cover 'youtube.com/watch?v=ID', 'youtu.be/ID', 'youtube.com/embed/ID'
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_\-]{11})/
+  );
+
+  if (match && match[1]) {
+    youTubeEmbed = `<iframe 
+      width="100%" 
+      height="200" 
+      src="https://www.youtube.com/embed/${match[1]}" 
+      frameborder="0" 
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+      allowfullscreen 
+      style="border-radius:8px;">
+    </iframe>`;
+  }
+}
 
         return `
           <div class="resource-card" style="
@@ -378,6 +463,7 @@ function renderResources(resources) {
             ${isYouTube ? `
               <div style="margin-top:10px;">
                 ${youTubeEmbed}
+               
               </div>
             ` : ''}
             ${resource.link && !isYouTube ? `
@@ -525,25 +611,7 @@ function getAssessmentBadgeClass(status) {
 }
 
 
-//Tracks user actions for analytics
-async function trackAction(eventType, data) {
-  try {
-    const payload = {
-      action: eventType,
-      userId: userData._id || userData.email,
-      timestamp: new Date().toISOString(),
-      ...data
-    };
-    console.log('Sending analytics:', payload);
-    await fetch(`${API_BASE_URL}/analytics`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  } catch (err) {
-    console.error('Tracking failed:', err);
-  }
-}
+
 
 
  //Renders quizzes for the course
