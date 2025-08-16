@@ -1,10 +1,11 @@
-// Courses.js
-import { fetchCourseDetails, fetchAssessments ,userData} from '../Data/data.js';
+import { fetchCourseDetails, fetchAssessments, userData } from '../Data/data.js';
 
+// Base API URL - defaults to localhost if not set in window.API_BASE_URL
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
+//Renders detailed course information including resources, assessments, and submissions
 export async function renderCourseDetails(contentArea, course) {
-  // Show loading state
+  // Show loading state while fetching data
   contentArea.innerHTML = `
     <div class="course-details-loading">
       <h2>Loading Course Details...</h2>
@@ -17,10 +18,7 @@ export async function renderCourseDetails(contentArea, course) {
     // Fetch assessments for this course
     const assessments = await fetchAssessments(course._id);
 
-   
-
-
-    // Render the course details page
+    // Render the course details page with tabs for resources, assessments, and submissions
     contentArea.innerHTML = `
       <div class="course-details-container">
         <!-- Course Header Section -->
@@ -41,6 +39,9 @@ export async function renderCourseDetails(contentArea, course) {
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="assessments-tab" data-bs-toggle="tab" data-bs-target="#assessments" type="button" role="tab">Assessments</button>
           </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="submissions-tab" data-bs-toggle="tab" data-bs-target="#submissions" type="button" role="tab">My Submissions</button>
+          </li>
         </ul>
         
         <!-- Tab Content -->
@@ -55,7 +56,14 @@ export async function renderCourseDetails(contentArea, course) {
           <!-- Assessments Tab -->
           <div class="tab-pane fade" id="assessments" role="tabpanel">
             <div class="assessments-container" id="assessmentsContainer">
-              ${renderAssessments(assessments || [])}
+              ${await renderAssessments(assessments || [], course._id)} <!-- Pass courseId to check submissions -->
+            </div>
+          </div>
+          
+          <!-- Submissions Tab -->
+          <div class="tab-pane fade" id="submissions" role="tabpanel">
+            <div class="submissions-container" id="submissionsContainer">
+              <div class="loading-message">Loading your submissions...</div>
             </div>
           </div>
         </div>
@@ -66,7 +74,137 @@ export async function renderCourseDetails(contentArea, course) {
     if (window.bootstrap) {
       new window.bootstrap.Tab(document.querySelector('#resources-tab'));
     }
-    
+
+    // Load submissions when submissions tab is clicked
+    document.querySelector('#submissions-tab').addEventListener('click', async () => {
+      await renderSubmissions(course._id, contentArea);
+    });
+
+    // Attach event listeners for the Start and Cancel buttons
+    document.querySelectorAll('.start-assessment').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const id = this.getAttribute('data-assessment-id');
+        document.getElementById('assessment-submit-area-' + id).style.display = 'block';
+      });
+    });
+
+    document.querySelectorAll('.cancel-submit').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const id = this.getAttribute('data-assessment-id');
+        document.getElementById('assessment-submit-area-' + id).style.display = 'none';
+      });
+    });
+
+    // Handle assessment submission form
+    document.querySelectorAll('.assessment-submit-form').forEach(form => {
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Disable submit button to prevent multiple submissions
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        
+        const parent = form.closest('.assessment-submit-area');
+        const fileInput = form.querySelector('input[type="file"]');
+        const comment = form.querySelector('textarea').value;
+        const assessmentItem = form.closest('.assessment-item');
+        const assessmentId = assessmentItem.getAttribute('data-assessment-id');
+        const courseId = course._id; // Use the course ID from the parent function
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const email = user.email || 'Unknown'; 
+        const username = user.name || 'Anonymous';
+
+        const submitTime = new Date().toISOString();
+
+        // Validate file input
+        if (!fileInput.files.length) {
+          parent.querySelector('.submit-message').innerHTML = '<span style="color:red;">Please attach a file.</span>';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Assessment';
+          return;
+        }
+
+        // Prepare form data for submission
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('comment', comment);
+        formData.append('username', username);
+        formData.append('email', email);
+        formData.append('courseId', courseId);
+        formData.append('assessmentId', assessmentId);
+        formData.append('submittedAt', submitTime);
+
+        try {
+          // Submit the assessment
+          const res = await fetch(`${API_BASE_URL}/assessments/${assessmentId}/submit`, {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || 'Submission failed');
+          }
+          
+          // Show success message
+          parent.querySelector('.submit-message').innerHTML = '<span style="color:green;">Submitted successfully!</span>';
+          form.reset();
+          
+          // Update the UI to show the assessment is submitted
+          const startBtn = assessmentItem.querySelector('.start-assessment');
+          if (startBtn) {
+            startBtn.textContent = 'Already Submitted';
+            startBtn.disabled = true;
+            startBtn.classList.remove('btn-primary');
+            startBtn.classList.add('btn-success');
+          }
+          
+          // Hide the submission form after 3 seconds
+          setTimeout(() => {
+            parent.style.display = 'none';
+            parent.querySelector('.submit-message').innerHTML = '';
+          }, 3000);
+        } catch (err) {
+          // Show error message and re-enable submit button
+          parent.querySelector('.submit-message').innerHTML = `<span style="color:red;">${err.message || 'Submission failed'}</span>`;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Assessment';
+        }
+      });
+    });
+
+    // Render quizzes after assessments
+    await renderQuizzes(course._id);
+
+    // Track resource actions (view/download)
+    setTimeout(() => {
+      document.querySelectorAll('.resource-actions a.primary-button').forEach(btn => {
+        btn.addEventListener('click', function () {
+          let actionType = 'resource_action';
+          const text = btn.textContent.trim().toLowerCase();
+          if (text.includes('view')) actionType = 'resource_view';
+          else if (text.includes('download')) actionType = 'resource_download';
+          else if (text.includes('open link') || text.includes('visit link')) actionType = 'resource_link_open';
+
+          const resourceItem = btn.closest('.resource-item');
+          const title = resourceItem ? resourceItem.querySelector('h4').textContent : '';
+          trackAction(actionType, { resourceTitle: title, resourceUrl: btn.href, courseId: course._id });
+        });
+      });
+    }, 0);
+
+    // Track time spent on course
+    let startTime = new Date();
+    window.addEventListener('beforeunload', () => {
+      const endTime = new Date();
+      const timeSpent = (endTime - startTime) / 1000;
+      trackAction('time_spent', {
+        courseId: course._id,
+        seconds: timeSpent
+      });
+    });
+
   } catch (error) {
     console.error("Error rendering course details:", error);
     contentArea.innerHTML = `
@@ -77,273 +215,97 @@ export async function renderCourseDetails(contentArea, course) {
       </div>
     `;
   }
-
-  // Attach event listeners for the Start and Cancel buttons
-  document.querySelectorAll('.start-assessment').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const id = this.getAttribute('data-assessment-id');
-      document.getElementById('assessment-submit-area-' + id).style.display = 'block';
-    });
-  });
-  document.querySelectorAll('.cancel-submit').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const id = this.getAttribute('data-assessment-id');
-      document.getElementById('assessment-submit-area-' + id).style.display = 'none';
-    });
-  });
-  document.querySelectorAll('.assessment-submit-form').forEach(form => {
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const parent = form.closest('.assessment-submit-area');
-      const fileInput = form.querySelector('input[type="file"]');
-      const comment = form.querySelector('textarea').value;
-      const assessmentItem = form.closest('.assessment-item');
-      const assessmentId = assessmentItem.getAttribute('data-assessment-id');
-      const courseId = assessmentItem.getAttribute('data-course-id') || course._id; // fallback to current course
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const email = user.email || 'Unknown'; 
-      const username = user.name || 'Anonymous';
-
-      const submitTime = new Date().toISOString();
-
-      if (!fileInput.files.length) {
-        parent.querySelector('.submit-message').innerHTML = '<span style="color:red;">Please attach a file.</span>';
-        return;
-      }
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-      formData.append('comment', comment);
-      formData.append('username', username);
-      formData.append('email', email);
-      formData.append('courseId', courseId);
-      formData.append('assessmentId', assessmentId);
-      formData.append('submittedAt', submitTime);
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/assessments/${assessmentId}/submit`, {
-          method: 'POST',
-          body: formData
-        });
-        if (!res.ok) throw new Error('Submission failed');
-        parent.querySelector('.submit-message').innerHTML = '<span style="color:green;">Submitted successfully!</span>';
-        form.reset();
-        // Hide the submission area after a short delay
-        setTimeout(() => {
-          parent.style.display = 'none';
-          parent.querySelector('.submit-message').innerHTML = '';
-        }, 3000);
-      } catch (err) {
-        parent.querySelector('.submit-message').innerHTML = '<span style="color:red;">Submission failed.</span>';
-      }
-    });
-  });
-
-  // Add this function to render quizzes and handle responses
-  async function renderQuizzes(courseId) {
-    const quizzesContainerId = 'quizzesContainer';
-    let quizzesContainer = document.getElementById(quizzesContainerId);
-    if (!quizzesContainer) {
-      const assessmentsTab = document.getElementById('assessmentsContainer');
-      quizzesContainer = document.createElement('div');
-      quizzesContainer.id = quizzesContainerId;
-      assessmentsTab.appendChild(quizzesContainer);
-    }
-    quizzesContainer.innerHTML = '<p>Loading quizzes...</p>';
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
-      const quizzes = await res.json();
-      if (!Array.isArray(quizzes) || quizzes.length === 0) {
-        quizzesContainer.innerHTML = '<div class="empty-message">No quizzes for this course.</div>';
-        return;
-      }
-
-      quizzesContainer.innerHTML = quizzes.map(quiz => `
-        <div class="quiz-block card mb-4" data-quiz-id="${quiz._id}">
-          <div class="card-body">
-            <h5>${quiz.title}</h5>
-            <button class="btn btn-primary btn-sm start-quiz-btn" data-quiz-id="${quiz._id}">Start Quiz</button>
-            <div class="quiz-form-area" id="quiz-form-area-${quiz._id}" style="display:none; margin-top:1rem;">
-              <form class="quiz-response-form" data-quiz-id="${quiz._id}">
-                ${quiz.questions.map((q, qIdx) => `
-                  <div class="mb-3">
-                    <strong>Q${qIdx + 1}: ${q.question}</strong>
-                    <div>
-                      ${q.options.map((opt, oIdx) => `
-                        <div class="form-check">
-                          <input class="form-check-input" type="radio" 
-                            name="question-${qIdx}" 
-                            id="quiz-${quiz._id}-q${qIdx}-opt${oIdx}" 
-                            value="${String.fromCharCode(65 + oIdx)}" required>
-                          <label class="form-check-label" for="quiz-${quiz._id}-q${qIdx}-opt${oIdx}">
-                            ${String.fromCharCode(65 + oIdx)}. ${opt}
-                          </label>
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
-                `).join('')}
-                <button type="submit" class="btn btn-success btn-sm">Submit Quiz</button>
-                <button type="button" class="btn btn-secondary btn-sm cancel-quiz-btn" style="margin-left:8px;">Cancel</button>
-                <div class="quiz-submit-message mt-2"></div>
-              </form>
-            </div>
-          </div>
-        </div>
-      `).join('');
-
-      // Start Quiz button logic
-      quizzesContainer.querySelectorAll('.start-quiz-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const quizId = btn.getAttribute('data-quiz-id');
-          // Track quiz start
-          trackAction('quiz_start', { 
-            courseId: course._id, 
-            quizId: quizId 
-          });
-          const formArea = document.getElementById(`quiz-form-area-${quizId}`);
-          formArea.style.display = 'block';
-          btn.style.display = 'none';
-        });
-      });
-
-      // Cancel Quiz button logic
-      quizzesContainer.querySelectorAll('.cancel-quiz-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const form = btn.closest('.quiz-response-form');
-          const quizId = form.getAttribute('data-quiz-id');
-          const formArea = document.getElementById(`quiz-form-area-${quizId}`);
-          const startBtn = quizzesContainer.querySelector(`.start-quiz-btn[data-quiz-id="${quizId}"]`);
-          formArea.style.display = 'none';
-          startBtn.style.display = '';
-          form.reset();
-          form.querySelector('.quiz-submit-message').innerHTML = '';
-        });
-      });
-
-      // Submit Quiz logic
-      quizzesContainer.querySelectorAll('.quiz-response-form').forEach(form => {
-        form.addEventListener('submit', async function(e) {
-          e.preventDefault();
-          const quizId = form.getAttribute('data-quiz-id');
-          const quiz = quizzes.find(q => q._id === quizId);
-          const answers = quiz.questions.map((q, qIdx) => {
-            const selected = form.querySelector(`input[name="question-${qIdx}"]:checked`);
-            return {
-              question: q.question,
-              answer: selected ? selected.value : ''
-            };
-          });
- const { email } = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : currentUser;      // student's email
-          try {
-            // Updated submission path and payload
-            const res = await fetch(`${API_BASE_URL}/quizzes/${quizId}/submit`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-               email: email,           // student's email
-                courseId: courseId,         // current course id
-                answers                     // array of { question, answer }
-              })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Submission failed');
-            form.querySelector('.quiz-submit-message').innerHTML = '<span style="color:green;">Quiz submitted!</span>';
-            form.querySelectorAll('button[type="submit"]').forEach(btn => btn.disabled = true);
-
-            // Auto-marking logic
-            try {
-              // Fetch quiz data to get correct answers
-              const quizRes = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
-              const quizzesList = await quizRes.json();
-              const submittedQuiz = quizzesList.find(q => q._id === quizId);
-
-              if (submittedQuiz) {
-                // Calculate score
-                let correctCount = 0;
-                submittedQuiz.questions.forEach((q, idx) => {
-                  const userAnswer = answers[idx]?.answer;
-                  if (userAnswer && userAnswer === q.correctAnswer) {
-                    correctCount++;
-                  }
-                });
-                const total = submittedQuiz.questions.length;
-                const grade = Math.round((correctCount / total) * 100);
-                console.log(`Quiz ${quizId} graded: ${correctCount}/${total} (${grade}%)`);
-                form.querySelector('.quiz-submit-message').innerHTML += `<br><span style="color:blue;">Grade: ${grade}% (${correctCount}/${total})</span>`;
-                // Save grade via Grades API
-                await fetch(`${API_BASE_URL}/grades`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    type: 'quiz',
-                    refId: quizId,
-                    courseId: courseId,
-                    email: email,
-                    grade: grade,
-                    feedback: `Auto-graded: ${correctCount} out of ${total} correct`
-                  })
-                });
-              }
-            } catch (err) {
-              // Optionally handle marking error
-            }
-
-            // Close the quiz tab after a short delay
-            setTimeout(() => {
-              const tabPane = form.closest('.tab-pane');
-              if (tabPane) {
-                tabPane.classList.remove('show', 'active');
-                const resourcesTab = document.querySelector('#resources-tab');
-                if (resourcesTab) resourcesTab.click();
-              }
-            }, 1200);
-          } catch (err) {
-   
-          form.querySelectorAll('button[type="submit"]').forEach(btn => btn.disabled = true);
-            form.querySelector('.quiz-submit-message').innerHTML = '<span style="color:red;">' + err.message + '</span>';
-          }
-        
-        });
-      });
-
-    } catch (err) {
-      quizzesContainer.innerHTML = '<div class="error-message">Failed to load quizzes.</div>';
-    }
-  }
-
-  // Call this after rendering assessments in renderCourseDetails:
-  await renderQuizzes(course._id);
-
-  // After rendering resources
-  setTimeout(() => {
-    document.querySelectorAll('.resource-actions a.primary-button').forEach(btn => {
-      btn.addEventListener('click', function () {
-        let actionType = 'resource_action';
-        const text = btn.textContent.trim().toLowerCase();
-        if (text.includes('view')) actionType = 'resource_view';
-        else if (text.includes('download')) actionType = 'resource_download';
-        else if (text.includes('open link') || text.includes('visit link')) actionType = 'resource_link_open';
-
-        // Find the resource title for context
-        const resourceItem = btn.closest('.resource-item');
-        const title = resourceItem ? resourceItem.querySelector('h4').textContent : '';
-        trackAction(actionType, { resourceTitle: title, resourceUrl: btn.href, courseId: course._id });
-      });
-    });
-  }, 0);
-
-  let startTime = new Date();
-  window.addEventListener('beforeunload', () => {
-    const endTime = new Date();
-    const timeSpent = (endTime - startTime) / 1000; // seconds
-    trackAction('time_spent', {
-      courseId: course._id,
-      seconds: timeSpent
-    });
-  });
 }
 
+
+//Renders the submissions tab content
+async function renderSubmissions(courseId, contentArea) {
+  const submissionsContainer = contentArea.querySelector('#submissionsContainer');
+  submissionsContainer.innerHTML = '<p>Loading your submissions...</p>';
+
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const email = user.email;
+    
+    if (!email) {
+      submissionsContainer.innerHTML = '<div class="alert alert-warning">Please log in to view your submissions.</div>';
+      return;
+    }
+
+    // Fetch submissions for this course and user
+    const response = await fetch(`${API_BASE_URL}/course/${courseId}/${email}`);
+    const submissions = await response.json();
+
+    // Fetch assessments to get their titles
+    const assessmentsResponse = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
+    const assessments = await assessmentsResponse.json();
+
+    if (!submissions || submissions.length === 0) {
+      submissionsContainer.innerHTML = '<div class="empty-message">You have no submissions for this course yet.</div>';
+      return;
+    }
+
+    // Render submissions table
+    submissionsContainer.innerHTML = `
+      <div class="submissions-list">
+        <h3>Your Submissions</h3>
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Assessment</th>
+                <th>Submitted At</th>
+                <th>File</th>
+                <th>Grade</th>
+                <th>Feedback</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${submissions.map(sub => {
+                const assessment = assessments.find(a => a._id === sub.assessmentId);
+                const assessmentTitle = assessment ? assessment.title : 'Unknown Assessment';
+                const fileUrl = sub.filePath ? 
+                  `${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}` : 
+                  null;
+                
+                return `
+                  <tr>
+                    <td>${assessmentTitle}</td>
+                    <td>${new Date(sub.submittedAt).toLocaleString()}</td>
+                    <td>
+                      ${fileUrl ? 
+                        `<a href="${fileUrl}" download class="btn btn-sm btn-outline-primary">Download</a>` : 
+                        'No file'}
+                    </td>
+                    <td>${sub.grade || 'Not graded'}</td>
+                    <td>${sub.feedback || 'No feedback'}</td>
+                    <td>
+                      <span class="badge ${sub.grade ? 'bg-success' : 'bg-warning'}">
+                        ${sub.grade ? 'Graded' : 'Submitted'}
+                      </span>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+  } catch (error) {
+    console.error('Error loading submissions:', error);
+    submissionsContainer.innerHTML = `
+      <div class="alert alert-danger">
+        Failed to load your submissions. Please try again later.
+      </div>
+    `;
+  }
+}
+
+
+//Renders course resources
 function renderResources(resources) {
   if (!resources || resources.length === 0) {
     return `
@@ -361,7 +323,7 @@ function renderResources(resources) {
         const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
         const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
 
-        // YouTube
+        // Check for YouTube links
         let isYouTube = false;
         let youTubeEmbed = '';
         if (resource.link && resource.link.includes('youtube.com')) {
@@ -416,7 +378,6 @@ function renderResources(resources) {
             ${isYouTube ? `
               <div style="margin-top:10px;">
                 ${youTubeEmbed}
-               
               </div>
             ` : ''}
             ${resource.link && !isYouTube ? `
@@ -431,7 +392,13 @@ function renderResources(resources) {
   `;
 }
 
-function renderAssessments(assessments) {
+/**
+ * Renders assessments list with submission status check
+ * @param {Array} assessments - Array of assessment objects
+ * @param {string} courseId - The ID of the course
+ * @returns {string} HTML string of rendered assessments
+ */
+async function renderAssessments(assessments, courseId) {
   if (assessments.length === 0) {
     return `
       <div class="empty-assessments">
@@ -440,11 +407,28 @@ function renderAssessments(assessments) {
     `;
   }
 
+  // Get user submissions for this course
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const email = user.email;
+  let userSubmissions = [];
+  
+  if (email) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/course/${courseId}/${email}`);
+      userSubmissions = await response.json();
+    } catch (error) {
+      console.error('Error fetching submissions:', error);
+    }
+  }
+
   let submitAreaId = 'assessment-submit-area';
 
   return `
     <div class="assessment-list">
       ${assessments.map(assessment => {
+        // Check if user has already submitted this assessment
+        const hasSubmitted = userSubmissions.some(sub => sub.assessmentId === assessment._id);
+        
         // Due date highlighting
         let dueClass = '';
         if (assessment.dueDate) {
@@ -463,7 +447,6 @@ function renderAssessments(assessments) {
         let fileLink = '';
         if (assessment.filePath) {
           const fileUrl = `${API_BASE_URL.replace('/api', '')}/${assessment.filePath.replace(/\\/g, '/')}`;
-          // Only allow view for certain types
           const ext = assessment.originalName ? assessment.originalName.split('.').pop().toLowerCase() : '';
           const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
           if (canView) {
@@ -474,7 +457,7 @@ function renderAssessments(assessments) {
         }
 
         return `
-          <div class="assessment-item card mb-3" data-assessment-id="${assessment._id}">
+          <div class="assessment-item card mb-3" data-assessment-id="${assessment._id}" data-course-id="${courseId}">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-start">
                 <div>
@@ -495,28 +478,32 @@ function renderAssessments(assessments) {
                 </small>
               </div>
               <div class="assessment-actions mt-3">
-                ${assessment.status === 'completed' ? 
-                  `<button class="btn btn-success btn-sm" disabled>Completed</button>` : 
-                  `<button class="btn btn-primary btn-sm start-assessment" data-assessment-id="${assessment._id}">
-                    ${assessment.status === 'in-progress' ? 'Continue' : 'Start'}
-                  </button>`}
+                ${hasSubmitted ? 
+                  `<button class="btn btn-success btn-sm" disabled>Already Submitted</button>` : 
+                  assessment.status === 'completed' ? 
+                    `<button class="btn btn-success btn-sm" disabled>Completed</button>` : 
+                    `<button class="btn btn-primary btn-sm start-assessment" data-assessment-id="${assessment._id}">
+                      ${assessment.status === 'in-progress' ? 'Continue' : 'Start'}
+                    </button>`}
                 ${assessment.grade ? 
                   `<span class="ms-2 badge bg-info">Grade: ${assessment.grade}</span>` : ''}
               </div>
-              <div id="${submitAreaId}-${assessment._id}" class="assessment-submit-area" style="display:none; margin-top:1rem;">
-                <form enctype="multipart/form-data" class="assessment-submit-form">
-                  <div class="mb-2">
-                    <label for="submissionFile-${assessment._id}" class="form-label">Attach your file:</label>
-                    <input type="file" id="submissionFile-${assessment._id}" name="submissionFile" class="form-control" required>
-                  </div>
-                  <div class="mb-2">
-                    <textarea class="form-control" name="submissionComment" placeholder="Add a comment (optional)"></textarea>
-                  </div>
-                  <button type="submit" class="btn btn-success btn-sm">Submit Assessment</button>
-                  <button type="button" class="btn btn-secondary btn-sm cancel-submit" data-assessment-id="${assessment._id}" style="margin-left:8px;">Cancel</button>
-                </form>
-                <div class="submit-message mt-2"></div>
-              </div>
+              ${!hasSubmitted ? `
+                <div id="${submitAreaId}-${assessment._id}" class="assessment-submit-area" style="display:none; margin-top:1rem;">
+                  <form enctype="multipart/form-data" class="assessment-submit-form">
+                    <div class="mb-2">
+                      <label for="submissionFile-${assessment._id}" class="form-label">Attach your file:</label>
+                      <input type="file" id="submissionFile-${assessment._id}" name="submissionFile" class="form-control" required>
+                    </div>
+                    <div class="mb-2">
+                      <textarea class="form-control" name="submissionComment" placeholder="Add a comment (optional)"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm">Submit Assessment</button>
+                    <button type="button" class="btn btn-secondary btn-sm cancel-submit" data-assessment-id="${assessment._id}" style="margin-left:8px;">Cancel</button>
+                  </form>
+                  <div class="submit-message mt-2"></div>
+                </div>
+              ` : ''}
             </div>
           </div>
         `;
@@ -525,6 +512,8 @@ function renderAssessments(assessments) {
   `;
 }
 
+
+//Returns the appropriate Bootstrap badge class based on assessment status
 function getAssessmentBadgeClass(status) {
   switch (status) {
     case 'completed': return 'bg-success';
@@ -535,6 +524,8 @@ function getAssessmentBadgeClass(status) {
   }
 }
 
+
+//Tracks user actions for analytics
 async function trackAction(eventType, data) {
   try {
     const payload = {
@@ -543,7 +534,7 @@ async function trackAction(eventType, data) {
       timestamp: new Date().toISOString(),
       ...data
     };
-    console.log('Sending analytics:', payload); // <-- Add this
+    console.log('Sending analytics:', payload);
     await fetch(`${API_BASE_URL}/analytics`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -555,3 +546,171 @@ async function trackAction(eventType, data) {
 }
 
 
+ //Renders quizzes for the course
+async function renderQuizzes(courseId) {
+  const quizzesContainerId = 'quizzesContainer';
+  let quizzesContainer = document.getElementById(quizzesContainerId);
+  if (!quizzesContainer) {
+    const assessmentsTab = document.getElementById('assessmentsContainer');
+    quizzesContainer = document.createElement('div');
+    quizzesContainer.id = quizzesContainerId;
+    assessmentsTab.appendChild(quizzesContainer);
+  }
+  quizzesContainer.innerHTML = '<p>Loading quizzes...</p>';
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
+    const quizzes = await res.json();
+    if (!Array.isArray(quizzes) || quizzes.length === 0) {
+      quizzesContainer.innerHTML = '<div class="empty-message">No quizzes for this course.</div>';
+      return;
+    }
+
+    quizzesContainer.innerHTML = quizzes.map(quiz => `
+      <div class="quiz-block card mb-4" data-quiz-id="${quiz._id}">
+        <div class="card-body">
+          <h5>${quiz.title}</h5>
+          <button class="btn btn-primary btn-sm start-quiz-btn" data-quiz-id="${quiz._id}">Start Quiz</button>
+          <div class="quiz-form-area" id="quiz-form-area-${quiz._id}" style="display:none; margin-top:1rem;">
+            <form class="quiz-response-form" data-quiz-id="${quiz._id}">
+              ${quiz.questions.map((q, qIdx) => `
+                <div class="mb-3">
+                  <strong>Q${qIdx + 1}: ${q.question}</strong>
+                  <div>
+                    ${q.options.map((opt, oIdx) => `
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" 
+                          name="question-${qIdx}" 
+                          id="quiz-${quiz._id}-q${qIdx}-opt${oIdx}" 
+                          value="${String.fromCharCode(65 + oIdx)}" required>
+                        <label class="form-check-label" for="quiz-${quiz._id}-q${qIdx}-opt${oIdx}">
+                          ${String.fromCharCode(65 + oIdx)}. ${opt}
+                        </label>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `).join('')}
+              <button type="submit" class="btn btn-success btn-sm">Submit Quiz</button>
+              <button type="button" class="btn btn-secondary btn-sm cancel-quiz-btn" style="margin-left:8px;">Cancel</button>
+              <div class="quiz-submit-message mt-2"></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // Start Quiz button logic
+    quizzesContainer.querySelectorAll('.start-quiz-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const quizId = btn.getAttribute('data-quiz-id');
+        trackAction('quiz_start', { 
+          courseId: courseId, 
+          quizId: quizId 
+        });
+        const formArea = document.getElementById(`quiz-form-area-${quizId}`);
+        formArea.style.display = 'block';
+        btn.style.display = 'none';
+      });
+    });
+
+    // Cancel Quiz button logic
+    quizzesContainer.querySelectorAll('.cancel-quiz-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const form = btn.closest('.quiz-response-form');
+        const quizId = form.getAttribute('data-quiz-id');
+        const formArea = document.getElementById(`quiz-form-area-${quizId}`);
+        const startBtn = quizzesContainer.querySelector(`.start-quiz-btn[data-quiz-id="${quizId}"]`);
+        formArea.style.display = 'none';
+        startBtn.style.display = '';
+        form.reset();
+        form.querySelector('.quiz-submit-message').innerHTML = '';
+      });
+    });
+
+    // Submit Quiz logic
+    quizzesContainer.querySelectorAll('.quiz-response-form').forEach(form => {
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const quizId = form.getAttribute('data-quiz-id');
+        const quiz = quizzes.find(q => q._id === quizId);
+        const answers = quiz.questions.map((q, qIdx) => {
+          const selected = form.querySelector(`input[name="question-${qIdx}"]:checked`);
+          return {
+            question: q.question,
+            answer: selected ? selected.value : ''
+          };
+        });
+
+        const { email } = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : currentUser;
+        
+        try {
+          const res = await fetch(`${API_BASE_URL}/quizzes/${quizId}/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: email,
+              courseId: courseId,
+              answers
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Submission failed');
+          form.querySelector('.quiz-submit-message').innerHTML = '<span style="color:green;">Quiz submitted!</span>';
+          form.querySelectorAll('button[type="submit"]').forEach(btn => btn.disabled = true);
+
+          // Auto-marking logic
+          try {
+            const quizRes = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
+            const quizzesList = await quizRes.json();
+            const submittedQuiz = quizzesList.find(q => q._id === quizId);
+
+            if (submittedQuiz) {
+              let correctCount = 0;
+              submittedQuiz.questions.forEach((q, idx) => {
+                const userAnswer = answers[idx]?.answer;
+                if (userAnswer && userAnswer === q.correctAnswer) {
+                  correctCount++;
+                }
+              });
+              const total = submittedQuiz.questions.length;
+              const grade = Math.round((correctCount / total) * 100);
+              console.log(`Quiz ${quizId} graded: ${correctCount}/${total} (${grade}%)`);
+              form.querySelector('.quiz-submit-message').innerHTML += `<br><span style="color:blue;">Grade: ${grade}% (${correctCount}/${total})</span>`;
+              
+              await fetch(`${API_BASE_URL}/grades`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'quiz',
+                  refId: quizId,
+                  courseId: courseId,
+                  email: email,
+                  grade: grade,
+                  feedback: `Auto-graded: ${correctCount} out of ${total} correct`
+                })
+              });
+            }
+          } catch (err) {
+            // Optionally handle marking error
+          }
+
+          setTimeout(() => {
+            const tabPane = form.closest('.tab-pane');
+            if (tabPane) {
+              tabPane.classList.remove('show', 'active');
+              const resourcesTab = document.querySelector('#resources-tab');
+              if (resourcesTab) resourcesTab.click();
+            }
+          }, 1200);
+        } catch (err) {
+          form.querySelectorAll('button[type="submit"]').forEach(btn => btn.disabled = true);
+          form.querySelector('.quiz-submit-message').innerHTML = '<span style="color:red;">' + err.message + '</span>';
+        }
+      });
+    });
+
+  } catch (err) {
+    quizzesContainer.innerHTML = '<div class="error-message">Failed to load quizzes.</div>';
+  }
+}
