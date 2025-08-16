@@ -374,109 +374,171 @@ function createToastContainer() {
 }
 
 //Renders course resources
+// Renders course resources with collapsible folders
+// Renders course resources with styled folders
 function renderResources(resources) {
   if (!resources || resources.length === 0) {
     return `
-      <div class="empty-message">
+      <div class="empty-message" style="
+        background:#f8fafc;
+        border:1px solid #e2e8f0;
+        border-radius:12px;
+        padding:2rem;
+        text-align:center;
+        color:#64748b;
+        font-size:1rem;">
         <p>No resources available for this course yet.</p>
       </div>
     `;
   }
 
+  // Group resources by folder
+  const folders = {};
+  resources.forEach(res => {
+    const folder = res.folder || "General";
+    if (!folders[folder]) folders[folder] = [];
+    folders[folder].push(res);
+  });
+
   return `
-    <div class="resource-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
-      ${resources.map(resource => {
-        const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
-        const fileUrl = resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '';
-        const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
-        const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
-
-        // YouTube
-        let isYouTube = false;
-        let youTubeEmbed = '';
-        if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
-
-  isYouTube = true;
-
-  // Try to extract the YouTube video ID from different URL formats
-  const url = resource.link;
-
-  // Regex to cover 'youtube.com/watch?v=ID', 'youtu.be/ID', 'youtube.com/embed/ID'
-  const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_\-]{11})/
-  );
-
-  if (match && match[1]) {
-    youTubeEmbed = `<iframe 
-      width="100%" 
-      height="200" 
-      src="https://www.youtube.com/embed/${match[1]}" 
-      frameborder="0" 
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-      allowfullscreen 
-      style="border-radius:8px;">
-    </iframe>`;
-  }
-}
-
-        return `
-          <div class="resource-card" style="
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(30,136,229,0.07);
-            padding: 1.5rem 1.2rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 260px;
-            position: relative;
-            ">
-            <div>
-              <h4 style="margin-bottom: 0.5rem; color: #1e88e5; font-weight: 600;">${resource.title}</h4>
-              <p class="resource-meta" style="font-size: 0.95rem; color: #666; margin-bottom: 0.5rem;">
-                <span style="margin-right: 12px;"><i class="fas fa-tag"></i> ${resource.type}</span>
-                <span><i class="fas fa-calendar-alt"></i> ${new Date(resource.createdAt).toLocaleDateString()}</span>
-              </p>
-              <p style="font-size: 1rem; color: #333; margin-bottom: 1rem;">${resource.description || '<span style="color:#bbb;">No description</span>'}</p>
-            </div>
-            <div class="resource-actions" style="margin-bottom: 0.7rem;">
-              ${canView ? `<a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm" style="margin-right:8px;">View</a>` : ''}
-              ${
-                resource.filePath && !(isYouTube)
-                  ? `<a href="${API_BASE_URL}/resources/${resource._id}/download" class="btn btn-outline-secondary btn-sm" style="margin-right:8px;">Download</a>`
-                  : ''
-              }
-            </div>
-            ${
-             ext === 'pdf'
-              ? `<div style="margin-top:10px;">
-               <iframe src="${fileUrl}" width="100%" height="300" style="border-radius:8px; border:1px solid #eee;"></iframe>
-               </div>`
-               : ''
-               }
-            ${isVideoFile ? `
-              <video width="100%" height="200" controls style="margin-top:10px; border-radius:8px;">
-                <source src="${fileUrl}" type="video/${ext}">
-                Your browser does not support the video tag.
-              </video>
-            ` : ''}
-            ${isYouTube ? `
-              <div style="margin-top:10px;">
-                ${youTubeEmbed}
-               
-              </div>
-            ` : ''}
-            ${resource.link && !isYouTube ? `
-              <div style="margin-top:10px;">
-                <a href="${resource.link}" target="_blank" style="color:#3182ce;">Visit Link</a>
-              </div>
-            ` : ''}
+    <div class="foldered-resources" style="margin-top: 1.5rem;">
+      ${Object.keys(folders).map(folderName => `
+        <div class="folder-section" style="margin-bottom:2.5rem;">
+          <!-- Folder Header -->
+          <div class="folder-header" style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            cursor:pointer;
+            padding:0.8rem 1.2rem;
+            background:linear-gradient(90deg,#1e88e5,#42a5f5);
+            border-radius:10px;
+            color:white;
+            font-weight:600;
+            font-size:1.1rem;
+            transition:all 0.3s ease;">
+            <span><i class="fas fa-folder-open" style="margin-right:8px;"></i> ${folderName}</span>
+            <i class="fas fa-chevron-down"></i>
           </div>
-        `;
-      }).join('')}
+
+          <!-- Folder Content -->
+          <div class="folder-content" style="margin-top:1rem; display:block;">
+            <div class="resource-grid" style="
+              display:grid;
+              grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+              gap: 24px;">
+              ${folders[folderName].map(resource => {
+                const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
+                const fileUrl = resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '';
+                const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
+                const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
+
+                // YouTube
+                let isYouTube = false;
+                let youTubeEmbed = '';
+                if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
+                  isYouTube = true;
+                  const url = resource.link;
+                  const match = url.match(
+                    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_\-]{11})/
+                  );
+                  if (match && match[1]) {
+                    youTubeEmbed = `<iframe 
+                      width="100%" 
+                      height="200" 
+                      src="https://www.youtube.com/embed/${match[1]}" 
+                      frameborder="0" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                      allowfullscreen 
+                      style="border-radius:8px;">
+                    </iframe>`;
+                  }
+                }
+
+                return `
+                  <div class="resource-card" style="
+                    background: #fff;
+                    border-radius: 14px;
+                    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+                    padding: 1.5rem 1.2rem;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                  "
+                  onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 6px 18px rgba(0,0,0,0.1)'"
+                  onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(0,0,0,0.06)'"
+                  >
+                    <div>
+                      <h4 style="margin-bottom: 0.5rem; color: #1e88e5; font-weight: 600; font-size:1.1rem;">${resource.title}</h4>
+                      <p class="resource-meta" style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.7rem;">
+                        <span style="margin-right: 12px;"><i class="fas fa-tag"></i> ${resource.type}</span>
+                        <span><i class="fas fa-calendar-alt"></i> ${new Date(resource.createdAt).toLocaleDateString()}</span>
+                      </p>
+                      <p style="font-size: 0.95rem; color: #334155; margin-bottom: 1rem; line-height:1.4;">${resource.description || '<span style="color:#bbb;">No description</span>'}</p>
+                    </div>
+
+                    <div class="resource-actions" style="margin-bottom: 0.7rem;">
+                      ${canView ? `<a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm" style="margin-right:8px;">View</a>` : ''}
+                      ${
+                        resource.filePath && !isYouTube
+                          ? `<a href="${API_BASE_URL}/resources/${resource._id}/download" class="btn btn-outline-secondary btn-sm" style="margin-right:8px;">Download</a>`
+                          : ''
+                      }
+                    </div>
+
+                    ${ext === 'pdf'
+                      ? `<div style="margin-top:10px;">
+                        <iframe src="${fileUrl}" width="100%" height="300" style="border-radius:8px; border:1px solid #eee;"></iframe>
+                      </div>` : ''}
+
+                    ${isVideoFile ? `
+                      <video width="100%" height="200" controls style="margin-top:10px; border-radius:8px;">
+                        <source src="${fileUrl}" type="video/${ext}">
+                        Your browser does not support the video tag.
+                      </video>
+                    ` : ''}
+
+                    ${isYouTube ? `
+                      <div style="margin-top:10px;">
+                        ${youTubeEmbed}
+                      </div>
+                    ` : ''}
+
+                    ${resource.link && !isYouTube ? `
+                      <div style="margin-top:10px;">
+                        <a href="${resource.link}" target="_blank" style="color:#2563eb; font-weight:500;">🔗 Visit Link</a>
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('')}
     </div>
+
+    <script>
+      // Toggle folders open/close
+      document.querySelectorAll('.folder-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const content = header.nextElementSibling;
+          const icon = header.querySelector('.fas.fa-chevron-down');
+          if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.style.transform = 'rotate(0deg)';
+          } else {
+            content.style.display = 'none';
+            icon.style.transform = 'rotate(-90deg)';
+          }
+        });
+      });
+    </script>
   `;
 }
+
+
 
 /**
  * Renders assessments list with submission status check

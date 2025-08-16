@@ -1,13 +1,25 @@
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
+import { renderFolderManager } from './FolderManager.js';
 
-function loadCSS() {
+// Utility functions
+function isYouTubeLink(link) {
+  return link && (link.includes('youtube.com') || link.includes('youtu.be'));
+}
+
+function getYouTubeId(link) {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = link.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
+{/*function loadCSS() {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './Resources.css'; 
+  link.href = './Resources.css';
   document.head.appendChild(link);
 }
 
-loadCSS();
+loadCSS();*/}
 
 export function renderResources(container, course) {
   container.innerHTML = `
@@ -20,12 +32,11 @@ export function renderResources(container, course) {
       <div class="resources-tabs">
         <div class="tabs">
           <button class="tab-button active" data-tab="resources">Resources</button>
-          <!-- Remove or comment out this line -->
-          <!-- <button class="tab-button" data-tab="assessments">Assessments</button> -->
         </div>
         
         <div class="tab-content active" id="resources-tab">
-          <!-- NEW: Added tabs for resource categories -->
+          <div class="folders-section" id="folderManager"></div>
+          
           <div class="resource-category-tabs">
             <button class="category-tab-button active" data-category="all">All Resources</button>
             <button class="category-tab-button" data-category="videos">Videos</button>
@@ -34,14 +45,13 @@ export function renderResources(container, course) {
           </div>
           
           <div class="existing-resources">
-            <div class="resources-list" id="resourcesList">
-              <!-- Resources will be loaded here -->
-            </div>
+            <div class="resources-list" id="resourcesList"></div>
           </div>
-          
+
           <div class="add-resource">
             <h3>Add New Resource</h3>
             <form id="resourceForm">
+              <input type="hidden" id="resourceId">
               <div class="form-group">
                 <label for="resourceTitle">Title*</label>
                 <input type="text" id="resourceTitle" required>
@@ -69,11 +79,21 @@ export function renderResources(container, course) {
               </div>
               
               <div class="form-group">
+                <label for="resourceFolder">Folder</label>
+                <select id="resourceFolder">
+                  <option value="General">General</option>
+                  <option value="__new__">➕ Create New Folder</option>
+                </select>
+                <input type="text" id="newFolderInput" placeholder="Enter new folder name" style="display:none; margin-top:6px;">
+              </div>
+              
+              <div class="form-group">
                 <label for="resourceDescription">Description</label>
                 <textarea id="resourceDescription"></textarea>
               </div>
               
-              <button type="submit" class="primary-button">Add Resource</button>
+              <button type="submit" class="primary-button" id="resourceSubmitButton">Add Resource</button>
+              <button type="button" class="secondary-button" id="cancelEditButton" style="display:none;">Cancel</button>
             </form>
           </div>
         </div>
@@ -88,7 +108,7 @@ export function renderResources(container, course) {
     });
   });
 
-  // Main tab switching 
+  // Main tab switching
   container.querySelectorAll('.tab-button').forEach(button => {
     button.addEventListener('click', (e) => {
       const tabName = e.target.dataset.tab;
@@ -99,14 +119,13 @@ export function renderResources(container, course) {
     });
   });
 
-  //Resource category tab switching
+  // Resource category tab switching
   container.querySelectorAll('.category-tab-button').forEach(button => {
     button.addEventListener('click', (e) => {
       const category = e.target.dataset.category;
       container.querySelectorAll('.category-tab-button').forEach(btn => btn.classList.remove('active'));
       e.target.classList.add('active');
       
-      // Show/hide resources based on category
       const allResources = container.querySelectorAll('.resource-item');
       allResources.forEach(resource => resource.style.display = 'none');
       
@@ -119,7 +138,7 @@ export function renderResources(container, course) {
     });
   });
 
-  // Show/hide file/link fields based on resource type (original functionality)
+  // Show/hide file/link fields based on resource type
   const resourceTypeSelect = container.querySelector('#resourceType');
   const fileGroup = container.querySelector('#resourceFileGroup');
   const linkGroup = container.querySelector('#resourceLinkGroup');
@@ -134,29 +153,69 @@ export function renderResources(container, course) {
     }
   });
 
+  // Show/hide "new folder" input
+  const resourceFolderSelect = container.querySelector('#resourceFolder');
+  const newFolderInput = container.querySelector('#newFolderInput');
+  resourceFolderSelect.addEventListener('change', () => {
+    if (resourceFolderSelect.value === '__new__') {
+      newFolderInput.style.display = 'block';
+      newFolderInput.required = true;
+    } else {
+      newFolderInput.style.display = 'none';
+      newFolderInput.required = false;
+    }
+  });
+
   // Load existing resources
   loadCourseResources(course._id);
 
+  // Render Folder Manager
+  const folderContainer = container.querySelector('#folderManager');
+  renderFolderManager(folderContainer, course._id, (selectedFolder) => {
+    try {
+      loadCourseResources(course._id, selectedFolder);
+    } catch (error) {
+      console.error('Error loading folder resources:', error);
+      document.getElementById('resourcesList').innerHTML = `
+        <p class="error-message">Failed to load folder resources: ${error.message}</p>
+      `;
+    }
+  });
+
+  // Form submission handler
   const resourceForm = container.querySelector('#resourceForm');
+  const cancelEditButton = container.querySelector('#cancelEditButton');
+  
   if (resourceForm) {
     resourceForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      const resourceId = document.getElementById('resourceId').value;
       const title = document.getElementById('resourceTitle').value.trim();
       let type = document.getElementById('resourceType').value;
       const description = document.getElementById('resourceDescription').value.trim();
+      let folder = document.getElementById('resourceFolder').value;
       const fileInput = document.getElementById('resourceFile');
       const linkInput = document.getElementById('resourceLink');
       let link = linkInput ? linkInput.value.trim() : '';
       const file = fileInput.files[0];
 
+      // Handle new folder case
+      if (folder === '__new__') {
+        folder = newFolderInput.value.trim();
+        if (!folder) {
+          alert('Please enter a new folder name.');
+          return;
+        }
+      }
+
       // Auto-detect YouTube links
-      if (link && (link.includes('youtube.com') || link.includes('youtu.be'))) {
-        type = 'link'; // keep as 'link' so backend expects a link, not a file
+      if (link && isYouTubeLink(link)) {
+        type = 'link';
       }
 
       // Validation
-      if (!title || !type || (type === 'link' ? !link : !file)) {
+      if (!title || !type || (type === 'link' ? !link : !file && !resourceId)) {
         alert('Please fill in all required fields and attach a file or provide a link.');
         return;
       }
@@ -165,54 +224,139 @@ export function renderResources(container, course) {
       formData.append('title', title);
       formData.append('type', type);
       formData.append('description', description);
+      formData.append('folder', folder);
+      
       if (type === 'link') {
         formData.append('link', link);
-      } else {
+      } else if (file) {
         formData.append('file', file);
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/courses/${course._id}/resources`, {
-          method: 'POST',
+        const url = resourceId 
+          ? `${API_BASE_URL}/resources/${resourceId}`
+          : `${API_BASE_URL}/courses/${course._id}/resources`;
+          
+        const method = resourceId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method,
           body: formData
         });
 
-        if (!response.ok) throw new Error('Failed to add resource');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to save resource');
+        }
 
         loadCourseResources(course._id);
-        resourceForm.reset();
-        fileGroup.style.display = '';
-        linkGroup.style.display = 'none';
-        alert('Resource added successfully!');
+        resetResourceForm();
+        alert(resourceId ? 'Resource updated successfully!' : 'Resource added successfully!');
 
       } catch (err) {
         alert('Error: ' + err.message);
       }
     });
   }
+
+  // Cancel edit handler
+  if (cancelEditButton) {
+    cancelEditButton.addEventListener('click', resetResourceForm);
+  }
+
+  function resetResourceForm() {
+    document.getElementById('resourceForm').reset();
+    document.getElementById('resourceId').value = '';
+    document.getElementById('resourceSubmitButton').textContent = 'Add Resource';
+    cancelEditButton.style.display = 'none';
+    fileGroup.style.display = '';
+    linkGroup.style.display = 'none';
+    newFolderInput.style.display = 'none';
+    newFolderInput.required = false;
+  }
+
+  function populateEditForm(resource) {
+    document.getElementById('resourceId').value = resource._id;
+    document.getElementById('resourceTitle').value = resource.title;
+    document.getElementById('resourceType').value = resource.type;
+    document.getElementById('resourceDescription').value = resource.description || '';
+    document.getElementById('resourceFolder').value = resource.folder || 'General';
+    document.getElementById('resourceSubmitButton').textContent = 'Update Resource';
+    cancelEditButton.style.display = 'inline-block';
+    
+    if (resource.type === 'link') {
+      document.getElementById('resourceLink').value = resource.link || '';
+      fileGroup.style.display = 'none';
+      linkGroup.style.display = '';
+    } else {
+      fileGroup.style.display = '';
+      linkGroup.style.display = 'none';
+    }
+  }
 }
 
-//Loads and displays course resources with new category tabs
-async function loadCourseResources(courseId) {
+function extractFoldersFromResources(resources) {
+  const folders = new Set(['General']);
+  resources.forEach(resource => {
+    if (resource.folder && resource.folder.trim() !== '') {
+      folders.add(resource.folder);
+    }
+  });
+  return Array.from(folders);
+}
+
+// Loads and displays course resources
+async function loadCourseResources(courseId, folder = null) {
   try {
-    const response = await fetch(`${API_BASE_URL}/courses/${courseId}/resources`);
+    let response = await fetch(`${API_BASE_URL}/courses/${courseId}/resources`);
     if (!response.ok) throw new Error('Failed to load resources');
     
-    const resources = await response.json();
+    let resources = await response.json();
     const resourcesList = document.getElementById('resourcesList');
     
+    // Extract and populate folders from resources
+    const folders = extractFoldersFromResources(resources);
+    const folderSelect = document.getElementById('resourceFolder');
+    
+    // Clear existing options
+    folderSelect.innerHTML = '';
+    const generalOption = document.createElement('option');
+    generalOption.value = 'General';
+    generalOption.textContent = 'General';
+    folderSelect.appendChild(generalOption);
+
+    // Add new folder options
+    folders.forEach(folderName => {
+      if (folderName !== 'General') {
+        const option = document.createElement('option');
+        option.value = folderName;
+        option.textContent = folderName;
+        folderSelect.appendChild(option);
+      }
+    });
+
+    // Add "Create New Folder" option
+    const createNewOption = document.createElement('option');
+    createNewOption.value = "__new__";
+    createNewOption.textContent = "➕ Create New Folder";
+    folderSelect.appendChild(createNewOption);
+
     if (resources.length === 0) {
       resourcesList.innerHTML = '<p class="empty-message">No resources added yet</p>';
       return;
     }
-    
+
+    // Filter by folder if specified
+    if (folder && folder !== "all") {
+      resources = resources.filter(r => (r.folder || "General") === folder);
+    }
+
     // Generate HTML for all resources with category data attributes
     resourcesList.innerHTML = resources.map(resource => {
       const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
       
-      // Determine resource category
       let category = 'others';
-      if (resource.type === 'link' && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
+      if (resource.type === 'link' && isYouTubeLink(resource.link)) {
         category = 'videos';
       } else if (resource.type === 'video' || ['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) {
         category = 'videos';
@@ -223,9 +367,9 @@ async function loadCourseResources(courseId) {
       return createResourceItem(resource, category);
     }).join('');
     
-    // Add delete event listeners to all delete buttons 
+    // Add delete event listeners
     resourcesList.querySelectorAll('.delete-resource').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      btn.addEventListener('click', async () => {
         const resourceId = btn.getAttribute('data-id');
         if (confirm('Are you sure you want to delete this resource?')) {
           try {
@@ -243,6 +387,17 @@ async function loadCourseResources(courseId) {
       });
     });
 
+    // Add edit event listeners
+    resourcesList.querySelectorAll('.edit-resource').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const resourceId = btn.getAttribute('data-id');
+        const resource = resources.find(r => r._id === resourceId);
+        if (resource) {
+          populateEditForm(resource);
+        }
+      });
+    });
+
   } catch (error) {
     console.error('Error loading resources:', error);
     document.getElementById('resourcesList').innerHTML = `
@@ -251,39 +406,36 @@ async function loadCourseResources(courseId) {
   }
 }
 
-
-//Creates HTML for a resource item with category data attribute
+// Creates HTML for a resource item
 function createResourceItem(resource, category) {
   const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
   const fileUrl = resource.type === 'link'
     ? resource.link
     : (resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '#');
 
-  // Format date for display
   const displayDate = resource.createdAt 
     ? new Date(resource.createdAt).toLocaleDateString() 
     : 'Recently added';
 
-  // YouTube specific handling
   let isYouTube = false;
   let youTubeId = '';
   if (resource.link && (resource.type === 'link' || resource.type === 'video')) {
-    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
-    isYouTube = youtubeRegex.test(resource.link);
+    isYouTube = isYouTubeLink(resource.link);
     if (isYouTube) {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-      const match = resource.link.match(regExp);
-      youTubeId = (match && match[2].length === 11) ? match[2] : null;
+      youTubeId = getYouTubeId(resource.link);
     }
   }
 
-  // Check if file can be viewed in browser (images, PDFs)
   const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
 
   return `
     <div class="resource-item" data-category="${category}">
       <h4>${resource.title}</h4>
-      <p class="resource-meta">Type: ${resource.type} • Added: ${displayDate}</p>
+      <p class="resource-meta">
+        Type: ${resource.type} • 
+        Folder: ${resource.folder || 'General'} • 
+        Added: ${displayDate}
+      </p>
       <p>${resource.description || 'No description'}</p>
       
       <div class="resource-actions">
