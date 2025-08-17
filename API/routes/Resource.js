@@ -62,7 +62,7 @@ router.post('/courses/:courseId/resources', upload.single('file'), async (req, r
       link: type === 'link' ? link : undefined,
       createdAt: new Date()
     });
-
+    console.log("resource created");
     await resource.save();
     await Course.findByIdAndUpdate(courseId, { $push: { resources: resource._id } });
 
@@ -81,6 +81,26 @@ router.post('/courses/:courseId/resources', upload.single('file'), async (req, r
   } catch (error) {
     console.error('Resource creation error:', error);
     res.status(500).json({ error: 'Failed to create resource' });
+  }
+});
+
+// GET single resource - will handle /api/resources/:resourceId
+router.get('/resources/:resourceId', async (req, res) => {
+  try {
+    const resource = await Resource.findById(req.params.resourceId);
+    if (!resource) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+    
+    res.status(200).json({
+      ...resource.toObject(),
+      downloadUrl: resource.type !== 'link' 
+        ? `/api/resources/file/${path.basename(resource.filePath)}` 
+        : null
+    });
+  } catch (err) {
+    console.error('Error fetching resource:', err);
+    res.status(500).json({ error: 'Failed to fetch resource' });
   }
 });
 
@@ -150,8 +170,9 @@ router.get('/courses/:courseId/resources', async (req, res) => {
 });
 
 // DELETE /api/resources/:resourceId
-router.delete('/:resourceId', async (req, res) => {
+router.delete('/resources/:resourceId', async (req, res) => {
   try {
+    console.log("DELETE request for:", req.params.resourceId);
     const resource = await Resource.findById(req.params.resourceId);
     if (!resource) {
       return res.status(404).json({ error: 'Resource not found' });
@@ -207,5 +228,87 @@ router.patch('/:resourceId/folder', async (req, res) => {
   }
 });
 
+// GET /api/resources/:resourceId
+router.get('/:resourceId', async (req, res) => {
+  try {
+    const resource = await Resource.findById(req.params.resourceId);
+    if (!resource) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+    
+    res.status(200).json({
+      ...resource.toObject(),
+      downloadUrl: resource.type !== 'link' ? `/api/resources/file/${path.basename(resource.filePath)}` : null
+    });
+  } catch (err) {
+    console.error('Error fetching resource:', err);
+    res.status(500).json({ error: 'Failed to fetch resource' });
+  }
+});
+
+// PUT /api/resources/:resourceId
+router.put('/resources/:resourceId', upload.single('file'), async (req, res) => {
+  try {
+    const { title, type, description, link, folder } = req.body;
+    const resourceId = req.params.resourceId;
+
+    const resource = await Resource.findById(resourceId);
+    if (!resource) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+    console.log("updated");
+    // Update fields
+    resource.title = title;
+    resource.type = type;
+    resource.description = description;
+    resource.folder = folder || "General";
+    
+    if (type === 'link') {
+      resource.link = link;
+      // Remove file if changing from file to link
+      if (resource.filePath) {
+        const absolutePath = path.join(__dirname, '..', resource.filePath);
+        if (fs.existsSync(absolutePath)) {
+          fs.unlinkSync(absolutePath);
+        }
+        resource.filePath = null;
+        resource.originalName = null;
+      }
+    } else if (req.file) {
+      // If new file uploaded
+      if (resource.filePath) {
+        // Remove old file
+        const oldPath = path.join(__dirname, '..', resource.filePath);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+      resource.filePath = path.relative(
+        path.join(__dirname, '..'),
+        req.file.path
+      ).replace(/\\/g, '/');
+      resource.originalName = req.file.originalname;
+      resource.link = undefined;
+    }
+
+    await resource.save();
+
+    res.status(200).json({
+      message: 'Resource updated successfully',
+      resource: {
+        id: resource._id,
+        title: resource.title,
+        type: resource.type,
+        folder: resource.folder,
+        filePath: resource.filePath,
+        downloadUrl: resource.type !== 'link' ? `/api/resources/file/${path.basename(resource.filePath)}` : null,
+        link: resource.link
+      }
+    });
+  } catch (error) {
+    console.error('Resource update error:', error);
+    res.status(500).json({ error: 'Failed to update resource' });
+  }
+});
 
 module.exports = router;
