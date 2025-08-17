@@ -174,6 +174,21 @@ export async function renderCourseDetails(contentArea, course) {
       });
     });
 
+    document.querySelectorAll('.folder-header').forEach(header => {
+  header.addEventListener('click', () => {
+    const content = header.nextElementSibling;
+    const icon = header.querySelector('.fas.fa-chevron-down');
+
+    if (content.style.display === 'none' || content.style.display === '') {
+      content.style.display = 'block';
+      icon.style.transform = 'rotate(0deg)';
+    } else {
+      content.style.display = 'none';
+      icon.style.transform = 'rotate(-90deg)';
+    }
+  });
+});
+
     // Render quizzes after assessments
     await renderQuizzes(course._id);
 
@@ -422,7 +437,7 @@ function renderResources(resources) {
           </div>
 
           <!-- Folder Content -->
-          <div class="folder-content" style="margin-top:1rem; display:block;">
+          <div class="folder-content" style="margin-top:1rem; display:none;">
             <div class="resource-grid" style="
               display:grid;
               grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -519,26 +534,16 @@ function renderResources(resources) {
       `).join('')}
     </div>
 
-    <script>
-      // Toggle folders open/close
-      document.querySelectorAll('.folder-header').forEach(header => {
-        header.addEventListener('click', () => {
-          const content = header.nextElementSibling;
-          const icon = header.querySelector('.fas.fa-chevron-down');
-          if (content.style.display === 'none') {
-            content.style.display = 'block';
-            icon.style.transform = 'rotate(0deg)';
-          } else {
-            content.style.display = 'none';
-            icon.style.transform = 'rotate(-90deg)';
-          }
-        });
-      });
-    </script>
+ 
   `;
 }
 
 
+
+
+   
+     
+    
 
 /**
  * Renders assessments list with submission status check
