@@ -6,6 +6,7 @@ const User = require('../models/User');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const path = require('path'); // Added for serving HTML files
+const Profile = require('../models/Profile');
 
 
 // Email transporter 
@@ -42,13 +43,18 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  console.log('Received login request:', req.body); // Log only
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+
+    // Ensure profile exists
+    let profile = await Profile.findOne({ email: user.email });
+    if (!profile) {
+      profile = await Profile.create({ email: user.email, bio: '' });
+    }
 
     const token = jwt.sign({ id: user._id, role: user.role }, 'mysecretkey', { expiresIn: '1h' });
 
@@ -61,6 +67,7 @@ router.post('/login', async (req, res) => {
         surname: user.surname,
         role: user.role,
         level: user.level,
+        bio: profile.bio,
       },
     });
   } catch (err) {
@@ -68,6 +75,7 @@ router.post('/login', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
 
 
 // Route: Get total registered users and their emails
