@@ -35,7 +35,7 @@ app.use('/api/quizzes', require('./routes/QuizSubmit'));
 app.use('/api/grades', require('./routes/Grades')); 
 app.use('/api', require('./routes/Analytics'));
 app.use('/api', require('./routes/Todos'));
-app.use('/api', require('./routes/Profile'));
+app.use('/api/Profile', require('./routes/Profile'));
 app.use('/api', require('./routes/User'));
 app.use('/api', require('./routes/Statistics'));
 app.use('/api/messages', require('./routes/Message'));

@@ -20,8 +20,9 @@ const GoalSchema = new mongoose.Schema({
   completed: { type: Boolean, default: false },
 });
 
-const ProfileSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true }, // Use email as unique ID
+const ProfileSchema = new mongoose.Schema({ 
+  email: { type: String, required: true, unique: true },
+  bio: { type: String, default: "" }, 
   achievements: [AchievementSchema],
   milestones: [MilestoneSchema],
   goals: [GoalSchema],
