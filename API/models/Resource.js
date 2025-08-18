@@ -27,6 +27,10 @@ const ResourceSchema = new mongoose.Schema({
     ref: "Course",
     required: true,
   },
+  folder: {
+    type: String,
+    default: "General", // you can set a default folder if none provided
+  },
 });
 
 module.exports = mongoose.model("Resource", ResourceSchema);
