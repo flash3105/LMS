@@ -204,7 +204,7 @@ export async function renderCourseDetails(contentArea, course) {
 
           const resourceItem = btn.closest('.resource-item');
           const title = resourceItem ? resourceItem.querySelector('h4').textContent : '';
-          trackAction(actionType, { resourceTitle: title, resourceUrl: btn.href, courseId: course._id });
+          
         });
       });
     }, 0);
@@ -214,10 +214,7 @@ export async function renderCourseDetails(contentArea, course) {
     window.addEventListener('beforeunload', () => {
       const endTime = new Date();
       const timeSpent = (endTime - startTime) / 1000;
-      trackAction('time_spent', {
-        courseId: course._id,
-        seconds: timeSpent
-      });
+  
     });
 
   } catch (error) {
@@ -739,10 +736,7 @@ async function renderQuizzes(courseId) {
     quizzesContainer.querySelectorAll('.start-quiz-btn').forEach(btn => {
       btn.addEventListener('click', function() {
         const quizId = btn.getAttribute('data-quiz-id');
-        trackAction('quiz_start', { 
-          courseId: courseId, 
-          quizId: quizId 
-        });
+  
         const formArea = document.getElementById(`quiz-form-area-${quizId}`);
         formArea.style.display = 'block';
         btn.style.display = 'none';
