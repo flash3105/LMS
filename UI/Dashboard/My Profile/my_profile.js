@@ -1,11 +1,17 @@
 import { userData } from '../Data/data.js';
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
-export function renderProfileTab(contentArea, currentUser) {
-  // Restore from localStorage if available
-  const savedUser = JSON.parse(localStorage.getItem('currentUser'));
-  if (savedUser && savedUser.email === currentUser.email) {
-    currentUser = savedUser;
+export async function renderProfileTab(contentArea, currentUser) {
+  // Fetch latest profile from backend to get bio
+  try {
+    const res = await fetch(`${API_BASE_URL}/Profile/${currentUser.email}`);
+    if (!res.ok) throw new Error('Failed to fetch profile');
+    const profile = await res.json();
+    currentUser.bio = profile.bio || '';
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+  } catch (err) {
+    console.error('Error fetching profile:', err);
+    currentUser.bio = currentUser.bio || '';
   }
 
   // Safely access userProgress
