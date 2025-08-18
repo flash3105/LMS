@@ -136,6 +136,28 @@ router.get('/course/:courseId', async (req, res) => {
   }
 });
 
+// GET /api/submissions/course/:courseId/:email
+router.get('/course/:courseId/:email', async (req, res) => {
+  try {
+    const { courseId, email } = req.params;
+
+    // Find submissions that match both courseId and email
+    const submissions = await AssessmentSubmission.find({ courseId, email });
+
+    // Add download URLs to each submission
+    const submissionsWithUrls = submissions.map(sub => ({
+      ...sub.toObject(),
+      downloadUrl: `/api/submissions/file/${sub.fileName}`
+    }));
+
+    console.log(`Fetched ${submissions.length} submissions for course ${courseId} and student ${email}`);
+    res.status(200).json(submissionsWithUrls);
+  } catch (err) {
+    console.error('Error fetching submissions for course and student:', err);
+    res.status(500).json({ error: 'Failed to fetch submissions' });
+  }
+});
+
 // PUT /api/submissions/:submissionId/grade
 router.put('/submissions/:submissionId/grade', async (req, res) => {
   try {
