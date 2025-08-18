@@ -125,13 +125,31 @@ export async function renderSetAssessment(container) {
       <!-- Grades Table -->
       <div id="courseGradesTable"></div>
     </div>
+
+    <!-- Edit Quiz Modal -->
+    <div id="editQuizModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Edit Quiz</h2>
+        <form id="editQuizForm">
+          <div class="form-group">
+            <label for="editQuizTitle">Quiz Title*</label>
+            <input type="text" id="editQuizTitle" required />
+          </div>
+          <div class="form-group">
+            <label for="editQuizDueDate">Due Date*</label>
+            <input type="date" id="editQuizDueDate" required />
+          </div>
+          <div id="editQuizQuestionsArea"></div>
+          <button type="button" id="addEditQuizQuestion" class="primary-button">Add Question</button>
+          <button type="submit" class="primary-button">Save Changes</button>
+          <div id="editQuizMessage"></div>
+        </form>
+      </div>
+    </div>
   `;
 
-
-
-
-
-  // Form submission handler remains the same
+  // Form submission handler for assessments
   const form = container.querySelector('#setAssessmentForm');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -176,191 +194,53 @@ export async function renderSetAssessment(container) {
     msgDiv.className = type === 'success' ? 'success-message' : 'error-message';
   }
 
-  // Render assessments table function remains the same
- async function renderAssessmentsTable(courseId) {
-  const tableDiv = container.querySelector('#currentAssessments');
-  if (!courseId) {
-    tableDiv.innerHTML = '<div class="empty-message">Select a course to view assessments</div>';
-    return;
-  }
-  tableDiv.innerHTML = '<p>Loading assessments...</p>';
-  try {
-    const res = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
-    const assessments = await res.json();
-    if (!Array.isArray(assessments) || assessments.length === 0) {
-      tableDiv.innerHTML = '<div class="empty-message">No assessments for this course.</div>';
+  // Render assessments table function
+  async function renderAssessmentsTable(courseId) {
+    const tableDiv = container.querySelector('#currentAssessments');
+    if (!courseId) {
+      tableDiv.innerHTML = '<div class="empty-message">Select a course to view assessments</div>';
       return;
     }
-    tableDiv.innerHTML = `
-      <div class="table-responsive">
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Due Date</th>
-              <th>Description</th>
-              <th>Document</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${assessments.map(a => `
-              <tr>
-                <td>${a.title}</td>
-                <td>${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : ''}</td>
-                <td>${a.description || ''}</td>
-                <td>
-                  ${a.filePath ? `<a href="${API_BASE_URL.replace('/api', '')}/${a.filePath.replace(/\\/g, '/')}" target="_blank">View</a>` : '—'}
-                  <button class="btn btn-sm btn-outline-primary ms-2 edit-btn" data-id="${a._id}">Edit</button>
-                  <button class="btn btn-sm btn-outline-danger ms-1 delete-btn" data-id="${a._id}">Delete</button>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-
-    // Attach event listeners after DOM update and successful fetch
-    tableDiv.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const assessmentId = btn.getAttribute('data-id');
-        const assessment = assessments.find(a => a._id === assessmentId);
-        if (assessment) {
-          showEditModal(assessment, courseId);
-        }
-      });
-    });
-
-    tableDiv.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const assessmentId = btn.getAttribute('data-id');
-        const confirmed = confirm('Are you sure you want to delete this assessment?');
-        if (confirmed) {
-          try {
-            const res = await fetch(`${API_BASE_URL}/assessments/${assessmentId}`, { method: 'DELETE' });
-            if (res.ok) {
-              alert('Assessment deleted.');
-              renderAssessmentsTable(courseId); // Refresh
-            } else {
-              alert('Failed to delete assessment.');
-            }
-          } catch (err) {
-            alert('Error deleting assessment.');
-            console.error(err);
-          }
-        }
-      });
-    });
-
-  } catch (err) {
-    tableDiv.innerHTML = '<div class="error-message">Failed to load assessments.</div>';
-  }
-}
-
-
-function showEditModal(assessment, courseId) {
-  let modal = document.getElementById('editAssessmentModal');
-
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'editAssessmentModal';
-    modal.className = 'modal fade';
-    modal.tabIndex = -1;
-    modal.innerHTML = `
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <form id="editAssessmentForm" enctype="multipart/form-data">
-            <div class="modal-header">
-              <h5 class="modal-title">Edit Assessment</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body">
-              <div class="mb-3">
-                <label for="editTitle" class="form-label">Title</label>
-                <input type="text" id="editTitle" class="form-control" required />
-              </div>
-
-              <div class="mb-3">
-                <label for="editDueDate" class="form-label">Due Date</label>
-                <input type="date" id="editDueDate" class="form-control" required />
-              </div>
-
-              <div class="mb-3">
-                <label for="editDescription" class="form-label">Description</label>
-                <textarea id="editDescription" class="form-control" rows="3"></textarea>
-              </div>
-
-              <div class="mb-3">
-                <label for="editFile" class="form-label">Replace Document (optional)</label>
-                <input type="file" id="editFile" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar" />
-              </div>
-            </div>
-
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-primary">Save Changes</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-
-    // Bootstrap modal instance (requires Bootstrap 5)
-    const bsModal = new bootstrap.Modal(modal);
-
-    // Form submission logic
-    modal.querySelector('#editAssessmentForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const title = modal.querySelector('#editTitle').value.trim();
-      const dueDate = modal.querySelector('#editDueDate').value;
-      const description = modal.querySelector('#editDescription').value.trim();
-      const fileInput = modal.querySelector('#editFile');
-      const file = fileInput.files[0];
-
-      if (!title || !dueDate) {
-        alert('Title and Due Date are required');
+    tableDiv.innerHTML = '<p>Loading assessments...</p>';
+    try {
+      const res = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
+      const assessments = await res.json();
+      if (!Array.isArray(assessments) || assessments.length === 0) {
+        tableDiv.innerHTML = '<div class="empty-message">No assessments for this course.</div>';
         return;
       }
-
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('dueDate', dueDate);
-      formData.append('description', description);
-      if (file) formData.append('file', file);
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/assessments/${assessment._id}`, {
-          method: 'PUT',
-          body: formData
-        });
-
-        if (!res.ok) throw new Error('Failed to update assessment');
-
-        alert('Assessment updated successfully');
-        bsModal.hide();
-        renderAssessmentsTable(courseId);
-      } catch (err) {
-        alert('Error updating assessment: ' + err.message);
-      }
-    });
-
-    // Store modal instance for reuse
-    modal._bsModal = bsModal;
+      tableDiv.innerHTML = `
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Due Date</th>
+                <th>Description</th>
+                <th>Document</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${assessments.map(a => `
+                <tr>
+                  <td>${a.title}</td>
+                  <td>${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : ''}</td>
+                  <td>${a.description || ''}</td>
+                  <td>
+                    ${a.filePath ? `<a href="${API_BASE_URL.replace('/api', '')}/${a.filePath.replace(/\\/g, '/')}" target="_blank">View</a>` : '—'}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } catch (err) {
+      tableDiv.innerHTML = '<div class="error-message">Failed to load assessments.</div>';
+    }
   }
 
-  // Populate fields with assessment data
-  modal.querySelector('#editTitle').value = assessment.title || '';
-  modal.querySelector('#editDueDate').value = assessment.dueDate ? new Date(assessment.dueDate).toISOString().slice(0, 10) : '';
-  modal.querySelector('#editDescription').value = assessment.description || '';
-  modal.querySelector('#editFile').value = ''; // reset file input
-
-  modal._bsModal.show();
-}
-
-
-const submissionCourseSelect = container.querySelector('#submissionCourse');
+  const submissionCourseSelect = container.querySelector('#submissionCourse');
   submissionCourseSelect.addEventListener('change', async () => {
     const courseId = submissionCourseSelect.value;
     if (!courseId) {
@@ -370,146 +250,136 @@ const submissionCourseSelect = container.querySelector('#submissionCourse');
     await renderSubmissions(courseId);
   });
 
-    async function renderSubmissions(courseId) {
-  const submissionsContent = container.querySelector('#submissionsContent');
-  submissionsContent.innerHTML = '<p>Loading submissions...</p>';
+  async function renderSubmissions(courseId) {
+    const submissionsContent = container.querySelector('#submissionsContent');
+    submissionsContent.innerHTML = '<p>Loading submissions...</p>';
 
-  try {
-    // Fetch assessments and submissions for this course
-    const [assessments, submissions] = await Promise.all([
-      fetch(`${API_BASE_URL}/courses/${courseId}/assessments`).then(r => r.json()),
-      fetch(`${API_BASE_URL}/course/${courseId}`).then(r => r.json())
-    ]);
-    
-    console.log('submissions', submissions);
-
-    if ((!assessments || assessments.length === 0)) {
-      submissionsContent.innerHTML = '<div class="empty-message">No assessments for this course.</div>';
-      return;
-    }
-
-    // Mark assessments with type
-    const allItems = [
-      ...assessments.map(a => ({ ...a, type: 'assessment' }))
-    ];
-
-    // Group submissions by assessmentId
-    const groupedSubmissions = {};
-    submissions.forEach(sub => {
-      if (!groupedSubmissions[sub.assessmentId]) {
-        groupedSubmissions[sub.assessmentId] = [];
+    try {
+      const [assessments, submissions] = await Promise.all([
+        fetch(`${API_BASE_URL}/courses/${courseId}/assessments`).then(r => r.json()),
+        fetch(`${API_BASE_URL}/course/${courseId}`).then(r => r.json())
+      ]);
+      
+      if ((!assessments || assessments.length === 0)) {
+        submissionsContent.innerHTML = '<div class="empty-message">No assessments for this course.</div>';
+        return;
       }
-      groupedSubmissions[sub.assessmentId].push(sub);
-    });
 
-    submissionsContent.innerHTML = `
-      <div class="submissions-container">
-        ${allItems.map(item => {
-          const itemSubmissions = groupedSubmissions[item._id] || [];
-          return `
-            <div class="submission-item">
-              <h3>${item.title} (${item.type === 'assessment' ? 'Assignment' : 'Quiz'})</h3>
-              ${itemSubmissions.length > 0 ? `
-                <table class="submissions-table">
-                  <thead>
-                    <tr>
-                      <th>Student</th>
-                      <th>Submitted At</th>
-                      <th>File</th>
-                      <th>Grade</th>
-                      <th>Feedback</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${itemSubmissions.map(sub => `
-                      <tr>
-                        <td>${sub.email}</td>
-                        <td>${new Date(sub.submittedAt).toLocaleString()}</td>
-                        <td>
-                          ${sub.filePath ? `
-                            <a href="${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}" 
-                               download="${sub.email}_${item.title.replace(/[^a-z0-9]/gi, '_')}.${sub.filePath.split('.').pop()}" 
-                               class="download-link">
-                              Download
-                            </a>
-                          ` : 'No file'}
-                        </td>
-                        <td>
-                          <input type="text" 
-                                 class="grade-input" 
-                                 data-submission-id="${sub._id}"
-                                 value="${sub.grade || ''}" 
-                                 placeholder="Enter grade" 
-                                 style="width:60px;">
-                        </td>
-                        <td>
-                          <textarea class="feedback-input" 
-                                    data-submission-id="${sub._id}" 
-                                    placeholder="Enter feedback"
-                                    rows="2"
-                                    style="width:150px;">${sub.feedback || ''}</textarea>
-                        </td>
-                        <td>
-                          <button class="save-grade-btn" data-submission-id="${sub._id}">Save</button>
-                        </td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              ` : `
-                <div class="empty-message">No submissions for this ${item.type === 'assessment' ? 'assignment' : 'quiz'}</div>
-              `}
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+      const allItems = [
+        ...assessments.map(a => ({ ...a, type: 'assessment' }))
+      ];
 
-    // Add event listeners for save buttons
-    submissionsContent.querySelectorAll('.save-grade-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const submissionId = btn.getAttribute('data-submission-id');
-        const gradeInput = submissionsContent.querySelector(`.grade-input[data-submission-id="${submissionId}"]`);
-        const feedbackInput = submissionsContent.querySelector(`.feedback-input[data-submission-id="${submissionId}"]`);
-        const grade = gradeInput.value.trim();
-        const feedback = feedbackInput.value.trim();
-
-        if (!grade) {
-          alert('Please enter a grade');
-          return;
+      const groupedSubmissions = {};
+      submissions.forEach(sub => {
+        if (!groupedSubmissions[sub.assessmentId]) {
+          groupedSubmissions[sub.assessmentId] = [];
         }
+        groupedSubmissions[sub.assessmentId].push(sub);
+      });
 
-        try {
-          const response = await fetch(`${API_BASE_URL}/submissions/${submissionId}/grade`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ grade, feedback })
-          });
+      submissionsContent.innerHTML = `
+        <div class="submissions-container">
+          ${allItems.map(item => {
+            const itemSubmissions = groupedSubmissions[item._id] || [];
+            return `
+              <div class="submission-item">
+                <h3>${item.title} (${item.type === 'assessment' ? 'Assignment' : 'Quiz'})</h3>
+                ${itemSubmissions.length > 0 ? `
+                  <table class="submissions-table">
+                    <thead>
+                      <tr>
+                        <th>Student</th>
+                        <th>Submitted At</th>
+                        <th>File</th>
+                        <th>Grade</th>
+                        <th>Feedback</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${itemSubmissions.map(sub => `
+                        <tr>
+                          <td>${sub.email}</td>
+                          <td>${new Date(sub.submittedAt).toLocaleString()}</td>
+                          <td>
+                            ${sub.filePath ? `
+                              <a href="${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}" 
+                                 download="${sub.email}_${item.title.replace(/[^a-z0-9]/gi, '_')}.${sub.filePath.split('.').pop()}" 
+                                 class="download-link">
+                                Download
+                              </a>
+                            ` : 'No file'}
+                          </td>
+                          <td>
+                            <input type="text" 
+                                   class="grade-input" 
+                                   data-submission-id="${sub._id}"
+                                   value="${sub.grade || ''}" 
+                                   placeholder="Enter grade" 
+                                   style="width:60px;">
+                          </td>
+                          <td>
+                            <textarea class="feedback-input" 
+                                      data-submission-id="${sub._id}" 
+                                      placeholder="Enter feedback"
+                                      rows="2"
+                                      style="width:150px;">${sub.feedback || ''}</textarea>
+                          </td>
+                          <td>
+                            <button class="save-grade-btn" data-submission-id="${sub._id}">Save</button>
+                          </td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                ` : `
+                  <div class="empty-message">No submissions for this ${item.type === 'assessment' ? 'assignment' : 'quiz'}</div>
+                `}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
 
-          if (!response.ok) {
-            throw new Error('Failed to save grade and feedback');
+      submissionsContent.querySelectorAll('.save-grade-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const submissionId = btn.getAttribute('data-submission-id');
+          const gradeInput = submissionsContent.querySelector(`.grade-input[data-submission-id="${submissionId}"]`);
+          const feedbackInput = submissionsContent.querySelector(`.feedback-input[data-submission-id="${submissionId}"]`);
+          const grade = gradeInput.value.trim();
+          const feedback = feedbackInput.value.trim();
+
+          if (!grade) {
+            alert('Please enter a grade');
+            return;
           }
 
-          alert('Grade and feedback saved successfully!');
-        } catch (error) {
-          console.error('Error saving grade and feedback:', error);
-          alert('Error saving grade and feedback: ' + error.message);
-        }
+          try {
+            const response = await fetch(`${API_BASE_URL}/submissions/${submissionId}/grade`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ grade, feedback })
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to save grade and feedback');
+            }
+
+            alert('Grade and feedback saved successfully!');
+          } catch (error) {
+            console.error('Error saving grade and feedback:', error);
+            alert('Error saving grade and feedback: ' + error.message);
+          }
+        });
       });
-    });
 
-  } catch (error) {
-    console.error('Error loading submissions:', error);
-    submissionsContent.innerHTML = '<div class="error-message">Failed to load submissions. Please try again.</div>';
+    } catch (error) {
+      console.error('Error loading submissions:', error);
+      submissionsContent.innerHTML = '<div class="error-message">Failed to load submissions. Please try again.</div>';
+    }
   }
-}
-
-  
-
-
 
   // --- QUIZ UI LOGIC ---
   const quizQuestionsArea = container.querySelector('#quizQuestionsArea');
@@ -568,7 +438,6 @@ const submissionCourseSelect = container.querySelector('#submissionCourse');
     const title = container.querySelector('#quizTitle').value.trim();
     const dueDate = container.querySelector('#quizDueDate').value;
 
-    // Validate questions and due date
     if (!courseId || !title || !dueDate || quizQuestions.length === 0 || quizQuestions.some(q => !q.question || q.options.some(opt => !opt) || !q.correctAnswer)) {
       showQuizMessage('Please fill in all quiz fields, add at least one question, and set a due date.', 'error');
       return;
@@ -637,6 +506,7 @@ const submissionCourseSelect = container.querySelector('#submissionCourse');
                   <td>${q.createdAt ? new Date(q.createdAt).toLocaleDateString() : ''}</td>
                   <td>
                     <button type="button" class="view-quiz-questions-btn" data-idx="${idx}">View Questions</button>
+                    <button type="button" class="edit-quiz-btn" data-quiz-id="${q._id}" data-course-id="${courseId}" style="margin-left:5px;">Edit</button>
                   </td>
                 </tr>
                 <tr class="quiz-questions-row" id="quiz-questions-row-${idx}" style="display:none;">
@@ -678,10 +548,168 @@ const submissionCourseSelect = container.querySelector('#submissionCourse');
           }
         });
       });
+
+      // Add event listeners for "Edit" buttons
+      tableDiv.querySelectorAll('.edit-quiz-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const quizId = btn.getAttribute('data-quiz-id');
+          const courseId = btn.getAttribute('data-course-id');
+          await openEditQuizModal(quizId, courseId);
+        });
+      });
     } catch (err) {
       tableDiv.innerHTML = '<div class="error-message">Failed to load quizzes.</div>';
     }
   }
+
+  // Edit Quiz Modal Functions
+  let currentEditQuizId = null;
+  let editQuizQuestions = [];
+
+  // Function to open the edit modal with quiz data
+  async function openEditQuizModal(quizId, courseId) {
+    try {
+      if (!courseId) {
+        throw new Error('Please select a course first');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes/${quizId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch quiz data');
+      }
+      
+      const quiz = await response.json();
+      currentEditQuizId = quizId;
+      document.getElementById('editQuizTitle').value = quiz.title;
+      document.getElementById('editQuizDueDate').value = quiz.dueDate.split('T')[0];
+      editQuizQuestions = [...quiz.questions];
+      renderEditQuizQuestions();
+      document.getElementById('editQuizModal').style.display = 'block';
+      
+    } catch (error) {
+      console.error('Error fetching quiz for editing:', error);
+      alert('Error fetching quiz for editing: ' + error.message);
+    }
+  }
+
+  // Function to render questions in the edit modal
+  function renderEditQuizQuestions() {
+    const editArea = document.getElementById('editQuizQuestionsArea');
+    editArea.innerHTML = editQuizQuestions.map((q, idx) => `
+      <div class="quiz-question-block" style="border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px;">
+        <label>Question ${idx + 1}</label>
+        <input type="text" class="edit-quiz-question" data-idx="${idx}" value="${q.question || ''}" placeholder="Enter question" required style="width:100%;margin-bottom:6px;">
+        <div>
+          ${[0,1,2,3].map(optIdx => `
+            <input type="text" class="edit-quiz-option" data-idx="${idx}" data-opt="${optIdx}" value="${q.options[optIdx] || ''}" placeholder="Option ${String.fromCharCode(65+optIdx)}" required style="width:48%;margin-bottom:4px;">
+          `).join('')}
+        </div>
+        <label>Correct Answer</label>
+        <select class="edit-quiz-correct" data-idx="${idx}" required>
+          <option value="">Select</option>
+          ${['A','B','C','D'].map((l, i) => `<option value="${l}" ${q.correctAnswer === l ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+        <button type="button" class="remove-edit-quiz-question" data-idx="${idx}" style="margin-left:10px;color:#e53e3e;background:none;border:none;cursor:pointer;">Remove</button>
+      </div>
+    `).join('');
+  }
+
+  // Event listeners for edit modal
+  document.getElementById('addEditQuizQuestion').addEventListener('click', () => {
+    editQuizQuestions.push({ question: '', options: ['', '', '', ''], correctAnswer: '' });
+    renderEditQuizQuestions();
+  });
+
+  document.getElementById('editQuizQuestionsArea').addEventListener('input', (e) => {
+    const idx = +e.target.getAttribute('data-idx');
+    if (e.target.classList.contains('edit-quiz-question')) {
+      editQuizQuestions[idx].question = e.target.value;
+    } else if (e.target.classList.contains('edit-quiz-option')) {
+      const opt = +e.target.getAttribute('data-opt');
+      editQuizQuestions[idx].options[opt] = e.target.value;
+    } else if (e.target.classList.contains('edit-quiz-correct')) {
+      editQuizQuestions[idx].correctAnswer = e.target.value;
+    }
+  });
+
+  document.getElementById('editQuizQuestionsArea').addEventListener('click', (e) => {
+    if (e.target.classList.contains('remove-edit-quiz-question')) {
+      const idx = +e.target.getAttribute('data-idx');
+      editQuizQuestions.splice(idx, 1);
+      renderEditQuizQuestions();
+    }
+  });
+
+  // Form submission for edit modal
+  document.getElementById('editQuizForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const quizId = currentEditQuizId;
+    const courseId = document.querySelector(`.edit-quiz-btn[data-quiz-id="${quizId}"]`)?.getAttribute('data-course-id');
+    
+    if (!courseId) {
+      showEditQuizMessage('Cannot determine course for this quiz', 'error');
+      return;
+    }
+
+    const title = document.getElementById('editQuizTitle').value.trim();
+    const dueDate = document.getElementById('editQuizDueDate').value;
+
+    if (!title || !dueDate || editQuizQuestions.length === 0 || 
+        editQuizQuestions.some(q => !q.question || q.options.some(opt => !opt) || !q.correctAnswer)) {
+      showEditQuizMessage('Please fill in all quiz fields and ensure all questions are complete.', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes/${quizId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          dueDate,
+          questions: editQuizQuestions
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update quiz');
+      }
+
+      showEditQuizMessage('Quiz updated successfully!', 'success');
+      
+      // Close modal after a short delay
+      setTimeout(() => {
+        document.getElementById('editQuizModal').style.display = 'none';
+        // Refresh the quizzes table
+        if (courseId) renderQuizzesTable(courseId);
+      }, 1000);
+    } catch (error) {
+      console.error('Error updating quiz:', error);
+      showEditQuizMessage('Error updating quiz: ' + error.message, 'error');
+    }
+  });
+
+  // Helper function for edit modal messages
+  function showEditQuizMessage(msg, type) {
+    const msgDiv = document.getElementById('editQuizMessage');
+    msgDiv.textContent = msg;
+    msgDiv.className = type === 'success' ? 'success-message' : 'error-message';
+  }
+
+  // Close modal when clicking X
+  document.querySelector('.close-modal').addEventListener('click', () => {
+    document.getElementById('editQuizModal').style.display = 'none';
+  });
+
+  // Close modal when clicking outside
+  window.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('editQuizModal')) {
+      document.getElementById('editQuizModal').style.display = 'none';
+    }
+  });
 
   // Course select change handler for assessments and quizzes
   const courseSelect = container.querySelector('#assessmentCourse');
@@ -690,24 +718,23 @@ const submissionCourseSelect = container.querySelector('#submissionCourse');
     renderAssessmentsTable(courseId);
     renderQuizzesTable(courseId);
 
-    // Fetch grades, assessments, and quizzes for the course
     try {
-      const [subResults,grades, assessmentsRes, quizzesRes] = await Promise.all([
+      const [subResults, grades, assessmentsRes, quizzesRes] = await Promise.all([
         fetch(`${API_BASE_URL}/course/${courseId}`).then(r => r.json()),
         fetchGradesForCourse(courseId),
         fetch(`${API_BASE_URL}/courses/${courseId}/assessments`).then(r => r.json()),
         fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`).then(r => r.json())
       ]);
-      // Render the grades table
+      
       let gradesTableDiv = container.querySelector('#courseGradesTable');
       if (!gradesTableDiv) {
         gradesTableDiv = document.createElement('div');
         gradesTableDiv.id = 'courseGradesTable';
         container.appendChild(gradesTableDiv);
       }
-      gradesTableDiv.innerHTML = `<h2>All Student Grades</h2>${renderCourseGradesTable(subResults,grades, assessmentsRes, quizzesRes)}`;
+      gradesTableDiv.innerHTML = `<h2>All Student Grades</h2>${renderCourseGradesTable(subResults, grades, assessmentsRes, quizzesRes)}`;
     } catch (err) {
-      // Optionally show error
+      console.error('Error loading grades:', err);
     }
   });
 
@@ -725,60 +752,56 @@ const submissionCourseSelect = container.querySelector('#submissionCourse');
     if (!res.ok) throw new Error('Failed to fetch grades');
     return await res.json();
   }
-async function fetchAssessmentsGrades(email){
-  const res = await fetch (`${API_BASE_URL}/graded/${email}/all`);
-  if(!res.ok) throw new Error('Failed to fetch grades');
-  return await res.json();
-}
-function renderCourseGradesTable(subResults, grades, assessments, quizzes) {
-  const items = [
-    ...assessments.map(a => ({ id: a._id, title: a.title, type: 'Assignment' })),
-    ...quizzes.map(q => ({ id: q._id, title: q.title, type: 'Quiz' }))
-  ];
 
-  const subEmails = subResults.map(s => s.email);
-  const gradeEmails = grades.map(g => g.email);
-  const studentEmails = [...new Set([...subEmails, ...gradeEmails])];
+  function renderCourseGradesTable(subResults, grades, assessments, quizzes) {
+    const items = [
+      ...assessments.map(a => ({ id: a._id, title: a.title, type: 'Assignment' })),
+      ...quizzes.map(q => ({ id: q._id, title: q.title, type: 'Quiz' }))
+    ];
 
-  return `
-    <div class="table-responsive">
-      <table class="table table-bordered">
-        <thead>
-          <tr>
-            <th>Student Email</th>
-            ${items.map(item => `<th>${item.title} (${item.type})</th>`).join('')}
-          </tr>
-        </thead>
-        <tbody>
-          ${studentEmails.map(email => {
-            let hasLowGrade = false;
+    const subEmails = subResults.map(s => s.email);
+    const gradeEmails = grades.map(g => g.email);
+    const studentEmails = [...new Set([...subEmails, ...gradeEmails])];
 
-            const gradeCells = items.map(item => {
-              let grade = null;
+    return `
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Student Email</th>
+              ${items.map(item => `<th>${item.title} (${item.type})</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${studentEmails.map(email => {
+              let hasLowGrade = false;
 
-              if (item.type === 'Assignment') {
-                const submission = subResults.find(sub => sub.email === email && sub.assessmentId === item.id);
-                grade = submission && submission.grade != null ? Number(submission.grade) : null;
-              } else {
-                const gradeObj = grades.find(g => g.email === email && g.refId === item.id && g.type.toLowerCase() === 'quiz');
-                grade = gradeObj && gradeObj.grade != null ? Number(gradeObj.grade) : null;
-              }
+              const gradeCells = items.map(item => {
+                let grade = null;
 
-              if (grade != null && grade < 50) hasLowGrade = true;
+                if (item.type === 'Assignment') {
+                  const submission = subResults.find(sub => sub.email === email && sub.assessmentId === item.id);
+                  grade = submission && submission.grade != null ? Number(submission.grade) : null;
+                } else {
+                  const gradeObj = grades.find(g => g.email === email && g.refId === item.id && g.type.toLowerCase() === 'quiz');
+                  grade = gradeObj && gradeObj.grade != null ? Number(gradeObj.grade) : null;
+                }
 
-              return `<td>${grade != null ? grade : '—'}</td>`;
-            }).join('');
+                if (grade != null && grade < 50) hasLowGrade = true;
 
-            return `
-              <tr style="${hasLowGrade ? 'background-color: #f8d7da;' : ''}">
-                <td>${email}</td>
-                ${gradeCells}
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
+                return `<td>${grade != null ? grade : '—'}</td>`;
+              }).join('');
+
+              return `
+                <tr style="${hasLowGrade ? 'background-color: #f8d7da;' : ''}">
+                  <td>${email}</td>
+                  ${gradeCells}
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
 }
