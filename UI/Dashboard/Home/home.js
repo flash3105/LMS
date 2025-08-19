@@ -1,3 +1,4 @@
+import { renderCourseDetails } from '../Courses/Courses.js';
 import { fetchCourses, fetchUserData, fetchMessages, courses, userData, messages } from '../Data/data.js';
 document.addEventListener('DOMContentLoaded', async () => {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -31,109 +32,377 @@ export function renderHomeTab(contentArea, currentUser) {
 
   // Render the content
   contentArea.innerHTML = `
-    <div class="welcome">
-          <h2 class="fw-bold">Hello ${currentUser.name}!  Set your plan for the day. </h2>
-      <p class="text-muted">Track your learning, manage your tasks, and stay up to date.</p>
-    </div>
-    <br>
-
+    <style>
+      .home-container {
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+      }
       
-    <div class="todo-section">
-    <div class="todo-header">
-      <h3>To-Do</h3>
-      <button class="add-task-btn">
-        <i class="fas fa-plus"></i> Add Task
-      </button>
-    </div>
+      .welcome {
+        margin-bottom: 2.5rem;
+        text-align: center;
+      }
+      
+      .welcome h2 {
+       color:rgb(26, 115, 150);
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+      }
+      
+      .welcome p {
+        color:rgb(39, 106, 177);
+        font-size: 1.1rem;
+      }
+      
+      .section-title {
+        color: white;
+        font-size: 1.5rem;
+        margin: 2rem 0 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      .card-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin-bottom: 3rem;
+      }
+      
+      @media (max-width: 768px) {
+        .card-container {
+          grid-template-columns: 1fr;
+        }
+        
+        .course-actions {
+          flex-direction: column;
+        }
+      }
+      
+      .course-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        border: none;
+      }
+      
+      .course-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+      }
+      
+      .course-card-content {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .course-card h5 {
+        background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.2rem;
+        margin: 0;
+      }
+      
+      .course-card p {
+        color: #4a5568;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 0.75rem;
+      }
+      
+      .course-card p strong {
+        color: #2d3748;
+      }
+      
+      .course-description {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        max-height: 4.5em;
+        line-height: 1.5em;
+        margin-bottom: 1rem;
+      }
+      
+      .course-description:after {
+        content: "";
+        text-align: right;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 30%;
+        height: 1.5em;
+        background: linear-gradient(to right, rgba(255, 255, 255, 0), white 50%);
+      }
+      
+      .progress-container {
+        margin: 1rem 0;
+      }
+      
+      .progress-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #4a5568;
+      }
+      
+      .progress-bar {
+        height: 8px;
+        background-color: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      
+      .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3182ce 60%, #63b3ed 100%);
+        border-radius: 4px;
+        transition: width 0.5s ease;
+      }
+      
+      .course-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid #edf2f7;
+        align-items: stretch; /* Ensure buttons stretch to same height */
+      }
+      
+      .continue-btn, .view-btn {
+        flex: 1;
+        padding: 0.75rem 0.5rem; /* Increased vertical padding */
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px; /* Set a minimum height */
+        box-sizing: border-box; /* Include padding in height calculation */
+        border: none;
+      }
+      
+      .continue-btn {
+        background: rgb(54, 126, 186);
+        color: white;
+      }
+      
+      .continue-btn:hover {
+        background: rgb(21, 81, 133);
+      }
+      
+      .view-btn {
+        background: white;
+        color: rgb(54, 126, 186);
+        border: 1px solid rgb(54, 126, 186) !important;
+      }
+      
+      .view-btn:hover {
+        background: #f7fafc;
+      }
+      
+      .empty-state {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        text-align: center;
+        color: #718096;
+        grid-column: 1 / -1;
+      }
+      
+      .statistics {
+        margin: 2rem 0;
+      
+      }
+      
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-top: 1rem;
+      }
+      
+      .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        text-align: center;
+      }
+      
+      .stat-card h4 {
+        color: #4a5568;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .stat-card p {
+        color:rgb(72, 53, 45);
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+      
+      .todo-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+      }
+      
+      .todo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      
+      .todo-header h3 {
+        color: #2d3748;
+      }
+      
+      .add-task-btn {
+        background: rgb(54, 126, 186);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .add-task-btn:hover {
+        background: rgb(21, 81, 133);
+      }
+      
+      .recent-messages {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-top: 2rem;
+      }
+      
+      .message-preview {
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1rem 0;
+      }
+      
+      .message-preview:last-child {
+        border-bottom: none;
+      }
+      
+      .message-preview h5 {
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+      }
+      
+      .message-preview p {
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+      }
+      
+      .message-preview small {
+        color: #718096;
+      }
+    </style>
     
-    <div class="todo-form" style="display:none;">
-      <input type="text" class="task-input" placeholder="Task name">
+    <div class="home-container">
+      <div class="welcome">
+        <h2>Hello ${currentUser.name}! Set your plan for the day.</h2>
+        <p>Track your learning, manage your tasks, and stay up to date.</p>
+      </div>
       
-      <div class="form-row">
-        <div class="form-group">
-          <label>Assignee</label>
-          <select class="assignee-select">
-            <option value="${currentUser.name}">Me (${currentUser.name})</option>
-            <option value="Team">Team</option>
-            <option value="Unassigned">Unassigned</option>
-          </select>
+      <div class="todo-section">
+        <div class="todo-header">
+          <h3>Todo</h3>
+          <button class="add-task-btn">
+            <i class="fas fa-plus"></i> Add Task
+          </button>
         </div>
         
-        <div class="form-group">
-          <label>Due Date</label>
-          <input type="date" class="due-date-input">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label>Priority</label>
-          <select class="priority-select">
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
+        <div class="todo-form" style="display:none;">
+          <input type="text" class="task-input" placeholder="Task name">
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Assignee</label>
+              <select class="assignee-select">
+                <option value="${currentUser.name}">Me (${currentUser.name})</option>
+                <option value="Team">Team</option>
+                <option value="Unassigned">Unassigned</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Due Date</label>
+              <input type="date" class="due-date-input">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Priority</label>
+              <select class="priority-select">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Status</label>
+              <select class="status-select">
+                <option value="on-track">On track</option>
+                <option value="at-risk">At risk</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="course-selection">
+            <label>Course</label>
+            <select class="course-select">
+              <option value="">None</option>
+              ${enrolledCoursesFromAPI.map(course => 
+                `<option value="${course.title || course.courseName}">${course.title || course.courseName}</option>`
+              ).join('')}
+            </select>
+          </div>
+          
+          <button class="submit-task-btn">Set</button>
         </div>
         
-        <div class="form-group">
-          <label>Status</label>
-          <select class="status-select">
-            <option value="on-track">On track</option>
-            <option value="at-risk">At risk</option>
-            <option value="done">Done</option>
-          </select>
+        <div class="task-list">
+          <!-- Tasks will appear here dynamically -->
         </div>
       </div>
       
-      <div class="course-selection">
-        <label>Course</label>
-        <select class="course-select">
-          <option value="">None</option>
-          ${enrolledCoursesFromAPI.map(course => 
-            `<option value="${course.title || course.courseName}">${course.title || course.courseName}</option>`
-          ).join('')}
-        </select>
-      </div>
+      <div class="section-title">Enrolled Courses</div>
+      <div class="card-container" id="enrolledCoursesContainer"></div>
       
-      <button class="submit-task-btn">Set</button>
-    </div>
-    
-    <div class="task-list">
-      <!-- Tasks will appear here dynamically -->
-    </div>
-  </div>
-          ${
-            enrolledCourses.length > 0
-              ? enrolledCourses
-                  .map(
-                    course => `
-              <div class="card" onclick="goToCourse('${course.title}')">
-                <h3>${course.title}</h3>
-                <div class="progress-bar">
-                  <div class="progress-bar-fill" style="width: ${
-                    userProgress.courseProgress[course.title] || 0
-                  }%"></div>
-                </div>
-                <div class="info">${
-                  userProgress.courseProgress[course.title] || 0
-                }% Complete • ${Math.floor(
-                  (userProgress.courseProgress[course.title] || 0) / 20
-                )} hrs spent</div>
-                <a href="#" class="continue-btn" onclick="event.preventDefault(); goToCourse('${course.title}')">Continue</a>
-              </div>
-            `
-                  )
-                  .join('')
-              : '<p></p>'
-          }
-        </div>
-      </div>
-      <div class="enrolled-courses">
-        <h2>Enrolled Courses</h2>
-        <div id="enrolledCoursesContainer"></div>
-      </div>
       <div class="statistics">
-        <h2>Statistics</h2>
+        <h2 class="section-title" style= "color:white">Statistics</h2>
         <div class="stats-grid">
           <div class="stat-card">
             <h4>Courses Enrolled</h4>
@@ -153,8 +422,9 @@ export function renderHomeTab(contentArea, currentUser) {
           </div>
         </div>
       </div>
+      
       <div class="recent-messages">
-        <h2>Recent Messages</h2>
+        <h2 class="section-title">Recent Messages</h2>
         ${
           recentMessages.length > 0
             ? recentMessages
@@ -183,7 +453,6 @@ export function renderHomeTab(contentArea, currentUser) {
 }
 
 function setupTodoFunctionality() {
-
   const addBtn = document.querySelector('.add-task-btn');
   const todoForm = document.querySelector('.todo-form');
   const submitBtn = document.querySelector('.submit-task-btn');
@@ -295,6 +564,7 @@ function setupTodoFunctionality() {
     }
   });
 }
+
 async function fetchEnrolledCourses() {
   const currentUser = userData.currentUser || {};
   const { email } = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : currentUser;
@@ -328,6 +598,7 @@ async function fetchEnrolledCourses() {
     renderEmptyState("enrolledCoursesContainer", "Failed to load enrolled courses.");
   }
 }
+
 function renderCourses(courseList, containerId) {
   const container = document.getElementById(containerId);
   if (!container) {
@@ -346,43 +617,55 @@ function renderCourses(courseList, containerId) {
     // Use course.title or course.courseName as the key
     const courseKey = course.title || course.courseName;
     const progress = progressData[courseKey] || 0;
+    const hoursSpent = Math.floor(progress / 20);
 
     const card = document.createElement("div");
     card.className = "course-card";
     card.innerHTML = `
       <div class="course-card-content">
         <h5>${courseKey}</h5>
-        <p>${course.description || course.courseDescription || ''}</p>
+        <div class="course-description">
+          ${course.description || course.courseDescription || 'No description available'}
+        </div>
         ${course.authorEmail ? `<p><strong>Author:</strong> ${course.authorEmail}</p>` : ""}
         ${course.courseCode ? `<p><strong>Course Code:</strong> ${course.courseCode}</p>` : ""}
-        <div class="progress-bar" style="height: 18px; background: #e9ecef; border-radius: 8px; margin-top: 10px;">
-          <div class="progress-bar-fill" style="
-            width: ${progress}%;
-            background: linear-gradient(90deg, #3182ce 60%, #63b3ed 100%);
-            height: 100%;
-            border-radius: 8px;
-            transition: width 0.5s;
-            display: flex;
-            align-items: center;
-            color: #fff;
-            font-weight: bold;
-            padding-left: 8px;
-            font-size: 13px;
-          ">${progress}%</div>
+        
+        <div class="progress-container">
+          <div class="progress-info">
+            <span>${progress}% Complete</span>
+            <span>${hoursSpent} hrs spent</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width: ${progress}%"></div>
+          </div>
+        </div>
+        
+        <div class="course-actions">
+          <button class="continue-btn" data-course-key="${courseKey}">Continue</button>
+          <button class="view-btn" data-course-id="${course._id}">View Details</button>
         </div>
       </div>
     `;
 
-    // Add click handler for the card content (to view course details)
-    card.querySelector('.course-card-content').addEventListener("click", () => {
+    // Add click handler for the view details button
+    card.querySelector('.view-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
       if (typeof renderCourseDetails === "function") {
         renderCourseDetails(document.getElementById("contentArea"), course);
       }
     });
 
+    // Add click handler for the continue button
+    card.querySelector('.continue-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const courseKey = e.target.getAttribute('data-course-key');
+      goToCourse(courseKey);
+    });
+
     container.appendChild(card);
   });
 }
+
 async function loadTodos() {
   const user = JSON.parse(localStorage.getItem('user'));
   const email = user.email;
@@ -464,14 +747,14 @@ async function loadTodos() {
     console.error('Failed to load todos:', err);
   }
 }
+
 function updateEnrolledCoursesStat() {
   document.getElementById('coursesEnrolledStat').textContent = enrolledCoursesFromAPI.length;
 }
+
 function renderEmptyState(containerId, message) {
   const container = document.getElementById(containerId);
   if (container) {
     container.innerHTML = `<div class="empty-state">${message}</div>`;
   }
 }
-
-
