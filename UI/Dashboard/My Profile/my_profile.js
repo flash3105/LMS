@@ -20,20 +20,12 @@ export async function renderProfileTab(contentArea, currentUser) {
     completedCourses: [],
   };
 
-  // Sample milestones & achievements
-  const milestones = [
-    "Completed 5 courses",
-    "Reached 50% overall progress",
-    "Active for 30 consecutive days"
-  ];
-  const achievements = [
-    "Python Fundamentals Certificate",
-    "Top Learner Award",
-    "Course Contributor Badge"
-  ];
+  const milestones = ["The system will render your milestones when you achieve them"];
+  const achievements = ["The system will render your achievements when you achieve them"];
 
   contentArea.innerHTML = `
-    <style>
+
+  <style>
       .profile-container {
         padding: 2rem;
         max-width: 1200px;
@@ -274,90 +266,67 @@ export async function renderProfileTab(contentArea, currentUser) {
       }
     </style>
     
-    <div class="profile-container">
-      <div class="welcome">
-        <h2>My Profile</h2>
-        <p>Manage your account and track your progress</p>
+    <div class="welcome">
+      <h2 class="fw-bold">My Profile</h2>
+      <p class="text-muted">Manage your account and track your progress.</p>
+    </div>
+
+    <div class="profile-grid">
+      <!-- Card 1: Account Details -->
+      <div class="profile-card">
+        <div class="card-header">
+          <h3>Account Details</h3>
+          <button class="edit-btn"><i class="fas fa-plus"></i> Edit</button>
+        </div>
+        <div class="card-body">
+          <div class="detail-item"><span class="detail-label">Name:</span><span class="detail-value">${currentUser.name}</span></div>
+          <div class="detail-item"><span class="detail-label">Email:</span><span class="detail-value">${currentUser.email}</span></div>
+          <div class="detail-item"><span class="detail-label">Department:</span><span class="detail-value">${currentUser.department || 'N/A'}</span></div>
+          <div class="detail-item"><span class="detail-label">Role:</span><span class="detail-value">${currentUser.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : 'N/A'}</span></div>
+          <div class="detail-item bio"><span class="detail-label">Bio:</span><span class="detail-value">${currentUser.bio || 'No bio available'}</span></div>
+        </div>
       </div>
 
-      <div class="profile-grid">
-        <!-- Card 1: Account Details -->
-        <div class="profile-card account-card">
-          <div class="card-header">
-            <h3>Account Details</h3>
-            <button class="edit-btn"><i class="fas fa-edit"></i> Edit</button>
-          </div>
-          <div class="card-body">
-            <div class="detail-item">
-              <span class="detail-label">Name:</span>
-              <span class="detail-value">${currentUser.name}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Email:</span>
-              <span class="detail-value">${currentUser.email}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Department:</span>
-              <span class="detail-value">${currentUser.department || 'N/A'}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Role:</span>
-              <span class="detail-value">${currentUser.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : 'N/A'}</span>
-            </div>
-            <div class="detail-item bio">
-              <span class="detail-label">Bio:</span>
-              <span class="detail-value">${currentUser.bio || 'No bio available'}</span>
-            </div>
-          </div>
+      <!-- Card 2: Milestones -->
+      <div class="profile-card">
+        <div class="card-header"><h3>Milestones</h3></div>
+        <div class="card-body">
+          <ul class="milestones-list">
+            ${milestones.map(m => `<li class="milestone-item"><i class="fas fa-check-circle"></i><span>${m}</span></li>`).join('')}
+          </ul>
         </div>
+      </div>
 
-        <!-- Card 2: Milestones -->
-        <div class="profile-card milestones-card">
-          <div class="card-header">
-            <h3>Milestones</h3>
-          </div>
-          <div class="card-body">
-            <ul class="milestones-list">
-              ${milestones.map(m => `
-                <li class="milestone-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span>${m}</span>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
+      <!-- Card 3: Achievements -->
+      <div class="profile-card">
+        <div class="card-header"><h3>Achievements & Certificates</h3></div>
+        <div class="card-body">
+          <ul class="achievements-list">
+            ${achievements.map(a => `<li class="achievement-item"><i class="fas fa-trophy"></i><span>${a}</span></li>`).join('')}
+          </ul>
         </div>
+      </div>
 
-        <!-- Card 3: Achievements -->
-        <div class="profile-card achievements-card">
-          <div class="card-header">
-            <h3>Achievements</h3>
-          </div>
-          <div class="card-body">
-            <ul class="achievements-list">
-              ${achievements.map(a => `
-                <li class="achievement-item">
-                  <i class="fas fa-trophy"></i>
-                  <span>${a}</span>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
+      <!-- Card 4: Goals -->
+      <div class="profile-card">
+        <div class="card-header">
+          <h3>Goals</h3>
+          <button class="add-goal-btn"><i class="fas fa-plus"></i> Add Goal</button>
         </div>
-
-        <!-- Card 4: Goals -->
-        <div class="profile-card goals-card">
-          <div class="card-header">
-            <h3>Learning Goals</h3>
-            <button class="add-goal-btn"><i class="fas fa-plus"></i> Add Goal</button>
-          </div>
-          <div class="goal-form" style="display:none;">
-            <input type="text" class="goal-input" placeholder="Enter your learning goal">
-            <button class="submit-goal-btn">Set Goal</button>
-          </div>
-          <div class="card-body">
-            <div class="goals-list"><div class="loading-goals">Loading goals...</div></div>
-          </div>
+       <div class="goal-form" style="display:none;">
+          <input type="text" class="goal-input" placeholder="Goal Title" />
+          <textarea class="goal-desc-input" placeholder="Goal Description"></textarea>
+          <input type="date" class="goal-date-input" placeholder="Target Date" 
+                min="${new Date().toISOString().split('T')[0]}" />
+          <select class="goal-priority-input">
+            <option value="low">Low Priority</option>
+            <option value="medium" selected>Medium Priority</option>
+            <option value="high">High Priority</option>
+          </select>
+          <button class="submit-goal-btn">Set Goal</button>
+        </div>
+        <div class="card-body">
+          <div class="goals-list"><div class="loading-goals">Loading goals...</div></div>
         </div>
       </div>
     </div>
@@ -369,8 +338,8 @@ export async function renderProfileTab(contentArea, currentUser) {
     editBtn.onclick = () => startEditingProfile(contentArea, currentUser);
   }
 
-  // Goals
-  setupGoalsFunctionality(currentUser);
+  // Setup goals functionality
+  setupGoalsFunctionality(currentUser, contentArea);
 }
 
 // Editable Bio
@@ -385,7 +354,7 @@ async function startEditingProfile(contentArea, currentUser) {
   bioEl.appendChild(textarea);
 
   const editBtn = contentArea.querySelector('.edit-btn');
-  editBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+  editBtn.textContent = 'Save';
   editBtn.onclick = async () => {
     const newBio = textarea.value.trim();
     try {
@@ -402,7 +371,7 @@ async function startEditingProfile(contentArea, currentUser) {
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
       bioEl.textContent = updatedProfile.bio || 'No bio available';
-      editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+      editBtn.textContent = 'Edit';
       editBtn.onclick = () => startEditingProfile(contentArea, currentUser);
     } catch (err) {
       console.error(err);
@@ -411,123 +380,128 @@ async function startEditingProfile(contentArea, currentUser) {
   };
 }
 
-// Goals functions
-async function setupGoalsFunctionality(currentUser) {
-  const addGoalBtn = document.querySelector('.add-goal-btn');
-  const goalForm = document.querySelector('.goal-form');
-  const submitGoalBtn = document.querySelector('.submit-goal-btn');
-  const goalsList = document.querySelector('.goals-list');
+// Goals functionality
+function setupGoalsFunctionality(currentUser, contentArea) {
+  const addGoalBtn = contentArea.querySelector(".add-goal-btn");
+  const goalForm = contentArea.querySelector(".goal-form");
+  const submitGoalBtn = contentArea.querySelector(".submit-goal-btn");
+  const goalsList = contentArea.querySelector(".goals-list");
 
-  await fetchGoals(currentUser.email, goalsList);
+  // Set minimum date to today (this makes past dates grey/unselectable)
+  const dateInput = contentArea.querySelector(".goal-date-input");
+  dateInput.min = new Date().toISOString().split('T')[0];
 
-  if (addGoalBtn && goalForm && submitGoalBtn && goalsList) {
-    addGoalBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      goalForm.style.display = goalForm.style.display === 'none' ? 'block' : 'none';
-    });
+  // Toggle form visibility
+  addGoalBtn.addEventListener("click", () => {
+    goalForm.style.display = goalForm.style.display === "none" ? "block" : "none";
+  });
 
-    submitGoalBtn.addEventListener('click', async () => {
-      const goalInput = document.querySelector('.goal-input');
-      if (goalInput.value.trim()) {
-        try {
-          await saveGoalToDatabase(currentUser.email, { title: goalInput.value.trim() });
-          await fetchGoals(currentUser.email, goalsList);
-          goalInput.value = '';
-          goalForm.style.display = 'none';
-        } catch (error) {
-          console.error('Error saving goal:', error);
-          alert('Failed to save goal. Please try again.');
-        }
+  // Submit goal
+  submitGoalBtn.addEventListener("click", async () => {
+    const titleInput = contentArea.querySelector(".goal-input");
+    const descInput = contentArea.querySelector(".goal-desc-input");
+    const dateInput = contentArea.querySelector(".goal-date-input");
+    const priorityInput = contentArea.querySelector(".goal-priority-input");
+
+    if (titleInput.value.trim()) {
+      try {
+        await fetch(`${API_BASE_URL}/profile/${currentUser.email}/goals`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: titleInput.value.trim(),
+            description: descInput.value.trim(),
+            targetDate: dateInput.value,
+            priority: priorityInput.value
+          })
+        });
+
+        await fetchGoals(currentUser.email, goalsList);
+
+        // Reset form
+        titleInput.value = "";
+        descInput.value = "";
+        dateInput.value = "";
+        priorityInput.value = "medium";
+        goalForm.style.display = "none";
+
+      } catch (error) {
+        console.error("Error saving goal:", error);
+        alert("Failed to save goal. Please try again.");
       }
-    });
-  }
-}
-
-async function fetchGoals(userEmail, goalsList) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/Profile/${userEmail}`);
-    if (!response.ok) throw new Error('Failed to fetch goals');
-
-    const goals = await response.json();
-    goalsList.innerHTML = '';
-
-    if (goals.length === 0) {
-      goalsList.innerHTML = '<p class="no-goals">No goals set yet. Add your first goal!</p>';
-      return;
+    } else {
+      alert("Goal title is required.");
     }
+  });
 
-    goals.forEach(goal => {
-      const goalItem = document.createElement('div');
-      goalItem.className = 'goal-item';
-      goalItem.dataset.goalId = goal.id;
-      goalItem.innerHTML = `
-        <div class="goal-content">
-          <input type="checkbox" class="goal-checkbox" ${goal.completed ? 'checked' : ''}>
-          <span class="goal-text">${goal.text}</span>
-        </div>
-        <button class="delete-goal"><i class="fas fa-trash"></i></button>
-      `;
+  // Fetch goals
+  async function fetchGoals(email, container) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/profile/${email}`);
+      const profile = await res.json();
+      container.innerHTML = "";
 
-      goalsList.appendChild(goalItem);
+      if (profile.goals && profile.goals.length > 0) {
+        profile.goals.forEach((goal, goalIndex) => {
+          const goalItem = document.createElement("div");
+          goalItem.classList.add("goal-item");
+          
+          const formattedDate = goal.targetDate ? new Date(goal.targetDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }) : null;
+          
+          goalItem.innerHTML = `
+            <div class="goal-header-wrapper">
+              <h4 class="goal-title">${goal.title}</h4>
+              <span class="goal-priority ${goal.priority && goal.priority.toLowerCase()}">${goal.priority ? goal.priority.charAt(0).toUpperCase() + goal.priority.slice(1) : 'Medium'} Priority</span>
+              <div class="goal-actions">
+                <button class="delete-goal" data-index="${goalIndex}">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+            </div>
+            
+            ${goal.description ? `<p class="goal-description">${goal.description}</p>` : ''}
+            
+            <div class="goal-meta">
+              <div class="goal-date">
+                <i class="fas fa-calendar-alt"></i>
+                ${formattedDate ? `Target date: ${formattedDate}` : "No target date set"}
+              </div>
+            </div>
+          `;
+          container.appendChild(goalItem);
+        });
 
-      goalItem.querySelector('.delete-goal').addEventListener('click', async () => {
-        try {
-          await deleteGoalFromDatabase(goal.id);
-          goalItem.remove();
-        } catch (error) {
-          console.error('Error deleting goal:', error);
-          alert('Failed to delete goal. Please try again.');
-        }
-      });
+        //delete events
+        container.querySelectorAll(".delete-goal").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            // Get the button element (not the icon)
+            const button = e.currentTarget; // This always refers to the element the listener was attached to
+            const goalIndex = parseInt(button.getAttribute("data-index"));
+            
+            try {
+              await fetch(`${API_BASE_URL}/profile/${currentUser.email}/goals/${goalIndex}`, {
+                method: "DELETE"
+              });
+              await fetchGoals(currentUser.email, goalsList);
+            } catch (error) {
+              console.error("Error deleting goal:", error);
+              alert("Failed to delete goal.");
+            }
+          });
+        });
 
-      const checkbox = goalItem.querySelector('.goal-checkbox');
-      checkbox.addEventListener('change', async (e) => {
-        try {
-          await updateGoalStatus(goal.id, e.target.checked);
-          if (e.target.checked) {
-            goalItem.style.opacity = '0.6';
-            goalItem.querySelector('.goal-text').style.textDecoration = 'line-through';
-          } else {
-            goalItem.style.opacity = '1';
-            goalItem.querySelector('.goal-text').style.textDecoration = 'none';
-          }
-        } catch (error) {
-          console.error('Error updating goal status:', error);
-          e.target.checked = !e.target.checked;
-        }
-      });
-    });
-  } catch (error) {
-    console.error('Error fetching goals:', error);
-    goalsList.innerHTML = '<p class="error-message">Failed to load goals. Please try again later.</p>';
+      } else {
+        container.innerHTML = "<p>No goals set yet.</p>";
+      }
+    } catch (err) {
+      console.error("Error fetching goals:", err);
+    }
   }
-}
 
-async function saveGoalToDatabase(email, goal) {
-  const payload = {
-    title: goal.title,
-    description: goal.description || '',
-    targetDate: goal.targetDate || ''
-  };
-  const res = await fetch(`${API_BASE_URL}/Profile/${email}/goals`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) throw new Error('Failed to add goal');
-  return await res.json();
-}
-
-async function deleteGoalFromDatabase(goalId) {
-  const response = await fetch(`${API_BASE_URL}/goals/${goalId}`, { method: 'DELETE' });
-  if (!response.ok) throw new Error('Failed to delete goal');
-}
-
-async function updateGoalStatus(goalId, completed) {
-  const response = await fetch(`${API_BASE_URL}/goals/${goalId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ completed })
-  });
-  if (!response.ok) throw new Error('Failed to update goal status');
+  // Initial load
+  fetchGoals(currentUser.email, goalsList);
 }
