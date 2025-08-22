@@ -209,23 +209,7 @@ function loadAssessmentPageCSS() {
   document.head.appendChild(style);
 }
 
-// Helper function to get course name directly from API
-async function getCourseName(courseId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/courses/${courseId}`);
-    if (response.ok) {
-      const courseData = await response.json();
-      // Try different possible property names for course name
-      return courseData.courseName || courseData.name || courseData.title || 
-             courseData.course_name || courseData.course_title || 
-             `Course ${courseId.substring(0, 8)}`;
-    }
-  } catch (error) {
-    console.error(`Error fetching course name for ${courseId}:`, error);
-  }
-  return `Course ${courseId.substring(0, 8)}`;
-}
-
+// MODIFIED: Main function to render assessment page with course names
 export async function renderAssessmentPage(contentArea) {
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : (typeof currentUser !== 'undefined' ? currentUser : null);
   const userEmail = user && user.email ? user.email : null;
@@ -254,6 +238,16 @@ export async function renderAssessmentPage(contentArea) {
   `;
 
   try {
+    // Get courses from global data or fetch if not available
+    let courses = window.courses || [];
+    if (courses.length === 0) {
+      const response = await fetch(`${API_BASE_URL}/courses/all`);
+      if (response.ok) {
+        courses = await response.json();
+        window.courses = courses; // Store for future use
+      }
+    }
+
     // Extract course IDs
     const courseIds = my_courses.map(course => 
       typeof course === 'string' ? course : course._id || course.id
@@ -266,17 +260,26 @@ export async function renderAssessmentPage(contentArea) {
       return;
     }
 
-    // Get course names
-    const courseNamePromises = courseIds.map(courseId => getCourseName(courseId));
-    const courseNames = await Promise.all(courseNamePromises);
-    
-    // Map courseId → courseName
+    // Create course ID to name mapping using available course data
     const courseInfoMap = new Map();
-    courseIds.forEach((courseId, index) => {
-      courseInfoMap.set(courseId, {
-        name: courseNames[index],
-        id: courseId
-      });
+    courseIds.forEach(courseId => {
+      const course = courses.find(c => 
+        c._id === courseId || c.id === courseId
+      );
+      
+      if (course) {
+        courseInfoMap.set(courseId, {
+          name: course.courseName || course.name || course.title || 
+                course.course_name || course.course_title || 
+                `Course ${courseId.substring(0, 8)}`,
+          id: courseId
+        });
+      } else {
+        courseInfoMap.set(courseId, {
+          name: `Course ${courseId.substring(0, 8)}`,
+          id: courseId
+        });
+      }
     });
     
     // Fetch assessments for each course
@@ -287,7 +290,7 @@ export async function renderAssessmentPage(contentArea) {
         assessmentsByCourse[courseId] = assessments;
       } catch (error) {
         console.error(`Error fetching assessments for course ${courseId}:`, error);
-        assessmentsByCourse[courseId] = [];
+        assessmentsByCourse[courseId] = {};
       }
     }
 
@@ -337,6 +340,7 @@ export async function renderAssessmentPage(contentArea) {
   }
 }
 
+// Function to render assessments grouped by course (using course names)
 function renderAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grades, ASSgrades, courseInfoMap) {
   if (courseIds.length === 0) {
     return `<div class="empty-message">You are not enrolled in any courses.</div>`;
@@ -351,13 +355,21 @@ function renderAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grad
       return '';
     }
     
-    const courseName = courseInfo.name; // Use NAME instead of ID
+    // Use course name instead of ID for folder display
+    const courseName = courseInfo.name;
     
-    const courseAssessments = assessmentsByCourse[courseId] || [];
+    const courseAssessmentsData = assessmentsByCourse[courseId] || {};
+    
+    // Flatten all assessments from all folders
+    let allCourseAssessments = [];
+    Object.values(courseAssessmentsData).forEach(folderAssessments => {
+      allCourseAssessments = [...allCourseAssessments, ...folderAssessments];
+    });
+
     const courseQuizzes = quizzes.filter(q => q.courseId?.toString() === courseId);
 
     // Process assessments with grades
-    const assessmentsWithGrades = courseAssessments.map(a => {
+    const assessmentsWithGrades = allCourseAssessments.map(a => {
       const gradeObj = ASSgrades.find(g => (g.assessmentId === a._id || g.assessmentId === a.id));
       return {
         ...a,

@@ -95,11 +95,13 @@ router.post('/courses/:courseId/assessments', upload.single('file'), async (req,
   }
 });
 
-// Route: Get all assessments for a course with folder structure
+// Route: Get all assessments for a course with folder structure, includes course name
 router.get('/courses/:courseId/assessments', async (req, res) => {
   try {
     const { courseId } = req.params;
-    const assessments = await Assessment.find({ course: courseId });
+    
+    // Populate course information to get the course name
+    const assessments = await Assessment.find({ course: courseId }).populate('course', 'name courseName title');
     
     // Group assessments by folder
     const assessmentsByFolder = {};
@@ -109,9 +111,12 @@ router.get('/courses/:courseId/assessments', async (req, res) => {
         assessmentsByFolder[folder] = [];
       }
       
+      //Include course name in the response for frontend use
       assessmentsByFolder[folder].push({
         ...assessment.toObject(),
-        downloadUrl: assessment.filePath ? `/api/assessments/${assessment._id}/download` : null
+        downloadUrl: assessment.filePath ? `/api/assessments/${assessment._id}/download` : null,
+        // Course name for frontend display
+        courseName: assessment.course?.name || assessment.course?.courseName || assessment.course?.title || `Course ${courseId.substring(0, 8)}`
       });
     });
 

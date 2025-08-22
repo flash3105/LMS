@@ -91,14 +91,27 @@ export async function fetchCourseDetails(courseId) {
   }
 }
 
-// Fetch assessments for a course from the database
+// Fetch assessments for a course from the database - now includes course name handling
 export async function fetchAssessments(courseId) {
   try {
     const response = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
     if (!response.ok) {
       throw new Error('Failed to fetch assessments');
     }
-    return await response.json();
+    const data = await response.json();
+    
+    // Add courseId to each assessment for reference and ensure course name is available
+    Object.keys(data).forEach(folder => {
+      data[folder].forEach(assessment => {
+        assessment.courseId = courseId;
+        // Ensure courseName exists (fallback if not provided by backend)
+        if (!assessment.courseName) {
+          assessment.courseName = `Course ${courseId.substring(0, 8)}`;
+        }
+      });
+    });
+    
+    return data;
   } catch (error) {
     console.error('Error fetching assessments:', error);
     throw error;
@@ -152,4 +165,3 @@ export async function fetchUserQuizzes(userId) {
     throw error;
   }
 }
-
