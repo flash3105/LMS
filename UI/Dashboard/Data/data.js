@@ -100,18 +100,21 @@ export async function fetchAssessments(courseId) {
     }
     const data = await response.json();
     
-    // Add courseId to each assessment for reference and ensure course name is available
+    // Convert object to flat array
+    const flatAssessments = [];
+    
     Object.keys(data).forEach(folder => {
       data[folder].forEach(assessment => {
         assessment.courseId = courseId;
-        // Ensure courseName exists (fallback if not provided by backend)
         if (!assessment.courseName) {
           assessment.courseName = `Course ${courseId.substring(0, 8)}`;
         }
+        assessment.folderType = folder; // Keep folder info if needed
+        flatAssessments.push(assessment);
       });
     });
     
-    return data;
+    return flatAssessments; // Now returns an array
   } catch (error) {
     console.error('Error fetching assessments:', error);
     throw error;
