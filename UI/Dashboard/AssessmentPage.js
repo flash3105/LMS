@@ -238,7 +238,7 @@ export async function renderAssessmentPage(contentArea) {
   `;
 
   try {
-    // Get courses from global data or fetch if not available
+    // CHANGED: Get courses from global data or fetch if not available
     let courses = window.courses || [];
     if (courses.length === 0) {
       const response = await fetch(`${API_BASE_URL}/courses/all`);
@@ -260,7 +260,7 @@ export async function renderAssessmentPage(contentArea) {
       return;
     }
 
-    // Create course ID to name mapping using available course data
+    // CHANGED: Create course ID to name mapping using available course data
     const courseInfoMap = new Map();
     courseIds.forEach(courseId => {
       const course = courses.find(c => 
@@ -290,7 +290,7 @@ export async function renderAssessmentPage(contentArea) {
         assessmentsByCourse[courseId] = assessments;
       } catch (error) {
         console.error(`Error fetching assessments for course ${courseId}:`, error);
-        assessmentsByCourse[courseId] = {};
+        assessmentsByCourse[courseId] = [];
       }
     }
 
@@ -340,7 +340,7 @@ export async function renderAssessmentPage(contentArea) {
   }
 }
 
-// Function to render assessments grouped by course (using course names)
+// MODIFIED: Function to render assessments grouped by course (using course names)
 function renderAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grades, ASSgrades, courseInfoMap) {
   if (courseIds.length === 0) {
     return `<div class="empty-message">You are not enrolled in any courses.</div>`;
@@ -355,21 +355,16 @@ function renderAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grad
       return '';
     }
     
-    // Use course name instead of ID for folder display
+    // MODIFIED: Use course name instead of ID for folder display
     const courseName = courseInfo.name;
     
-    const courseAssessmentsData = assessmentsByCourse[courseId] || {};
-    
-    // Flatten all assessments from all folders
-    let allCourseAssessments = [];
-    Object.values(courseAssessmentsData).forEach(folderAssessments => {
-      allCourseAssessments = [...allCourseAssessments, ...folderAssessments];
-    });
+    // FIXED: assessmentsByCourse[courseId] is now an array, not an object with folders
+    const courseAssessments = assessmentsByCourse[courseId] || [];
 
     const courseQuizzes = quizzes.filter(q => q.courseId?.toString() === courseId);
 
     // Process assessments with grades
-    const assessmentsWithGrades = allCourseAssessments.map(a => {
+    const assessmentsWithGrades = courseAssessments.map(a => {
       const gradeObj = ASSgrades.find(g => (g.assessmentId === a._id || g.assessmentId === a.id));
       return {
         ...a,
