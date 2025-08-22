@@ -20,6 +20,11 @@ connectDB();
 // Middleware
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log(req.method, req.originalUrl);
+  next();
+});
+
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -31,7 +36,7 @@ app.use('/api', require('./routes/Assessment'));
 app.use('/api', require('./routes/Resource'));
 app.use('/api', require('./routes/Submit'));
 app.use('/api', require('./routes/Quiz'));
-app.use('/api/quizzes', require('./routes/QuizSubmit')); 
+app.use('/api/quizzes', require('./routes/QuizSubmit'));
 app.use('/api/grades', require('./routes/Grades')); 
 app.use('/api', require('./routes/Analytics'));
 app.use('/api', require('./routes/Todos'));
@@ -39,6 +44,9 @@ app.use('/api/Profile', require('./routes/Profile'));
 app.use('/api', require('./routes/User'));
 app.use('/api', require('./routes/Statistics'));
 app.use('/api/messages', require('./routes/Message'));
+app.use("/api/submissions", require("./routes/quizSubmissions"));
+app.get('/api/quizzes/test', (req, res) => res.send('QuizSubmit route works'));
+
 // Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
