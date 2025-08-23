@@ -58,6 +58,7 @@ router.get('/courses/:courseId/assessments', async (req, res) => {
   try {
     const { courseId } = req.params;
     const assessments = await Assessment.find({ course: courseId });
+    console.log('path',assessments.filePath);
     res.status(200).json(assessments);
   } catch (error) {
     console.error('Error fetching assessments:', error);
@@ -91,10 +92,72 @@ router.get('/assessments/count', async (req, res) => {
 router.get('/assessments/:assessmentId/download', async (req, res) => {
   try {
     const assessment = await Assessment.findById(req.params.assessmentId);
-    if (!assessment || !assessment.filePath) return res.status(404).json({ message: 'File not found' });
+    console.log('path', assessment.filePath);
+    if (!assessment || !assessment.filePath) 
+      return res.status(404).json({ message: 'File not found' });
+
     res.download(assessment.filePath, assessment.originalName);
   } catch (error) {
     console.error('Error downloading assessment file:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+
+// Route: Update an assessment
+router.put('/assessments/:assessmentId', upload.single('file'), async (req, res) => {
+  try {
+    const { title, description, dueDate } = req.body;
+    const { assessmentId } = req.params;
+
+    const assessment = await Assessment.findById(assessmentId);
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    // If a new file is uploaded, delete the old one
+    if (req.file && assessment.filePath && fs.existsSync(assessment.filePath)) {
+      fs.unlinkSync(assessment.filePath);
+    }
+
+    // Update fields
+    assessment.title = title || assessment.title;
+    assessment.description = description || assessment.description;
+    assessment.dueDate = dueDate || assessment.dueDate;
+    if (req.file) {
+      assessment.filePath = req.file.path;
+      assessment.originalName = req.file.originalname;
+    }
+
+    await assessment.save();
+    res.status(200).json({ message: 'Assessment updated successfully', assessment });
+
+  } catch (error) {
+    console.error('Error updating assessment:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Route: Delete an assessment
+router.delete('/assessments/:assessmentId', async (req, res) => {
+  try {
+    const { assessmentId } = req.params;
+
+    const assessment = await Assessment.findById(assessmentId);
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    // Delete the file if it exists
+    if (assessment.filePath && fs.existsSync(assessment.filePath)) {
+      fs.unlinkSync(assessment.filePath);
+    }
+
+    await Assessment.findByIdAndDelete(assessmentId);
+    res.status(200).json({ message: 'Assessment deleted successfully' });
+
+  } catch (error) {
+    console.error('Error deleting assessment:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

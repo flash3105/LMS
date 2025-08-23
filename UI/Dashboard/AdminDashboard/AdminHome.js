@@ -303,16 +303,19 @@ async function renderUserAnalytics(container, email) {
     const coursesWithQuizzes = await Promise.all(
       userData.enrolledCourses.map(async (course) => {
         try {
+          //Fetch quizzes for thic course and user
           const quizzesRes = await fetch(`${API_BASE_URL}/courses/${course._id}/quizzes`);
           const quizzes = quizzesRes.ok ? await quizzesRes.json() : [];
 
+          //Fetches assignments for this course and user
           const assRes = await fetch(`${API_BASE_URL}/courses/${course._id}/assessments`);
           const assessments = assRes.ok ? await assRes.json() : [];
 
-          // Fetch quiz submissions for this course + user
+          // Fetches quiz submissions for this course and user
           const quizSubsRes = await fetch(`http://localhost:5000/api/submissions/${course._id}/${encodeURIComponent(email)}`);
           const QuizSubmissions = quizSubsRes.ok ? await quizSubsRes.json() : [];
 
+          //Fetches assignments submissions for this course and user
           const assSubsRes = await fetch(`${API_BASE_URL}/course/${course._id}/${encodeURIComponent(email)}`);
           const assignmentSubmissions = assSubsRes.ok ? await assSubsRes.json() : [];
 

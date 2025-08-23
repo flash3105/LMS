@@ -17,7 +17,8 @@ router.get('/:email', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-//Edit profile
+
+// Edit profile
 router.patch('/edit/:email', async (req, res) => {
   const email = req.params.email;
   const { bio } = req.body;
@@ -27,7 +28,7 @@ router.patch('/edit/:email', async (req, res) => {
   try {
     const profile = await Profile.findOneAndUpdate(
       { email },
-      { $set: { bio: bio || '' } }, // only update bio
+      { $set: { bio: bio || '' } },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
@@ -37,59 +38,62 @@ router.patch('/edit/:email', async (req, res) => {
   }
 });
 
-// Add a goal
-router.post('/:email/goals', async (req, res) => {
+// Add new goal
+router.post("/:email/goals", async (req, res) => {
   const email = req.params.email;
-  const { text } = req.body;
+  const { title, description, targetDate, priority } = req.body;
 
-  if (!text) return res.status(400).json({ error: 'Goal text is required' });
+  if (!title) return res.status(400).json({ error: "Goal title is required" });
 
   try {
+    // Convert priority to proper case to match schema enum
+    const formattedPriority = priority 
+      ? priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()
+      : "Medium";
+
     const profile = await Profile.findOneAndUpdate(
       { email },
-      { $push: { goals: { text, completed: false } } },
+      {
+        $push: {
+          goals: {
+            title,
+            description: description || "",
+            targetDate: targetDate || null,
+            priority: formattedPriority
+          }
+        }
+      },
       { new: true, upsert: true }
     );
     res.json(profile);
   } catch (err) {
+    console.error("Error adding goal:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Delete a goal
-router.delete('/:email/goals/:goalId', async (req, res) => {
-  try {
-    const profile = await Profile.findOneAndUpdate(
-      { email: req.params.email },
-      { $pull: { goals: { _id: req.params.goalId } } },
-      { new: true }
-    );
+// Delete goal by index
+router.delete("/:email/goals/:index", async (req, res) => {
+  const email = req.params.email;
+  const index = parseInt(req.params.index);
 
-    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+  try {
+    const profile = await Profile.findOne({ email });
+    if (!profile) return res.status(404).json({ error: "Profile not found" });
+
+    if (index < 0 || index >= profile.goals.length) {
+      return res.status(400).json({ error: "Invalid goal index" });
+    }
+
+    // Remove the goal at the specified index
+    profile.goals.splice(index, 1);
+    await profile.save();
+
     res.json(profile);
   } catch (err) {
+    console.error("Error deleting goal:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
-// Update goal status
-router.patch('/:email/goals/:goalId', async (req, res) => {
-  try {
-    const { completed } = req.body;
-
-    const profile = await Profile.findOneAndUpdate(
-      { email: req.params.email, "goals._id": req.params.goalId },
-      { $set: { "goals.$.completed": completed } },
-      { new: true }
-    );
-
-    if (!profile) return res.status(404).json({ error: 'Profile or goal not found' });
-    res.json(profile);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
 
 module.exports = router;
