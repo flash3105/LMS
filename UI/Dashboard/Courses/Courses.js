@@ -16,41 +16,54 @@ export async function renderCourseDetails(contentArea, course) {
   `;
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-const userId = user._id;
+  const userId = user._id;
 
-console.log("User: ", user)
+  console.log("User: ", user)
 
-const [completionsRes, ratingsRes, resourcesRes] = await Promise.all([
-  fetch(`http://localhost:5000/api/resources/completions/${userId}`),
-  fetch(`http://localhost:5000/api/resources/ratings/${userId}`),
-  fetch(`${API_BASE_URL}/courses/${course._id}/resources`)
-]);
+  //Fetches user by email
+  const res = await fetch(`${API_BASE_URL}/email/${encodeURIComponent(user.email)}`);
+  if (!res.ok) throw new Error('User not found');
+  const userFromEmail = await res.json();
+  console.log('Fetched user:', userFromEmail)
 
-const completions = await completionsRes.json();
-const ratings = await ratingsRes.json();
-const resources = await resourcesRes.json();
+  //Fetches resource completion, resource ratings and resources asynchronously
+  const [completionsRes, ratingsRes, resourcesRes] = await Promise.all([
+    fetch(`${API_BASE_URL}/resources/completions/${userFromEmail._id}`),
+    fetch(`${API_BASE_URL}/resources/ratings/${userFromEmail._id}`),
+    fetch(`${API_BASE_URL}/courses/${course._id}/resources`)
+  ]);
+  const resources = await resourcesRes.json();
+  const completions = (await completionsRes.json()).filter(c =>
+    resources.some(r => r._id === c.resource)
+  );
 
-console.log('Completions JSON:', completions);
-console.log('Ratings JSON:', ratings);
+  const ratings = (await ratingsRes.json()).filter(r =>
+    resources.some(res => res._id === r.resource)
+  );
 
-// Render resources
-resources.forEach(resource => {
-  const completed = completions.some(c => c.resource === resource._id);
-  const rating = ratings.find(r => r.resource === resource._id)?.rating;
+  console.log('Completions JSON:', completions);
+  console.log('Ratings JSON:', ratings);
 
-  const parent = document.querySelector(`[data-resource-id="${resource._id}"]`);
-  if (!parent) return;
 
-  if (completed) {
-    parent.querySelector('.mark-complete-btn').style.display = 'none';
-    parent.querySelector('.rating-section').style.display = 'block';
-  }
 
-  if (rating) {
-    parent.querySelector('.rating-input').value = rating;
-    parent.querySelector('.submit-rating-btn').disabled = true;
-  }
-});
+  // Render resources
+  resources.forEach(resource => {
+    const completed = completions.some(c => c.resource === resource._id);
+    const rating = ratings.find(r => r.resource === resource._id)?.rating;
+
+    const parent = document.querySelector(`[data-resource-id="${resource._id}"]`);
+    if (!parent) return;
+
+    if (completed) {
+      parent.querySelector('.mark-complete-btn').style.display = 'none';
+      parent.querySelector('.rating-section').style.display = 'block';
+    }
+
+    if (rating) {
+      parent.querySelector('.rating-input').value = rating;
+      parent.querySelector('.submit-rating-btn').disabled = true;
+    }
+  });
 
   try {
     // Fetch detailed course information including resources
@@ -397,160 +410,162 @@ resources.forEach(resource => {
 
     const resourcesContainer = document.getElementById('resourcesContainer');
 
-// Apply completion & rating states
-resources.forEach(resource => {
-  const parent = resourcesContainer.querySelector(`[data-resource-id="${resource._id}"]`);
-  if (!parent) return;
+    // Apply completion & rating states
+    resources.forEach(resource => {
+      const parent = resourcesContainer.querySelector(`[data-resource-id="${resource._id}"]`);
+      if (!parent) return;
 
-  const completed = completions.some(c => c.resource === resource._id);
-  const rating = ratings.find(r => r.resource === resource._id)?.rating;
+      const completed = completions.some(c => c.resource === resource._id);
+      const rating = ratings.find(r => r.resource === resource._id)?.rating;
 
-  const completeBtn = parent.querySelector('.mark-complete-btn');
-  const ratingSection = parent.querySelector('.rating-section');
+      const completeBtn = parent.querySelector('.mark-complete-btn');
+      const ratingSection = parent.querySelector('.rating-section');
 
-  if (completed) {
-    if (completeBtn) completeBtn.style.display = 'none';
-    ratingSection.style.display = 'block';
-    updateResourceUI(resource._id, true, rating);
-  } else if (rating) {
-    ratingSection.querySelector('.rating-input').value = rating;
-    ratingSection.querySelector('.submit-rating-btn').disabled = true;
-  }
-});
+      if (completed) {
+        if (completeBtn) completeBtn.style.display = 'none';
+        ratingSection.style.display = 'block';
+        updateResourceUI(resource._id, true, rating);
+      } else if (rating) {
+        ratingSection.querySelector('.rating-input').value = rating;
+        ratingSection.querySelector('.submit-rating-btn').disabled = true;
+      }
+    });
 
-// Event delegation for buttons inside resourcesContainer
-resourcesContainer.addEventListener('click', async (e) => {
-  const target = e.target;
-  const parent = target.closest('.resource-completion');
-  if (!parent) return;
-  const resourceId = parent.dataset.resourceId;
-  const ratingSection = parent.querySelector('.rating-section');
+    // Event delegation for buttons inside resourcesContainer
+    resourcesContainer.addEventListener('click', async (e) => {
+      const target = e.target;
+      const parent = target.closest('.resource-completion');
+      if (!parent) return;
+      const resourceId = parent.dataset.resourceId;
+      const ratingSection = parent.querySelector('.rating-section');
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const res = await fetch(`${API_BASE_URL}/email/${encodeURIComponent(user.email)}`);
+      if (!res.ok) throw new Error('User not found');
+      const userFromEmail = await res.json();
 
-  // Mark Complete
-  if (target.classList.contains('mark-complete-btn')) {
-    try {
-      await fetch(`http://localhost:5000/api/resources/${resourceId}/complete`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id })
-      });
-      updateResourceUI(resourceId, true);
-    } catch (err) {
-      console.error(err);
-      showToast('Error marking complete', 'danger');
-    }
-  }
-
-  // Mark Uncomplete
-  if (target.classList.contains('mark-uncomplete-btn')) {
-    try {
-      await fetch(`http://localhost:5000/api/resources/${resourceId}/uncomplete`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id })
-      });
-
-      // Delete rating if it exists
-      const ratingInputVal = ratingSection.querySelector('.rating-input').value;
-      if (ratingInputVal) {
-        await fetch(`http://localhost:5000/api/resources/${resourceId}/rating`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user._id })
-        });
+      // Mark Complete
+      if (target.classList.contains('mark-complete-btn')) {
+        try {
+          await fetch(`${API_BASE_URL}/resources/${resourceId}/complete`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userFromEmail._id })
+          });
+          updateResourceUI(resourceId, true);
+        } catch (err) {
+          console.error(err);
+          showToast('Error marking complete', 'danger');
+        }
       }
 
-      updateResourceUI(resourceId, false);
-    } catch (err) {
-      console.error(err);
-      showToast('Error marking uncomplete', 'danger');
+      // Mark Uncomplete
+      if (target.classList.contains('mark-uncomplete-btn')) {
+      try {
+        await fetch(`${API_BASE_URL}/resources/${resourceId}/uncomplete`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userFromEmail._id })
+        });
+
+        // Delete rating if it exists
+        const ratingInputVal = ratingSection.querySelector('.rating-input').value;
+        if (ratingInputVal) {
+          await fetch(`${API_BASE_URL}/resources/${resourceId}/rating`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userFromEmail._id })
+          });
+        }
+
+        updateResourceUI(resourceId, false);
+      } catch (err) {
+        console.error(err);
+        showToast('Error marking uncomplete', 'danger');
+      }
     }
-  }
 
-  // Submit Rating
-  if (target.classList.contains('submit-rating-btn')) {
-    const ratingInput = ratingSection.querySelector('.rating-input').value;
-    if (!ratingInput) return showToast('Select a rating first', 'warning');
+    // Submit Rating
+    if (target.classList.contains('submit-rating-btn')) {
+      const ratingInput = ratingSection.querySelector('.rating-input').value;
+      if (!ratingInput) return showToast('Select a rating first', 'warning');
 
-    try {
-      await fetch(`http://localhost:5000/api/resources/${resourceId}/rating`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id, rating: parseInt(ratingInput) })
-      });
-      updateResourceUI(resourceId, true, parseInt(ratingInput));
-      showToast('Rating submitted');
-    } catch (err) {
-      console.error(err);
-      showToast('Error submitting rating', 'danger');
+      try {
+        await fetch(`${API_BASE_URL}/resources/${resourceId}/rating`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userFromEmail._id, rating: parseInt(ratingInput) })
+        });
+        updateResourceUI(resourceId, true, parseInt(ratingInput));
+        showToast('Rating submitted');
+      } catch (err) {
+        console.error(err);
+        showToast('Error submitting rating', 'danger');
+      }
     }
-  }
 
-  // Change Rating
-  if (target.classList.contains('change-rating-btn')) {
-    ratingSection.style.display = 'block';
-    ratingSection.querySelector('.submit-rating-btn').disabled = false;
-  }
-});
+    // Change Rating
+    if (target.classList.contains('change-rating-btn')) {
+      ratingSection.style.display = 'block';
+      ratingSection.querySelector('.submit-rating-btn').disabled = false;
+    }
+  });
 
-// Update UI function
-function updateResourceUI(resourceId, completed = false, rating = null) {
-  const parent = document.querySelector(`[data-resource-id="${resourceId}"]`);
-  if (!parent) return;
+  // Update UI function
+  function updateResourceUI(resourceId, completed = false, rating = null) {
+    const parent = document.querySelector(`[data-resource-id="${resourceId}"]`);
+    if (!parent) return;
 
-  const completeBtn = parent.querySelector('.mark-complete-btn');
-  const ratingSection = parent.querySelector('.rating-section');
+    const completeBtn = parent.querySelector('.mark-complete-btn');
+    const ratingSection = parent.querySelector('.rating-section');
 
-  // Remove old status row if exists
-  const oldStatusRow = parent.querySelector('.status-row');
-  if (oldStatusRow) oldStatusRow.remove();
+    // Remove old status row if exists
+    const oldStatusRow = parent.querySelector('.status-row');
+    if (oldStatusRow) oldStatusRow.remove();
 
-  if (completed) {
-    if (completeBtn) completeBtn.style.display = 'none';
-    ratingSection.style.display = 'block';
+    if (completed) {
+      if (completeBtn) completeBtn.style.display = 'none';
+      ratingSection.style.display = 'block';
 
-    // Add status row
-    let statusRow = document.createElement('div');
-    statusRow.className = 'status-row d-flex align-items-center gap-2 mt-2';
+      // Add status row
+      let statusRow = document.createElement('div');
+      statusRow.className = 'status-row d-flex align-items-center gap-2 mt-2';
 
-    let completeMsg = document.createElement('span');
-    completeMsg.className = 'completion-msg text-success fw-bold';
-    completeMsg.textContent = 'Marked as completed';
-    statusRow.appendChild(completeMsg);
+      let completeMsg = document.createElement('span');
+      completeMsg.className = 'completion-msg text-success fw-bold';
+      completeMsg.textContent = 'Marked as completed';
+      statusRow.appendChild(completeMsg);
+
+      if (rating !== null) {
+        let ratingMsg = document.createElement('span');
+        ratingMsg.className = 'rating-msg text-primary fw-semibold';
+        ratingMsg.textContent = `Rating: ${rating}`;
+        statusRow.appendChild(ratingMsg);
+
+        let changeBtn = document.createElement('button');
+        changeBtn.className = 'btn btn-sm btn-outline-info ms-2 change-rating-btn';
+        changeBtn.textContent = 'Change Rating';
+        statusRow.appendChild(changeBtn);
+      }
+
+      let uncompleteBtn = document.createElement('button');
+      uncompleteBtn.className = 'btn btn-sm btn-outline-danger ms-2 mark-uncomplete-btn';
+      uncompleteBtn.textContent = 'Mark as Uncomplete';
+      statusRow.appendChild(uncompleteBtn);
+
+      parent.appendChild(statusRow);
+      if (rating !== null) ratingSection.style.display = 'none';
+    } else {
+      if (completeBtn) completeBtn.style.display = 'inline-block';
+      ratingSection.style.display = 'none';
+      ratingSection.querySelector('.rating-input').value = '';
+      ratingSection.querySelector('.submit-rating-btn').disabled = false;
+    }
 
     if (rating !== null) {
-      let ratingMsg = document.createElement('span');
-      ratingMsg.className = 'rating-msg text-primary fw-semibold';
-      ratingMsg.textContent = `Rating: ${rating}`;
-      statusRow.appendChild(ratingMsg);
-
-      let changeBtn = document.createElement('button');
-      changeBtn.className = 'btn btn-sm btn-outline-info ms-2 change-rating-btn';
-      changeBtn.textContent = 'Change Rating';
-      statusRow.appendChild(changeBtn);
+      ratingSection.querySelector('.rating-input').value = rating;
+      ratingSection.querySelector('.submit-rating-btn').disabled = true;
     }
-
-    let uncompleteBtn = document.createElement('button');
-    uncompleteBtn.className = 'btn btn-sm btn-outline-danger ms-2 mark-uncomplete-btn';
-    uncompleteBtn.textContent = 'Mark as Uncomplete';
-    statusRow.appendChild(uncompleteBtn);
-
-    parent.appendChild(statusRow);
-    if (rating !== null) ratingSection.style.display = 'none';
-  } else {
-    if (completeBtn) completeBtn.style.display = 'inline-block';
-    ratingSection.style.display = 'none';
-    ratingSection.querySelector('.rating-input').value = '';
-    ratingSection.querySelector('.submit-rating-btn').disabled = false;
   }
-
-  if (rating !== null) {
-    ratingSection.querySelector('.rating-input').value = rating;
-    ratingSection.querySelector('.submit-rating-btn').disabled = true;
-  }
-}
     
     // Initialize Bootstrap tabs if needed
     if (window.bootstrap) {

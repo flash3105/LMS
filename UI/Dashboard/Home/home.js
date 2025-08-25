@@ -633,8 +633,8 @@ function renderCourses(courseList, containerId) {
         
         <div> <!--this had the progress-container class -->
           <div class="progress-info">
-            <span>0Z% Complete</span>
-            <span>${hoursSpent} hrs spent</span>
+            <span class="progress-text">0% Complete</span>
+            <span class="hours-text">${hoursSpent} hrs spent</span>
           </div>
           <div class="progress-bar">
             <div class="progress-bar-fill" style="width: 0%"></div>
@@ -651,16 +651,32 @@ function renderCourses(courseList, containerId) {
    // Append card immediately
   container.appendChild(card);
 
-  // Fetch quizzes and assignments asynchronously
+  // Fetch quizzes, assignments, resources and resource completions asynchronously
   Promise.all([
     fetch(`${API_BASE_URL}/courses/${course._id}/quizzes`).then(res => res.json()).catch(() => []),
-    fetch(`${API_BASE_URL}/course/${course._id}/assignments`).then(res => res.json()).catch(() => [])
-  ]).then(([quizzes, assignments]) => {
-    const quizzesCompleted = quizzes.filter(q => q.completed).length || 0; // replace with your submission logic
-    const assignmentsCompleted = assignments.filter(a => a.completed).length || 0;
+    fetch(`${API_BASE_URL}/courses/${course._id}/assessments`).then(res => res.json()).catch(() => []),
+    fetch(`${API_BASE_URL}/submissions/${course._id}/${encodeURIComponent(user.email)}`).then(res => res.json()).catch(() => []),
+    fetch(`${API_BASE_URL}/course/${course._id}/${encodeURIComponent(user.email)}`).then(res => res.json()).catch(() => []),
+    fetch(`${API_BASE_URL}/courses/${course._id}/resources`).then(res => res.json()).catch(() => []),
+    fetch(`${API_BASE_URL}/resources/completions/${user._id}`).then(res => res.json()).catch(() => [])
+  ]).then(([quizzes, assignments, QuizSubmissions, assignmentSubmissions, resources, resourceCompletions]) => {
+    const quizzesCompleted = quizzes.filter(q =>
+      QuizSubmissions.some(s => s.quizId === q._id)
+    ).length || 0;
+    
+    const assignmentsCompleted =  assignments.filter(a =>
+      assignmentSubmissions.some(s => s.assessmentId === a._id)
+    ).length || 0;
+    
+    //const resourcesCompleted = resourceCompletions.length;
+    const resourcesCompleted = resourceCompletions.filter(c =>
+      resources.some(r => r._id === c.resource)
+    ).length || 0;
 
-    const totalItems = quizzes.length + assignments.length;
-    const completedItems = quizzesCompleted + assignmentsCompleted;
+
+    //Calculating values to use for the progress bar
+    const totalItems = quizzes.length + assignments.length + resources.length;
+    const completedItems = quizzesCompleted + assignmentsCompleted + resourcesCompleted;
     const progressPercent = totalItems ? Math.round((completedItems / totalItems) * 100) : 0;
 
     // Update progress bar dynamically
@@ -670,7 +686,7 @@ function renderCourses(courseList, containerId) {
 
     progressFill.style.width = progressPercent + "%";
     progressText.textContent = progressPercent + "% Complete";
-    hoursText.textContent = Math.floor(progressPercent / 20) + " hrs spent"; // example
+    hoursText.textContent = Math.floor(progressPercent / 20) + " hrs spent"; // test ecample for calculating hours spent on a course
 
     // Update quizzes info
     const quizzesInfo = card.querySelector(".quizzes-info");

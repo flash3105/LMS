@@ -312,7 +312,7 @@ async function renderUserAnalytics(container, email) {
           const assessments = assRes.ok ? await assRes.json() : [];
 
           // Fetches quiz submissions for this course and user
-          const quizSubsRes = await fetch(`http://localhost:5000/api/submissions/${course._id}/${encodeURIComponent(email)}`);
+          const quizSubsRes = await fetch(`${API_BASE_URL}/submissions/${course._id}/${encodeURIComponent(email)}`);
           const QuizSubmissions = quizSubsRes.ok ? await quizSubsRes.json() : [];
 
           //Fetches assignments submissions for this course and user
@@ -322,11 +322,30 @@ async function renderUserAnalytics(container, email) {
           console.log("Quiz Submissions: ", QuizSubmissions);
           console.log("Assignment submissions: ", assignmentSubmissions);
 
-          // Count quizzes that have submissions
+          
+          const resourceRes = await fetch(`${API_BASE_URL}/courses/${course._id}/resources`);
+          const resources = await resourceRes.json();
+
+          //Fetches the user using their email
+          const res = await fetch(`${API_BASE_URL}/email/${encodeURIComponent(email)}`);
+          if (!res.ok) throw new Error('User not found');
+          const user = await res.json();
+          console.log('Fetched user:', user);
+
+          //Fteches the completed resources
+          const compRes = await fetch(`${API_BASE_URL}/api/resources/completions/${user._id}`);
+          const completions = (await compRes.json()).filter(c =>
+            resources.some(r => r._id === c.resource)
+          );
+
+          console.log("Completions: ", completions);
+
+          // Counts quizzes that have been submitted
           const quizzesTaken = quizzes.filter(q =>
             QuizSubmissions.some(s => s.quizId === q._id)
           ).length;
 
+          // Counts assignements that have been submitted
           const assignemntsSubmitted = assessments.filter(a =>
             assignmentSubmissions.some(s => s.assessmentId === a._id)
           ).length;
@@ -334,13 +353,24 @@ async function renderUserAnalytics(container, email) {
           const totalQuizzes = quizzes.length;
           const totalAssessments = assessments.length;
 
+          const completedResources = completions.length
+          const allResources = resources.length;
+
+          /* Calculations for the progress bar */
+          const completedItems = quizzesTaken + assignemntsSubmitted + completedResources;
+          const totalItems = totalQuizzes + totalAssessments + allResources;
+
+          const progress = totalItems ? Math.round((completedItems / totalItems) * 100) : 0;
+
           return {
             ...course,
             quizzesTaken,
             totalQuizzes,
             assignemntsSubmitted,
             totalAssessments,
-            progress: course.progress || 0,
+            completedResources,
+            allResources,
+            progress,
             assessments
           };
         } catch (err) {
@@ -354,6 +384,7 @@ async function renderUserAnalytics(container, email) {
     const totalQuizzes = coursesWithQuizzes.reduce((sum, c) => sum + (c.quizzesTaken || 0), 0);
     const totalAssignments = coursesWithQuizzes.reduce((sum, c) => sum + (c.assignemntsSubmitted || 0), 0);
     const completedCourses = 0;
+    const completedResources = coursesWithQuizzes.reduce((sum, c) => sum + (c.completedResources || 0), 0);
 
     // Base UI with buttons
     container.innerHTML = `
@@ -372,6 +403,7 @@ async function renderUserAnalytics(container, email) {
             <div class="card p-2 text-center">Completed Courses: ${completedCourses} </div>
             <div class="card p-2 text-center">Quizzes Taken: ${totalQuizzes}</div>
             <div class="card p-2 text-center">Assignments Submitted: ${totalAssignments}</div>
+            <div class="card p-2 text center">Resources completed: ${completedResources}</div>
           </div>
           <div>
             <button id="showCourses" class="btn btn-primary">Courses</button>
@@ -393,6 +425,7 @@ async function renderUserAnalytics(container, email) {
               <th>Course</th>
               <th>Quizzes Taken</th>
               <th>Assignments Done</th>
+              <th>Resources completed</th>
               <th>Progress</th>
             </tr>
           </thead>
@@ -402,11 +435,14 @@ async function renderUserAnalytics(container, email) {
                 <td>${c.courseName}</td>
                 <td>${c.quizzesTaken} / ${c.totalQuizzes}</td>
                 <td>${c.assignemntsSubmitted} / ${c.totalAssessments}</td>
+                <td>${c.completedResources} / ${c.allResources} </td>
                 <td>
-                  <div class="progress">
-                    <div class="progress-bar" role="progressbar" style="width: ${c.progress || 0}%">
+                  <div class="progress" style="width:100%; background:#eee; border:1px solid #ccc; border-radius:5px; height:12px; position:relative; overflow:hidden;">
+                    <div class="progress-bar" role="progressbar" style="width: ${c.progress || 0}%; background:#2196f3; height:100%;">
+                  </div>
+                    <span style="position:absolute; top:0; left:50%; transform:translateX(-50%); font-size:10px; line-height:12px; font-weight:bold; color:#000;">
                       ${c.progress || 0}%
-                    </div>
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -432,7 +468,7 @@ async function renderUserAnalytics(container, email) {
         <table class="table table-striped">
           <thead>
             <tr>
-              <th>Assessment</th>
+              <th>Assessment</th>z
               <th>Type</th>
               <th>Highest Grade</th>
               <th>Attempts</th>
