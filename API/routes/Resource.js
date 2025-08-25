@@ -356,14 +356,21 @@ router.patch('/resources/:resourceId/complete', async (req, res) => {
 //Route for rating a resource
 router.post('/resources/:resourceId/rating', async (req, res) => {
   try {
-    const { userId, rating, feedback } = req.body;
-    if (!userId || !rating) {
+    const { userId, user, rating, feedback } = req.body;
+    const finalUserId = userId || user;
+
+    if (!finalUserId || rating == null) { // allow 0 check
       return res.status(400).json({ error: 'User ID and rating are required' });
     }
 
+    const numericRating = Number(rating);
+    if (numericRating < 1 || numericRating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+
     const savedRating = await ResourceRating.findOneAndUpdate(
-      { user: userId, resource: req.params.resourceId },
-      { rating, feedback, ratedAt: new Date() },
+      { user: finalUserId, resource: req.params.resourceId },
+      { rating: numericRating, feedback, ratedAt: new Date() },
       { upsert: true, new: true }
     );
 
@@ -373,6 +380,7 @@ router.post('/resources/:resourceId/rating', async (req, res) => {
     res.status(500).json({ error: 'Failed to save rating' });
   }
 });
+
 
 //Route for getting resource completions
 router.get('/resources/completions/:userId', async (req, res) => {

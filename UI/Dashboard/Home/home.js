@@ -689,8 +689,8 @@ function renderCourses(courseList, containerId) {
     hoursText.textContent = Math.floor(progressPercent / 20) + " hrs spent"; // test ecample for calculating hours spent on a course
 
     // Update quizzes info
-    const quizzesInfo = card.querySelector(".quizzes-info");
-    quizzesInfo.textContent = `Quizzes: ${quizzesCompleted}/${quizzes.length}, Assignments: ${assignmentsCompleted}/${assignments.length}`;
+    //const quizzesInfo = card.querySelector(".quizzes-info");
+    //quizzesInfo.textContent = `Quizzes: ${quizzesCompleted}/${quizzes.length}, Assignments: ${assignmentsCompleted}/${assignments.length}`;
   });
 
 

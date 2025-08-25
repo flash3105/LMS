@@ -333,7 +333,7 @@ async function renderUserAnalytics(container, email) {
           console.log('Fetched user:', user);
 
           //Fteches the completed resources
-          const compRes = await fetch(`${API_BASE_URL}/api/resources/completions/${user._id}`);
+          const compRes = await fetch(`${API_BASE_URL}/resources/completions/${user._id}`);
           const completions = (await compRes.json()).filter(c =>
             resources.some(r => r._id === c.resource)
           );
