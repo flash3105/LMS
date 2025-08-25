@@ -3,14 +3,11 @@ import { fetchCourseDetails, fetchAssessments, userData } from '../Data/data.js'
 // Base API URL - defaults to localhost if not set in window.API_BASE_URL
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
-// Renders detailed course information including resources, assessments, and submissions
+//Renders detailed course information including resources, assessments, and submissions
 export async function renderCourseDetails(contentArea, course) {
   // Show loading state while fetching data
   contentArea.innerHTML = `
-    <div class="course-details-loading" style="
-      text-align: center; 
-      padding: 2rem; 
-      color: white;">
+    <div class="course-details-loading">
       <h2>Loading Course Details...</h2>
     </div>
   `;
@@ -73,291 +70,6 @@ export async function renderCourseDetails(contentArea, course) {
 
     // Render the course details page with tabs for resources, assessments, and submissions
     contentArea.innerHTML = `
-      <style>
-        .course-details-container {
-          padding: 2rem;
-          max-width: 1200px;
-          margin: 0 auto;
-          background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
-          min-height: 100vh;
-        }
-        
-        .course-header {
-          background: white;
-          border-radius: 12px;
-          padding: 2rem;
-          margin-bottom: 2rem;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-        
-        .course-title {
-          color: rgb(26, 115, 150);
-          font-size: 2rem;
-          margin-bottom: 1rem;
-          font-weight: 700;
-        }
-        
-        .course-description {
-          color: #4a5568;
-          font-size: 1.1rem;
-          line-height: 1.6;
-          margin-bottom: 1.5rem;
-        }
-        
-        .course-meta {
-          display: flex;
-          gap: 1rem;
-          align-items: center;
-        }
-        
-        .badge {
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          font-weight: 600;
-        }
-        
-        .bg-primary {
-          background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
-          color: white;
-        }
-        
-        .text-muted {
-          color: #718096 !important;
-        }
-        
-        .nav-tabs {
-          border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-          margin-bottom: 2rem;
-        }
-        
-        .nav-link {
-          color: white;
-          font-weight: 500;
-          padding: 1rem 1.5rem;
-          border: none;
-          background: transparent;
-          position: relative;
-        }
-        
-        .nav-link.active {
-          color: white;
-          background: transparent;
-          border: none;
-        }
-        
-        .nav-link.active:after {
-          content: '';
-          position: absolute;
-          bottom: -2px;
-          left: 0;
-          width: 100%;
-          height: 3px;
-          background: white;
-          border-radius: 3px 3px 0 0;
-        }
-        
-        .nav-link:hover {
-          color: rgba(255, 255, 255, 0.8);
-          border: none;
-        }
-        
-        .tab-content {
-          background: white;
-          border-radius: 12px;
-          padding: 2rem;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-        
-        .section-title {
-          color: rgb(26, 115, 150);
-          font-size: 1.5rem;
-          margin-bottom: 1.5rem;
-          padding-bottom: 0.5rem;
-          border-bottom: 2px solid #e2e8f0;
-        }
-        
-        .empty-message {
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 12px;
-          padding: 2rem;
-          text-align: center;
-          color: #64748b;
-          font-size: 1rem;
-        }
-        
-        .resource-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-          gap: 24px;
-        }
-        
-        .resource-card {
-          background: #fff;
-          border-radius: 14px;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-          padding: 1.5rem 1.2rem;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          border: 1px solid #e2e8f0;
-        }
-        
-        .resource-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 6px 18px rgba(0,0,0,0.1);
-        }
-        
-        .folder-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          cursor: pointer;
-          padding: 0.8rem 1.2rem;
-          background: linear-gradient(90deg, #1e88e5, #42a5f5);
-          border-radius: 10px;
-          color: white;
-          font-weight: 600;
-          font-size: 1.1rem;
-          transition: all 0.3s ease;
-          margin-bottom: 1rem;
-        }
-        
-        .folder-content {
-          margin-top: 1rem;
-        }
-        
-        .assessment-item {
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-          padding: 1.5rem;
-          margin-bottom: 1.5rem;
-          border: 1px solid #e2e8f0;
-        }
-        
-        .btn {
-          padding: 0.5rem 1rem;
-          border-radius: 6px;
-          font-weight: 500;
-          cursor: pointer;
-          text-align: center;
-          transition: all 0.2s;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 42px;
-          box-sizing: border-box;
-          border: none;
-        }
-        
-        .btn-primary {
-          background: rgb(54, 126, 186);
-          color: white;
-        }
-        
-        .btn-primary:hover {
-          background: rgb(21, 81, 133);
-        }
-        
-        .btn-success {
-          background: #38a169;
-          color: white;
-        }
-        
-        .btn-outline-primary {
-          background: white;
-          color: rgb(54, 126, 186);
-          border: 1px solid rgb(54, 126, 186);
-        }
-        
-        .btn-outline-primary:hover {
-          background: #f7fafc;
-        }
-        
-        .btn-sm {
-          padding: 0.4rem 0.8rem;
-          font-size: 0.9rem;
-          min-height: 36px;
-        }
-        
-        .form-control {
-          padding: 0.5rem 0.75rem;
-          border: 1px solid #e2e8f0;
-          border-radius: 6px;
-          font-size: 1rem;
-          width: 100%;
-          box-sizing: border-box;
-        }
-        
-        .form-label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
-          color: #4a5568;
-        }
-        
-        .mb-2 {
-          margin-bottom: 0.5rem;
-        }
-        
-        .mb-3 {
-          margin-bottom: 1rem;
-        }
-        
-        .mt-2 {
-          margin-top: 0.5rem;
-        }
-        
-        .mt-3 {
-          margin-top: 1rem;
-        }
-        
-        .table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        
-        .table th, .table td {
-          padding: 0.75rem;
-          border-bottom: 1px solid #e2e8f0;
-          text-align: left;
-        }
-        
-        .table th {
-          background: #f7fafc;
-          font-weight: 600;
-          color: #4a5568;
-        }
-        
-        .table-responsive {
-          overflow-x: auto;
-        }
-        
-        .loading-message {
-          text-align: center;
-          padding: 2rem;
-          color: #718096;
-        }
-        
-        @media (max-width: 768px) {
-          .course-details-container {
-            padding: 1rem;
-          }
-          
-          .resource-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .course-meta {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-        }
-      </style>
-      
       <div class="course-details-container">
         <!-- Course Header Section -->
         <div class="course-header">
@@ -672,19 +384,19 @@ export async function renderCourseDetails(contentArea, course) {
     });
 
     document.querySelectorAll('.folder-header').forEach(header => {
-      header.addEventListener('click', () => {
-        const content = header.nextElementSibling;
-        const icon = header.querySelector('.fas.fa-chevron-down');
+  header.addEventListener('click', () => {
+    const content = header.nextElementSibling;
+    const icon = header.querySelector('.fas.fa-chevron-down');
 
-        if (content.style.display === 'none' || content.style.display === '') {
-          content.style.display = 'block';
-          icon.style.transform = 'rotate(0deg)';
-        } else {
-          content.style.display = 'none';
-          icon.style.transform = 'rotate(-90deg)';
-        }
-      });
-    });
+    if (content.style.display === 'none' || content.style.display === '') {
+      content.style.display = 'block';
+      icon.style.transform = 'rotate(0deg)';
+    } else {
+      content.style.display = 'none';
+      icon.style.transform = 'rotate(-90deg)';
+    }
+  });
+});
 
     // Render quizzes after assessments
     await renderQuizzes(course._id);
@@ -726,7 +438,8 @@ export async function renderCourseDetails(contentArea, course) {
   }
 }
 
-// Renders the submissions tab content
+
+//Renders the submissions tab content
 async function renderSubmissions(courseId, contentArea) {
   const submissionsContainer = contentArea.querySelector('#submissionsContainer');
   submissionsContainer.innerHTML = '<p>Loading your submissions...</p>';
@@ -881,11 +594,20 @@ function createToastContainer() {
   return container;
 }
 
+//Renders course resources
+// Renders course resources with collapsible folders
 // Renders course resources with styled folders
 function renderResources(resources) {
   if (!resources || resources.length === 0) {
     return `
-      <div class="empty-message">
+      <div class="empty-message" style="
+        background:#f8fafc;
+        border:1px solid #e2e8f0;
+        border-radius:12px;
+        padding:2rem;
+        text-align:center;
+        color:#64748b;
+        font-size:1rem;">
         <p>No resources available for this course yet.</p>
       </div>
     `;
@@ -906,14 +628,28 @@ function renderResources(resources) {
       ${Object.keys(folders).map(folderName => `
         <div class="folder-section" style="margin-bottom:2.5rem;">
           <!-- Folder Header -->
-          <div class="folder-header">
+          <div class="folder-header" style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            cursor:pointer;
+            padding:0.8rem 1.2rem;
+            background:linear-gradient(90deg,#1e88e5,#42a5f5);
+            border-radius:10px;
+            color:white;
+            font-weight:600;
+            font-size:1.1rem;
+            transition:all 0.3s ease;">
             <span><i class="fas fa-folder-open" style="margin-right:8px;"></i> ${folderName}</span>
             <i class="fas fa-chevron-down"></i>
           </div>
 
           <!-- Folder Content -->
-          <div class="folder-content" style="display:none;">
-            <div class="resource-grid">
+          <div class="folder-content" style="margin-top:1rem; display:none;">
+            <div class="resource-grid" style="
+              display:grid;
+              grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+              gap: 24px;">
               ${folders[folderName].map(resource => {
                 const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
                 const fileUrl = resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '';
@@ -943,7 +679,19 @@ function renderResources(resources) {
                 }
 
                 return `
-                  <div class="resource-card">
+                  <div class="resource-card" style="
+                    background: #fff;
+                    border-radius: 14px;
+                    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+                    padding: 1.5rem 1.2rem;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                  "
+                  onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 6px 18px rgba(0,0,0,0.1)'"
+                  onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(0,0,0,0.06)'"
+                  >
                     <div>
                       <h4 style="margin-bottom: 0.5rem; color: #1e88e5; font-weight: 600; font-size:1.1rem;">${resource.title}</h4>
                       <p class="resource-meta" style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.7rem;">
@@ -1009,9 +757,18 @@ function renderResources(resources) {
         </div>
       `).join('')}
     </div>
+
+ 
   `;
   
 }
+
+
+
+
+   
+     
+    
 
 /**
  * Renders assessments list with submission status check
@@ -1078,27 +835,27 @@ async function renderAssessments(assessments, courseId) {
         }
 
         return `
-          <div class="assessment-item" data-assessment-id="${assessment._id}" data-course-id="${courseId}">
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div class="assessment-item card mb-3" data-assessment-id="${assessment._id}" data-course-id="${courseId}">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start">
                 <div>
-                  <h5 style="color: #2d3748; margin-bottom: 0.5rem;">${assessment.title}</h5>
-                  <p style="color: #4a5568; margin-bottom: 0.5rem;">${assessment.description || 'No description provided'}</p>
+                  <h5 class="card-title">${assessment.title}</h5>
+                  <p class="card-text">${assessment.description || 'No description provided'}</p>
                   ${fileLink}
                 </div>
                 <span class="badge ${getAssessmentBadgeClass(assessment.status)}">
                   ${assessment.status || 'Pending'}
                 </span>
               </div>
-              <div style="margin-top: 0.5rem;">
-                <small class="text-muted ${dueClass}" style="margin-right: 1rem;">
+              <div class="assessment-meta mt-2">
+                <small class="text-muted me-3 ${dueClass}">
                   <strong>Due:</strong> ${assessment.dueDate ? new Date(assessment.dueDate).toLocaleDateString() : 'No due date'}
                 </small>
                 <small class="text-muted">
                   <strong>Points:</strong> ${assessment.points || 'N/A'}
                 </small>
               </div>
-              <div style="margin-top: 1rem;">
+              <div class="assessment-actions mt-3">
                 ${hasSubmitted ? 
                   `<button class="btn btn-success btn-sm" disabled>Already Submitted</button>` : 
                   assessment.status === 'completed' ? 
@@ -1107,22 +864,22 @@ async function renderAssessments(assessments, courseId) {
                       ${assessment.status === 'in-progress' ? 'Continue' : 'Start'}
                     </button>`}
                 ${assessment.grade ? 
-                  `<span style="margin-left: 0.5rem;" class="badge bg-info">Grade: ${assessment.grade}</span>` : ''}
+                  `<span class="ms-2 badge bg-info">Grade: ${assessment.grade}</span>` : ''}
               </div>
               ${!hasSubmitted ? `
                 <div id="${submitAreaId}-${assessment._id}" class="assessment-submit-area" style="display:none; margin-top:1rem;">
                   <form enctype="multipart/form-data" class="assessment-submit-form">
-                    <div style="margin-bottom: 0.5rem;">
+                    <div class="mb-2">
                       <label for="submissionFile-${assessment._id}" class="form-label">Attach your file:</label>
                       <input type="file" id="submissionFile-${assessment._id}" name="submissionFile" class="form-control" required>
                     </div>
-                    <div style="margin-bottom: 0.5rem;">
+                    <div class="mb-2">
                       <textarea class="form-control" name="submissionComment" placeholder="Add a comment (optional)"></textarea>
                     </div>
                     <button type="submit" class="btn btn-success btn-sm">Submit Assessment</button>
                     <button type="button" class="btn btn-secondary btn-sm cancel-submit" data-assessment-id="${assessment._id}" style="margin-left:8px;">Cancel</button>
                   </form>
-                  <div class="submit-message" style="margin-top: 0.5rem;"></div>
+                  <div class="submit-message mt-2"></div>
                 </div>
               ` : ''}
             </div>
@@ -1133,7 +890,8 @@ async function renderAssessments(assessments, courseId) {
   `;
 }
 
-// Returns the appropriate Bootstrap badge class based on assessment status
+
+//Returns the appropriate Bootstrap badge class based on assessment status
 function getAssessmentBadgeClass(status) {
   switch (status) {
     case 'completed': return 'bg-success';
@@ -1144,7 +902,11 @@ function getAssessmentBadgeClass(status) {
   }
 }
 
-// Renders quizzes for the course
+
+
+
+
+ //Renders quizzes for the course
 async function renderQuizzes(courseId) {
   const quizzesContainerId = 'quizzesContainer';
   let quizzesContainer = document.getElementById(quizzesContainerId);
@@ -1170,7 +932,8 @@ async function renderQuizzes(courseId) {
           <h5>${quiz.title}</h5>
           <button class="btn btn-primary btn-sm start-quiz-btn" data-quiz-id="${quiz._id}">Start Quiz</button>
           <div class="quiz-form-area" id="quiz-form-area-${quiz._id}" style="display:none; margin-top:1rem;">
-            <form class="quiz-response-form" data-quiz-id=              ${quiz.questions.map((q, qIdx) => `
+            <form class="quiz-response-form" data-quiz-id="${quiz._id}">
+              ${quiz.questions.map((q, qIdx) => `
                 <div class="mb-3">
                   <strong>Q${qIdx + 1}: ${q.question}</strong>
                   <div>
@@ -1236,8 +999,7 @@ async function renderQuizzes(courseId) {
           };
         });
 
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        const email = user.email;
+        const { email } = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : currentUser;
         
         try {
           const res = await fetch(`${API_BASE_URL}/quizzes/${quizId}/submit`, {
@@ -1308,16 +1070,4 @@ async function renderQuizzes(courseId) {
   } catch (err) {
     quizzesContainer.innerHTML = '<div class="error-message">Failed to load quizzes.</div>';
   }
-}
-
-// Helper function to track user actions
-function trackAction(actionType, data) {
-  // Implementation depends on your analytics setup
-  console.log(`Tracking: ${actionType}`, data);
-}
-
-// Helper function to navigate to a course
-function goToCourse(courseTitle) {
-  // Implementation depends on your routing setup
-  console.log(`Navigating to course: ${courseTitle}`);
 }
