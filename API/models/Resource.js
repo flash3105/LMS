@@ -31,6 +31,12 @@ const ResourceSchema = new mongoose.Schema({
     type: String,
     default: "General", // you can set a default folder if none provided
   },
+   cachedSignedUrl: {
+    type: String,
+  },
+  signedUrlExpiresAt: {
+    type: Date,
+  },
 });
 
 module.exports = mongoose.model("Resource", ResourceSchema);

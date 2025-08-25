@@ -1,36 +1,73 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const Resource = require('../models/Resource');
 const Course = require('../models/Course');
+const bucket = require('../config/gcs');
 
-// Ensure resources directory exists
-const resourcesDir = path.join(__dirname, '..', 'uploads', 'resources');
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-if (!fs.existsSync(resourcesDir)) {
-  fs.mkdirSync(resourcesDir, { recursive: true });
+async function uploadToGCS(file) {
+  const uniqueName = Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const blob = bucket.file(`resources/${uniqueName}`);
+  const stream = blob.createWriteStream({
+    resumable: false,
+    contentType: file.mimetype,
+  });
+
+  return new Promise((resolve, reject) => {
+    stream.on('finish', () => {
+      // Don't try to make public - just resolve with the filePath
+      resolve({
+        filePath: uniqueName,
+      });
+    });
+    stream.on('error', reject);
+    stream.end(file.buffer);
+  });
 }
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, resourcesDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const sanitizedFileName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, uniqueSuffix + '-' + sanitizedFileName);
+async function getSignedUrl(filePath) {
+  if (!filePath) return null;
+
+  const file = bucket.file(`resources/${filePath}`);
+  const [exists] = await file.exists();
+  if (!exists) {
+    console.log('File not found in bucket:', filePath);
+    return null;
   }
-});
 
-const upload = multer({ storage: storage });
+  const options = {
+    version: 'v4',
+    action: 'read',
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+  };
+  const [url] = await file.getSignedUrl(options);
+  return url;
+}
 
-// POST /api/courses/:courseId/resources
+
+// Helper to delete file from GCS
+async function deleteFromGCS(filePath) {
+  try {
+    const file = bucket.file(`resources/${filePath}`);
+    const [exists] = await file.exists();
+    if (exists) {
+      await file.delete();
+      console.log(`File ${filePath} deleted from GCS`);
+    }
+  } catch (error) {
+    console.error('Error deleting file from GCS:', error);
+  }
+}
+
 // POST /api/courses/:courseId/resources
 router.post('/courses/:courseId/resources', upload.single('file'), async (req, res) => {
+  console.log('POST /courses/:courseId/resources called');
+  
   try {
-    const { title, type, description, link, folder } = req.body; // <-- include folder
+    const { title, type, description, link, folder } = req.body;
     const { courseId } = req.params;
 
     if (type !== 'link' && !req.file) {
@@ -40,15 +77,19 @@ router.post('/courses/:courseId/resources', upload.single('file'), async (req, r
       return res.status(400).json({ error: 'Link is required for external resources.' });
     }
 
-    let filePath = type === 'link' ? link : null;
+    let filePath = null;
     let originalName = null;
 
+    // Upload file to GCS if it's a file resource
     if (req.file) {
-      filePath = path.relative(
-        path.join(__dirname, '..'),
-        req.file.path
-      ).replace(/\\/g, '/');
-      originalName = req.file.originalname;
+      try {
+        const uploadResult = await uploadToGCS(req.file);
+        filePath = uploadResult.filePath;
+        originalName = req.file.originalname;
+      } catch (uploadError) {
+        console.error('GCS upload error:', uploadError);
+        return res.status(500).json({ error: 'Failed to upload file to storage' });
+      }
     }
 
     const resource = new Resource({
@@ -56,31 +97,66 @@ router.post('/courses/:courseId/resources', upload.single('file'), async (req, r
       type,
       description,
       course: courseId,
-      folder: folder || "General", // <-- store folder (default if none provided)
-      filePath,
+      folder: folder || "General",
+      filePath: type === 'link' ? link : filePath, // Store filePath for GCS files
+      filePath: filePath,
       originalName,
       link: type === 'link' ? link : undefined,
       createdAt: new Date()
     });
-    console.log("resource created");
+
     await resource.save();
     await Course.findByIdAndUpdate(courseId, { $push: { resources: resource._id } });
-
+    
+    // Generate signed URL for the uploaded file
+    let downloadUrl = null;
+    if (resource.type !== 'link' && resource.filePath) {
+      downloadUrl = await getSignedUrl(resource.filePath);
+    }
+    
     res.status(201).json({
       message: 'Resource added successfully',
       resource: {
         id: resource._id,
         title: resource.title,
         type: resource.type,
-        folder: resource.folder, // include folder in response
+        folder: resource.folder,
         filePath: resource.filePath,
-        downloadUrl: resource.type !== 'link' ? `/api/resources/file/${path.basename(resource.filePath)}` : null,
+        downloadUrl,
         link: resource.link
       }
     });
   } catch (error) {
     console.error('Resource creation error:', error);
     res.status(500).json({ error: 'Failed to create resource' });
+  }
+});
+
+// GET /api/courses/:courseId/resources
+router.get('/courses/:courseId/resources', async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const resources = await Resource.find({ course: courseId });
+    
+    // Generate signed URLs for all file resources
+    const resourcesWithUrls = await Promise.all(
+      resources.map(async resource => {
+        let downloadUrl = null;
+        if (resource.type !== 'link' && resource.filePath) {
+          downloadUrl = await getSignedUrl(resource.filePath);
+        }
+        return {
+          ...resource.toObject(),
+          downloadUrl
+        };
+      })
+    );
+
+    
+    res.status(200).json(resourcesWithUrls);
+  } catch (err) {
+    console.error('Error fetching resources:', err);
+    res.status(500).json({ error: 'Failed to fetch resources' });
   }
 });
 
@@ -92,80 +168,18 @@ router.get('/resources/:resourceId', async (req, res) => {
       return res.status(404).json({ error: 'Resource not found' });
     }
     
+    let downloadUrl = null;
+    if (resource.type !== 'link' && resource.filePath) {
+      downloadUrl = await getSignedUrl(resource.filePath);
+    }
+    
     res.status(200).json({
       ...resource.toObject(),
-      downloadUrl: resource.type !== 'link' 
-        ? `/api/resources/file/${path.basename(resource.filePath)}` 
-        : null
+      downloadUrl
     });
   } catch (err) {
     console.error('Error fetching resource:', err);
     res.status(500).json({ error: 'Failed to fetch resource' });
-  }
-});
-
-// GET /api/resources/file/:filename
-router.get('/file/:filename', (req, res) => {
-  try {
-    const filename = req.params.filename;
-    const filePath = path.join(resourcesDir, filename);
-    
-    if (!fs.existsSync(filePath)) {
-      console.error(`File not found: ${filePath}`);
-      return res.status(404).json({ error: 'File not found' });
-    }
-
-    // Get the original filename from the database if available
-    Resource.findOne({ filePath: { $regex: filename } })
-      .then(resource => {
-        const originalFileName = resource?.originalName || filename;
-        
-        // Set headers for file download
-        res.setHeader('Content-Disposition', `attachment; filename="${originalFileName}"`);
-        res.setHeader('Content-Type', 'application/octet-stream');
-        
-        // Create read stream and pipe to response
-        const fileStream = fs.createReadStream(filePath);
-        fileStream.pipe(res);
-        
-        fileStream.on('error', (err) => {
-          console.error('File stream error:', err);
-          res.status(500).json({ error: 'Error streaming file' });
-        });
-      })
-      .catch(err => {
-        console.error('Database lookup error:', err);
-        // Fallback if database lookup fails
-        res.download(filePath, err => {
-          if (err) {
-            console.error('Error downloading file:', err);
-            res.status(500).json({ error: 'Failed to download file' });
-          }
-        });
-      });
-  } catch (err) {
-    console.error('Error serving file:', err);
-    res.status(500).json({ error: 'Failed to serve file' });
-  }
-});
-
-// GET /api/courses/:courseId/resources
-router.get('/courses/:courseId/resources', async (req, res) => {
-  try {
-    const { courseId } = req.params;
-    const resources = await Resource.find({ course: courseId });
-    
-    // Add download URLs to file resources
-    const resourcesWithUrls = resources.map(resource => ({
-      ...resource.toObject(),
-      downloadUrl: resource.type !== 'link' ? `/api/resources/file/${path.basename(resource.filePath)}` : null
-    }));
-
-    console.log(`Fetched ${resources.length} resources for course ${courseId}`);
-    res.status(200).json(resourcesWithUrls);
-  } catch (err) {
-    console.error('Error fetching resources:', err);
-    res.status(500).json({ error: 'Failed to fetch resources' });
   }
 });
 
@@ -178,12 +192,9 @@ router.delete('/resources/:resourceId', async (req, res) => {
       return res.status(404).json({ error: 'Resource not found' });
     }
 
-    // Remove file from disk if not a link
+    // Remove file from GCS if not a link and has a filePath
     if (resource.type !== 'link' && resource.filePath) {
-      const absolutePath = path.join(__dirname, '..', resource.filePath);
-      if (fs.existsSync(absolutePath)) {
-        fs.unlinkSync(absolutePath);
-      }
+      await deleteFromGCS(resource.filePath);
     }
 
     // Remove from course's resources array
@@ -200,7 +211,7 @@ router.delete('/resources/:resourceId', async (req, res) => {
 });
 
 // PATCH /api/resources/:resourceId/folder
-router.patch('/:resourceId/folder', async (req, res) => {
+router.patch('/resources/:resourceId/folder', async (req, res) => {
   try {
     const { folder } = req.body;
 
@@ -211,7 +222,7 @@ router.patch('/:resourceId/folder', async (req, res) => {
     const resource = await Resource.findByIdAndUpdate(
       req.params.resourceId,
       { folder },
-      { new: true } // return updated resource
+      { new: true }
     );
 
     if (!resource) {
@@ -228,24 +239,6 @@ router.patch('/:resourceId/folder', async (req, res) => {
   }
 });
 
-// GET /api/resources/:resourceId
-router.get('/:resourceId', async (req, res) => {
-  try {
-    const resource = await Resource.findById(req.params.resourceId);
-    if (!resource) {
-      return res.status(404).json({ error: 'Resource not found' });
-    }
-    
-    res.status(200).json({
-      ...resource.toObject(),
-      downloadUrl: resource.type !== 'link' ? `/api/resources/file/${path.basename(resource.filePath)}` : null
-    });
-  } catch (err) {
-    console.error('Error fetching resource:', err);
-    res.status(500).json({ error: 'Failed to fetch resource' });
-  }
-});
-
 // PUT /api/resources/:resourceId
 router.put('/resources/:resourceId', upload.single('file'), async (req, res) => {
   try {
@@ -256,42 +249,49 @@ router.put('/resources/:resourceId', upload.single('file'), async (req, res) => 
     if (!resource) {
       return res.status(404).json({ error: 'Resource not found' });
     }
-    console.log("updated");
+
     // Update fields
     resource.title = title;
     resource.type = type;
     resource.description = description;
     resource.folder = folder || "General";
-    
+
     if (type === 'link') {
-      resource.link = link;
-      // Remove file if changing from file to link
+      // Remove file from GCS if changing from file to link
       if (resource.filePath) {
-        const absolutePath = path.join(__dirname, '..', resource.filePath);
-        if (fs.existsSync(absolutePath)) {
-          fs.unlinkSync(absolutePath);
-        }
+        await deleteFromGCS(resource.filePath);
         resource.filePath = null;
         resource.originalName = null;
       }
+      resource.filePath = link;
+      resource.link = link;
     } else if (req.file) {
       // If new file uploaded
+      // Remove old file from GCS if exists
       if (resource.filePath) {
-        // Remove old file
-        const oldPath = path.join(__dirname, '..', resource.filePath);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
+        await deleteFromGCS(resource.filePath);
       }
-      resource.filePath = path.relative(
-        path.join(__dirname, '..'),
-        req.file.path
-      ).replace(/\\/g, '/');
-      resource.originalName = req.file.originalname;
-      resource.link = undefined;
+
+      // Upload new file to GCS
+      try {
+        const uploadResult = await uploadToGCS(req.file);
+        resource.filePath = uploadResult.filePath;
+        resource.filePath = uploadResult.filePath;
+        resource.originalName = req.file.originalname;
+        resource.link = undefined;
+      } catch (uploadError) {
+        console.error('GCS upload error:', uploadError);
+        return res.status(500).json({ error: 'Failed to upload file to storage' });
+      }
     }
 
     await resource.save();
+
+    // Generate signed URL if resource is a file
+    let downloadUrl = null;
+    if (resource.type !== 'link' && resource.filePath) {
+      downloadUrl = await getSignedUrl(resource.filePath);
+    }
 
     res.status(200).json({
       message: 'Resource updated successfully',
@@ -301,7 +301,7 @@ router.put('/resources/:resourceId', upload.single('file'), async (req, res) => 
         type: resource.type,
         folder: resource.folder,
         filePath: resource.filePath,
-        downloadUrl: resource.type !== 'link' ? `/api/resources/file/${path.basename(resource.filePath)}` : null,
+        downloadUrl,
         link: resource.link
       }
     });
