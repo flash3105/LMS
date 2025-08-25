@@ -18,15 +18,15 @@ export async function renderCourseDetails(contentArea, course) {
   console.log("User: ", user)
 
   //Fetches user by email
-  const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(user.email)}`);
+  const res = await fetch(`${API_BASE_URL}/email/${encodeURIComponent(user.email)}`);
   if (!res.ok) throw new Error('User not found');
   const userFromEmail = await res.json();
   console.log('Fetched user:', userFromEmail)
 
   //Fetches resource completion, resource ratings and resources asynchronously
   const [completionsRes, ratingsRes, resourcesRes] = await Promise.all([
-    fetch(`http://localhost:5000/api/resources/completions/${userFromEmail._id}`),
-    fetch(`http://localhost:5000/api/resources/ratings/${userFromEmail._id}`),
+    fetch(`${API_BASE_URL}/resources/completions/${userFromEmail._id}`),
+    fetch(`${API_BASE_URL}/resources/ratings/${userFromEmail._id}`),
     fetch(`${API_BASE_URL}/courses/${course._id}/resources`)
   ]);
   const resources = await resourcesRes.json();
@@ -151,14 +151,14 @@ export async function renderCourseDetails(contentArea, course) {
       const resourceId = parent.dataset.resourceId;
       const ratingSection = parent.querySelector('.rating-section');
 
-      const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(user.email)}`);
+      const res = await fetch(`${API_BASE_URL}/email/${encodeURIComponent(user.email)}`);
       if (!res.ok) throw new Error('User not found');
       const userFromEmail = await res.json();
 
       // Mark Complete
       if (target.classList.contains('mark-complete-btn')) {
         try {
-          await fetch(`http://localhost:5000/api/resources/${resourceId}/complete`, {
+          await fetch(`${API_BASE_URL}/resources/${resourceId}/complete`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: userFromEmail._id })
@@ -173,7 +173,7 @@ export async function renderCourseDetails(contentArea, course) {
       // Mark Uncomplete
       if (target.classList.contains('mark-uncomplete-btn')) {
       try {
-        await fetch(`http://localhost:5000/api/resources/${resourceId}/uncomplete`, {
+        await fetch(`${API_BASE_URL}/resources/${resourceId}/uncomplete`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: userFromEmail._id })
@@ -182,7 +182,7 @@ export async function renderCourseDetails(contentArea, course) {
         // Delete rating if it exists
         const ratingInputVal = ratingSection.querySelector('.rating-input').value;
         if (ratingInputVal) {
-          await fetch(`http://localhost:5000/api/resources/${resourceId}/rating`, {
+          await fetch(`${API_BASE_URL}/resources/${resourceId}/rating`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: userFromEmail._id })
@@ -198,41 +198,40 @@ export async function renderCourseDetails(contentArea, course) {
 
     // Submit Rating
     // Submit Rating
-if (target.classList.contains('submit-rating-btn')) {
-  const ratingInput = parseInt(ratingSection.querySelector('.rating-input').value);
-  if (!ratingInput || ratingInput < 1 || ratingInput > 5) {
-    return showToast('Select a valid rating (1-5)', 'warning');
-  }
+    if (target.classList.contains('submit-rating-btn')) {
+      const ratingInput = parseInt(ratingSection.querySelector('.rating-input').value);
+      if (!ratingInput || ratingInput < 1 || ratingInput > 5) {
+        return showToast('Select a valid rating (1-5)', 'warning');
+      }
 
-  if (!userFromEmail || !userFromEmail._id) {
-    return showToast('User not found', 'danger');
-  }
-
-  try {
-    const res = await fetch(`http://localhost:5000/api/resources/${resourceId}/rating`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: userFromEmail._id,
-        rating: ratingInput,
-        feedback: '' // optional
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      console.error(data);
-      return showToast(data.error || 'Error submitting rating', 'danger');
+      if (!userFromEmail || !userFromEmail._id) {
+      return showToast('User not found', 'danger');
     }
 
-    updateResourceUI(resourceId, true, ratingInput);
-    showToast('Rating submitted');
-  } catch (err) {
-    console.error(err);
-    showToast('Error submitting rating', 'danger');
-  }
-}
+    try {
+      const res = await fetch(`${API_BASE_URL}/resources/${resourceId}/rating`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userFromEmail._id,
+          rating: ratingInput,
+          feedback: '' // optional
+        })
+      });
 
+      const data = await res.json();
+      if (!res.ok) {
+        console.error(data);
+        return showToast(data.error || 'Error submitting rating', 'danger');
+      }
+
+      updateResourceUI(resourceId, true, ratingInput);
+      showToast('Rating submitted');
+    } catch (err) {
+      console.error(err);
+      showToast('Error submitting rating', 'danger');
+    }
+  }
 
     // Change Rating
     if (target.classList.contains('change-rating-btn')) {

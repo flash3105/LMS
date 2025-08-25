@@ -650,16 +650,21 @@ function renderCourses(courseList, containerId) {
 
    // Append card immediately
   container.appendChild(card);
-
+  
+fetch(`${API_BASE_URL}/email/${encodeURIComponent(user.email)}`)
+      .then(res => res.json())
+      .then(userFromEmail => {
   // Fetch quizzes, assignments, resources and resource completions asynchronously
   Promise.all([
     fetch(`${API_BASE_URL}/courses/${course._id}/quizzes`).then(res => res.json()).catch(() => []),
     fetch(`${API_BASE_URL}/courses/${course._id}/assessments`).then(res => res.json()).catch(() => []),
-    fetch(`${API_BASE_URL}/submissions/${course._id}/${encodeURIComponent(user.email)}`).then(res => res.json()).catch(() => []),
-    fetch(`${API_BASE_URL}/course/${course._id}/${encodeURIComponent(user.email)}`).then(res => res.json()).catch(() => []),
+    fetch(`${API_BASE_URL}/submissions/${course._id}/${encodeURIComponent(userFromEmail.email)}`).then(res => res.json()).catch(() => []),
+    fetch(`${API_BASE_URL}/course/${course._id}/${encodeURIComponent(userFromEmail.email)}`).then(res => res.json()).catch(() => []),
     fetch(`${API_BASE_URL}/courses/${course._id}/resources`).then(res => res.json()).catch(() => []),
-    fetch(`${API_BASE_URL}/resources/completions/${user._id}`).then(res => res.json()).catch(() => [])
+    fetch(`${API_BASE_URL}/resources/completions/${userFromEmail._id}`).then(res => res.json()).catch(() => [])
   ]).then(([quizzes, assignments, QuizSubmissions, assignmentSubmissions, resources, resourceCompletions]) => {
+   
+    
     const quizzesCompleted = quizzes.filter(q =>
       QuizSubmissions.some(s => s.quizId === q._id)
     ).length || 0;
@@ -673,7 +678,7 @@ function renderCourses(courseList, containerId) {
       resources.some(r => r._id === c.resource)
     ).length || 0;
 
-
+    console.log("Resources completd: ", resourcesCompleted);
     //Calculating values to use for the progress bar
     const totalItems = quizzes.length + assignments.length + resources.length;
     const completedItems = quizzesCompleted + assignmentsCompleted + resourcesCompleted;
@@ -692,6 +697,8 @@ function renderCourses(courseList, containerId) {
     //const quizzesInfo = card.querySelector(".quizzes-info");
     //quizzesInfo.textContent = `Quizzes: ${quizzesCompleted}/${quizzes.length}, Assignments: ${assignmentsCompleted}/${assignments.length}`;
   });
+   })
+      .catch(err => console.error("Failed to fetch user or course data:", err));
 
 
     // Add click handler for the view details button
