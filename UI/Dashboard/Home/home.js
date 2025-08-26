@@ -669,9 +669,11 @@ function renderCourses(courseList, containerId) {
           QuizSubmissions.some(s => s.quizId === q._id)
         ).length || 0;
     
-        const assignmentsCompleted =  assignments.filter(a =>
-          assignmentSubmissions.some(s => s.assessmentId === a._id)
-        ).length || 0;
+        const assignmentsCompleted = Array.isArray(assignments) 
+        ? assignments.filter(a =>
+            assignmentSubmissions.some(s => s.assessmentId === a._id)
+          ).length 
+        : 0;
     
         //const resourcesCompleted = resourceCompletions.length;
         const resourcesCompleted = resourceCompletions.filter(c =>
