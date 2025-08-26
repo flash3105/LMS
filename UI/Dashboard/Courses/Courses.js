@@ -17,16 +17,30 @@ export async function renderCourseDetails(contentArea, course) {
 
   console.log("User: ", user)
 
+
+
+  const response = await fetch(`http://localhost:5000/api/mycourses/${user.email}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch enrolled courses");
+    }
+
+    const courses = await response.json();
+
+    console.log("Enrolled Courses: ", courses);
+    courses.enrolledCourses.forEach(course => {
+      console.log("Course:", course.courseName, "Status:", course.status, "Progress:", course.progress);
+    });
+
   //Fetches user by email
-  const res = await fetch(`${API_BASE_URL}/email/${encodeURIComponent(user.email)}`);
+  const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(user.email)}`);
   if (!res.ok) throw new Error('User not found');
   const userFromEmail = await res.json();
   console.log('Fetched user:', userFromEmail)
 
   //Fetches resource completion, resource ratings and resources asynchronously
   const [completionsRes, ratingsRes, resourcesRes] = await Promise.all([
-    fetch(`${API_BASE_URL}/resources/completions/${userFromEmail._id}`),
-    fetch(`${API_BASE_URL}/resources/ratings/${userFromEmail._id}`),
+    fetch(`http://localhost:5000/api/resources/completions/${userFromEmail._id}`),
+    fetch(`http://localhost:5000/api/resources/ratings/${userFromEmail._id}`),
     fetch(`${API_BASE_URL}/courses/${course._id}/resources`)
   ]);
   const resources = await resourcesRes.json();
@@ -151,14 +165,14 @@ export async function renderCourseDetails(contentArea, course) {
       const resourceId = parent.dataset.resourceId;
       const ratingSection = parent.querySelector('.rating-section');
 
-      const res = await fetch(`${API_BASE_URL}/email/${encodeURIComponent(user.email)}`);
+      const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(user.email)}`);
       if (!res.ok) throw new Error('User not found');
       const userFromEmail = await res.json();
 
       // Mark Complete
       if (target.classList.contains('mark-complete-btn')) {
         try {
-          await fetch(`${API_BASE_URL}/resources/${resourceId}/complete`, {
+          await fetch(`http://localhost:5000/api/resources/${resourceId}/complete`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: userFromEmail._id })
@@ -173,7 +187,7 @@ export async function renderCourseDetails(contentArea, course) {
       // Mark Uncomplete
       if (target.classList.contains('mark-uncomplete-btn')) {
       try {
-        await fetch(`${API_BASE_URL}/resources/${resourceId}/uncomplete`, {
+        await fetch(`http://localhost:5000/api/resources/${resourceId}/uncomplete`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: userFromEmail._id })
@@ -182,7 +196,7 @@ export async function renderCourseDetails(contentArea, course) {
         // Delete rating if it exists
         const ratingInputVal = ratingSection.querySelector('.rating-input').value;
         if (ratingInputVal) {
-          await fetch(`${API_BASE_URL}/resources/${resourceId}/rating`, {
+          await fetch(`http://localhost:5000/api/resources/${resourceId}/rating`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: userFromEmail._id })
@@ -209,7 +223,7 @@ export async function renderCourseDetails(contentArea, course) {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/resources/${resourceId}/rating`, {
+      const res = await fetch(`http://localhost:5000/api/resources/${resourceId}/rating`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

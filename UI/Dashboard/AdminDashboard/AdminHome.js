@@ -184,6 +184,40 @@ function setupDashboardInteractions(currentUser) {
   }
 }
 
+function renderAnalyticsLayout(container, activeTab, bodyContent = "") {
+  container.innerHTML = `
+    <div class="reports-page card">
+      <h2 class="card-header"><i class="fas fa-chart-line"></i> LMS Reports & Analytics</h2>
+      <div class="card-body">
+        <button id="backButton" class="btn btn-secondary mb-3">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+        <div class="mb-3">
+          <button id="showUserProgressAnalytics" class="btn ${activeTab === "user" ? "btn-primary" : "btn-outline-primary"}">User progress</button>
+          <button id="showCourseAnalytics" class="btn ${activeTab === "courses" ? "btn-primary" : "btn-outline-primary"}">Courses</button>
+          <button id="showAssessmentAnalytics" class="btn ${activeTab === "assessments" ? "btn-primary" : "btn-outline-primary"}">Assessments</button>
+          <button id="showActivityAnalytics" class="btn ${activeTab === "activity" ? "btn-primary" : "btn-outline-primary"}">Activity</button>
+        </div>
+        <div id="analyticsContent">
+          ${bodyContent}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Back button
+  document.getElementById("backButton").addEventListener("click", () => {
+    renderHomeTab(container, { name: "User", role: "user" }); // adjust to real currentUser
+  });
+
+  // Tab buttons
+  document.getElementById("showUserProgressAnalytics").addEventListener("click", () => renderReportsPage(container));
+  document.getElementById("showCourseAnalytics").addEventListener("click", () => renderCoursesAnalytics(container));
+  document.getElementById("showAssessmentAnalytics").addEventListener("click", () => renderAssessmentsAnalytics(container));
+  document.getElementById("showActivityAnalytics").addEventListener("click", () => renderActivityAnalytics(container));
+}
+
+
 // Reports Page
 async function renderReportsPage(container) {
   try {
@@ -210,63 +244,57 @@ async function renderReportsPage(container) {
       })
     );
 
-    // Render
-    container.innerHTML = `
-      <div class="reports-page card">
-        <h2 class="card-header"><i class="fas fa-chart-line"></i> LMS Reports & Analytics</h2>
-        <div class="card-body">
-          <button id="backButton" class="btn btn-secondary mb-3">
-            <i class="fas fa-arrow-left"></i> Back
-          </button>
-          <ul>
-            <li>User progress over time</li>
-            <table class="table table-striped">
-              <thead>
+    // Prepare the table HTML
+    const tableHTML = `
+      <ul>
+        <li>User progress over time</li>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Email</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Courses</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${usersWithCourses
+              .filter(u => u.role === 'Student' || u.role === 'Intern')
+              .map((u, i) => `
                 <tr>
-                  <th>#</th>
-                  <th>Email</th>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Courses</th>
+                  <td>${i + 1}</td>
+                  <td>${u.email}</td>
+                  <td>${u.name}</td>
+                  <td>${u.role}</td>
+                  <td>${u.courseCount}</td>
+                  <td>
+                    <button class="btn btn-primary btn-sm details-btn" data-email="${u.email}">
+                      Details
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                ${usersWithCourses
-                  .filter(u => u.role === 'Student' || u.role === 'Intern')
-                  .map((u, i) => `
-                    <tr>
-                      <td>${i + 1}</td>
-                      <td>${u.email}</td>
-                      <td>${u.name}</td>
-                      <td>${u.role}</td>
-                      <td>${u.courseCount}</td>
-                      <td>
-                        <button class="btn btn-primary btn-sm details-btn" data-email="${u.email}">
-                          Details
-                        </button>
-                      </td>
-                    </tr>
-                  `).join('')}
-              </tbody>
-            </table>
-            <li>Top-performing courses</li>
-            <li>Engagement rates</li>
-            <li>Assessment results and trends</li>
-            <li>Active vs inactive users</li>
-          </ul>
-          <div class="text-muted mt-3">
-            <i class="fas fa-spinner fa-spin"></i> More analytics coming soon...
-          </div>
-        </div>
+              `).join('')}
+          </tbody>
+        </table>
+      </ul>
+      <div class="text-muted mt-3">
+        <i class="fas fa-spinner fa-spin"></i> More analytics coming soon...
       </div>
     `;
 
-    document.querySelectorAll('.details-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+    // Render the layout once
+    renderAnalyticsLayout(container, "user", tableHTML);
+
+    // Add per-user details buttons
+    document.querySelectorAll(".details-btn").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
         const email = e.currentTarget.dataset.email;
         await renderUserAnalytics(container, email);
       });
     });
+
   } catch (err) {
     console.error('Statistics load error:', err);
     container.innerHTML = `
@@ -298,21 +326,25 @@ async function renderUserAnalytics(container, email) {
     };
   }
 
+  let allQuizzesTaken = [];
+
   try {
     // Fetch quizzes + submissions for each course
     const coursesWithQuizzes = await Promise.all(
       userData.enrolledCourses.map(async (course) => {
         try {
-          //Fetch quizzes for thic course and user
+          //Fetches quizzes for thic course and user
           const quizzesRes = await fetch(`${API_BASE_URL}/courses/${course._id}/quizzes`);
           const quizzes = quizzesRes.ok ? await quizzesRes.json() : [];
+
+          console.log("Quizzes: ", quizzes);
 
           //Fetches assignments for this course and user
           const assRes = await fetch(`${API_BASE_URL}/courses/${course._id}/assessments`);
           const assessments = assRes.ok ? await assRes.json() : [];
 
           // Fetches quiz submissions for this course and user
-          const quizSubsRes = await fetch(`${API_BASE_URL}/submissions/${course._id}/${encodeURIComponent(email)}`);
+          const quizSubsRes = await fetch(`http://localhost:5000/api/submissions/${course._id}/${encodeURIComponent(email)}`);
           const QuizSubmissions = quizSubsRes.ok ? await quizSubsRes.json() : [];
 
           //Fetches assignments submissions for this course and user
@@ -326,26 +358,28 @@ async function renderUserAnalytics(container, email) {
           const resourceRes = await fetch(`${API_BASE_URL}/courses/${course._id}/resources`);
           const resources = await resourceRes.json();
 
-          //Fetches the user using their email
-          const res = await fetch(`${API_BASE_URL}/email/${encodeURIComponent(email)}`);
+          const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(email)}`);
           if (!res.ok) throw new Error('User not found');
           const user = await res.json();
           console.log('Fetched user:', user);
 
-          //Fteches the completed resources
-          const compRes = await fetch(`${API_BASE_URL}/resources/completions/${user._id}`);
+          const compRes = await fetch(`http://localhost:5000/api/resources/completions/${user._id}`);
           const completions = (await compRes.json()).filter(c =>
             resources.some(r => r._id === c.resource)
           );
 
           console.log("Completions: ", completions);
 
-          // Counts quizzes that have been submitted
+          // Count quizzes that have submissions
           const quizzesTaken = quizzes.filter(q =>
             QuizSubmissions.some(s => s.quizId === q._id)
-          ).length;
+          );
 
-          // Counts assignements that have been submitted
+          allQuizzesTaken.push(...quizzesTaken);
+
+
+          console.log("Quizzes taken: ", quizzesTaken)
+
           const assignemntsSubmitted = assessments.filter(a =>
             assignmentSubmissions.some(s => s.assessmentId === a._id)
           ).length;
@@ -356,15 +390,14 @@ async function renderUserAnalytics(container, email) {
           const completedResources = completions.length
           const allResources = resources.length;
 
-          /* Calculations for the progress bar */
-          const completedItems = quizzesTaken + assignemntsSubmitted + completedResources;
+          const completedItems = quizzesTaken.length + assignemntsSubmitted + completedResources;
           const totalItems = totalQuizzes + totalAssessments + allResources;
 
           const progress = totalItems ? Math.round((completedItems / totalItems) * 100) : 0;
 
           return {
             ...course,
-            quizzesTaken,
+            quizzesTaken: quizzesTaken.length || 0,
             totalQuizzes,
             assignemntsSubmitted,
             totalAssessments,
@@ -407,7 +440,7 @@ async function renderUserAnalytics(container, email) {
           </div>
           <div>
             <button id="showCourses" class="btn btn-primary">Courses</button>
-            <!--<button id="showAssessments" class="btn btn-outline-primary">Assessments</button> -->
+            <button id="showQuizzes" class="btn btn-outline-primary">Quizzes</button>
           </div>
           <div id="tableContainer"></div>
         </div>
@@ -450,6 +483,67 @@ async function renderUserAnalytics(container, email) {
           </tbody>
         </table>
       `;
+    }
+
+    function renderQuizzesTable() {
+      // Clear the container first
+      tableContainer.innerHTML = "<p>Loading quizzes...</p>";
+
+      
+
+      // Fetch additional info for all quizzes asynchronously
+      Promise.all(
+        allQuizzesTaken.map(async (q) => {
+          const courseRes = await fetch(`${API_BASE_URL}/mycourses/retrieve/${q.courseId}`);
+          const courses = courseRes.ok ? await courseRes.json() : {};
+          const gradeRes = await fetch(`${API_BASE_URL}/grades/course/${q.courseId}`);
+          const grades = gradeRes.ok ? await gradeRes.json() : {};
+          
+          const quizGrade = grades.find(g => g.refId === q._id);
+          console.log("Courses: ", courses);
+          console.log("Grades: ", grades);
+          console.log("Quiz grade: ", quizGrade);
+          return {
+            ...q,
+            dueDate: courses.dueDate || q.dueDate,
+            courseName: courses.courseName,
+            grade: quizGrade ? quizGrade.grade : "-",
+            feedback: quizGrade ? quizGrade.feedback : ""
+          };
+        })
+      )
+      .then(quizzesWithExtra => {
+        const rows = quizzesWithExtra.map(q => `
+          <tr>
+            <td>${q.title || "-"}</td>
+            <td>${q.dueDate ? new Date(q.dueDate).toLocaleDateString() : "-"}</td>
+            <td>${q.courseName || "-"}</td>
+            <td>${q.grade}</td>
+            <td>${q.feedback}</td>
+          </tr>
+        `);
+
+        tableContainer.innerHTML = `
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Due Date</th>
+                <th>Course</th>
+                <th>Grade</th>
+                <th>Feedback</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.length ? rows.join('') : "<tr><td colspan='3'>No quizzes found</td></tr>"}
+            </tbody>
+          </table>
+        `;
+      })
+      .catch(err => {
+        console.error("Failed fetching extra quiz data:", err);
+        tableContainer.innerHTML = "<p>Failed to load quizzes.</p>";
+      });
     }
 
     // Assessments Table
@@ -495,8 +589,16 @@ async function renderUserAnalytics(container, email) {
       renderCoursesTable();
       document.getElementById("showCourses").classList.add("btn-primary");
       document.getElementById("showCourses").classList.remove("btn-outline-primary");
-      document.getElementById("showAssessments").classList.add("btn-outline-primary");
-      document.getElementById("showAssessments").classList.remove("btn-primary");
+      document.getElementById("showQuizzes").classList.add("btn-outline-primary");
+      document.getElementById("showQuizzes").classList.remove("btn-primary");
+    });
+
+    document.getElementById("showQuizzes").addEventListener("click", () => {
+      renderQuizzesTable();
+      document.getElementById("showQuizzes").classList.add("btn-primary");
+      document.getElementById("showQuizzes").classList.remove("btn-outline-primary");
+      document.getElementById("showCourses").classList.add("btn-outline-primary");
+      document.getElementById("showCourses").classList.remove("btn-primary");
     });
 
     //document.getElementById("showAssessments").addEventListener("click", () => {
@@ -513,9 +615,14 @@ async function renderUserAnalytics(container, email) {
   }
 }
 
+async function renderCoursesAnalytics(container) {
+  renderAnalyticsLayout(container, "courses", `<div class="text-muted">Courses analytics coming soon...</div>`);
+}
 
+async function renderAssessmentsAnalytics(container) {
+  renderAnalyticsLayout(container, "assessments", `<div class="text-muted">Assessments analytics coming soon...</div>`);
+}
 
-
-
-
-
+async function renderActivityAnalytics(container) {
+  renderAnalyticsLayout(container, "activity", `<div class="text-muted">Activity analytics coming soon...</div>`);
+}
