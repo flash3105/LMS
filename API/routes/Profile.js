@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Profile = require('../models/Profile');
+const { generateCertificatePDF } = require('../Utils/certificateGenerator');
 
 // Get a user's profile by email
 router.get('/:email', async (req, res) => {
@@ -92,6 +93,49 @@ router.delete("/:email/goals/:index", async (req, res) => {
     res.json(profile);
   } catch (err) {
     console.error("Error deleting goal:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//Certificate route
+router.post('/:email/test-certificate', async (req, res) => {
+  try {
+    const { email } = req.params;
+    const { studentName, courseName } = req.body;
+    
+    let profile = await Profile.findOne({ email });
+    if (!profile) {
+      profile = new Profile({ email, certificates: [] });
+    }
+    
+    const certificateId = `TEST-${Date.now()}`;
+    const certificateUrl = await generateCertificatePDF({
+      certificateId,
+      studentName: studentName || "Test Student",
+      courseName: courseName || "Test Course",
+      grade: "A+",
+      completionDate: new Date(),
+      status: "completed"
+    });
+    
+    profile.certificates.push({
+      certificateId,
+      title: `${courseName || "Test Course"} Certificate`,
+      courseName: courseName || "Test Course",
+      grade: "A+",
+      issueDate: new Date(),
+      completionDate: new Date(),
+      certificateUrl,
+      status: "completed"
+    });
+    
+    await profile.save();
+    
+    res.json({ 
+      message: 'Test certificate created successfully',
+      certificate: profile.certificates[profile.certificates.length - 1]
+    });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

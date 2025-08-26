@@ -52,9 +52,18 @@ export async function renderProfileTab(contentArea, currentUser) {
       
       .profile-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 1.5rem;
+        grid-template-areas:
+          "account milestones"
+          "achievements goals";
       }
+
+      .profile-card:nth-child(1) { grid-area: account; }
+      .profile-card:nth-child(2) { grid-area: milestones; }
+      .profile-card:nth-child(3) { grid-area: achievements; }
+      .profile-card:nth-child(4) { grid-area: goals; }
       
       .profile-card {
         background: white;
