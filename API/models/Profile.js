@@ -11,6 +11,13 @@ const MilestoneSchema = new mongoose.Schema({
   title: String,
   description: String,
   achievedOn: Date,
+  courseId: mongoose.Schema.Types.ObjectId, // Reference to course
+  type: {
+    type: String,
+    enum: ['quiz', 'course', 'streak', 'other'],
+    default: 'other'
+  },
+  score: Number, // score that triggers the milestone
 });
 
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const QuizSubmit = require('../models/QuizSubmit');
+const Profile = require('../models/Profile'); // Import Profile model
 
 // Submit a quiz
 router.post('/:quizId/submit', async (req, res) => {
@@ -12,22 +13,84 @@ router.post('/:quizId/submit', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields.' });
     }
 
-    // Optionally: prevent duplicate submissions per user per quiz
-    // const existing = await QuizSubmit.findOne({ quizId, email });
-    // if (existing) return res.status(409).json({ error: 'Quiz already submitted.' });
+    // Get the quiz to check answers
+    const quiz = await mongoose.model('Quiz').findById(quizId);
+    if (!quiz) {
+      return res.status(404).json({ error: 'Quiz not found.' });
+    }
 
+    // Calculate score
+    let correctCount = 0;
+    quiz.questions.forEach((q, idx) => {
+      const userAnswer = answers[idx]?.answer;
+      if (userAnswer && userAnswer === q.correctAnswer) {
+        correctCount++;
+      }
+    });
+
+    const totalQuestions = quiz.questions.length;
+    const grade = Math.round((correctCount / totalQuestions) * 100);
+
+    // Save submission
     const submission = new QuizSubmit({
       quizId,
       courseId,
       email,
-      answers
+      answers,
+      grade // Store the grade with the submission
     });
 
     await submission.save();
-    res.json({ message: 'Quiz submitted successfully.' });
+
+    // Check if score is 80% or higher and add milestone
+    if (grade >= 80) {
+      await addQuizMilestone(email, quiz.title, grade, courseId);
+    }
+
+    res.json({ 
+      message: 'Quiz submitted successfully.',
+      grade: grade,
+      correctCount: correctCount,
+      totalQuestions: totalQuestions
+    });
   } catch (err) {
+    console.error('Error submitting quiz:', err);
     res.status(500).json({ error: 'Server error.' });
   }
 });
+
+// Helper function to add quiz milestone
+async function addQuizMilestone(email, quizTitle, score, courseId) {
+  try {
+    // Check if milestone already exists for this quiz
+    const profile = await Profile.findOne({ email });
+    const existingMilestone = profile.milestones.find(m => 
+      m.title.includes(quizTitle) && m.description.includes(`Scored ${score}%`)
+    );
+
+    if (existingMilestone) {
+      return; // Milestone already exists
+    }
+
+    // Add new milestone
+    const milestone = {
+      title: `Quiz Excellence: ${quizTitle}`,
+      description: `Scored ${score}% on ${quizTitle} quiz`,
+      achievedOn: new Date(),
+      courseId: courseId,
+      type: 'quiz'
+    };
+
+    await Profile.findOneAndUpdate(
+      { email },
+      { $push: { milestones: milestone } },
+      { new: true, upsert: true }
+    );
+
+    console.log(`Added milestone for ${email}: Scored ${score}% on ${quizTitle}`);
+  } catch (err) {
+    console.error('Error adding quiz milestone:', err);
+  }
+}
 
 module.exports = router;

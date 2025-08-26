@@ -209,7 +209,7 @@ function loadAssessmentPageCSS() {
   document.head.appendChild(style);
 }
 
-// MODIFIED: Main function to render assessment page with course names
+// Main function to render assessment page with course names
 export async function renderAssessmentPage(contentArea) {
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : (typeof currentUser !== 'undefined' ? currentUser : null);
   const userEmail = user && user.email ? user.email : null;
@@ -238,7 +238,7 @@ export async function renderAssessmentPage(contentArea) {
   `;
 
   try {
-    // CHANGED: Get courses from global data or fetch if not available
+    // Get courses from global data or fetch if not available
     let courses = window.courses || [];
     if (courses.length === 0) {
       const response = await fetch(`${API_BASE_URL}/courses/all`);
@@ -260,7 +260,7 @@ export async function renderAssessmentPage(contentArea) {
       return;
     }
 
-    // CHANGED: Create course ID to name mapping using available course data
+    // Create course ID to name mapping using available course data
     const courseInfoMap = new Map();
     courseIds.forEach(courseId => {
       const course = courses.find(c => 
@@ -304,7 +304,7 @@ export async function renderAssessmentPage(contentArea) {
       courseIds.includes(q.courseId?.toString())
     );
 
-    // Render assessments with course NAME instead of ID
+    // Render assessments with course name instead of ID
     const assessmentsHtml = renderAssessmentsByCourse(
       courseIds, 
       assessmentsByCourse, 
@@ -340,7 +340,7 @@ export async function renderAssessmentPage(contentArea) {
   }
 }
 
-// MODIFIED: Function to render assessments grouped by course (using course names)
+// Function to render assessments grouped by course
 function renderAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grades, ASSgrades, courseInfoMap) {
   if (courseIds.length === 0) {
     return `<div class="empty-message">You are not enrolled in any courses.</div>`;
@@ -355,10 +355,10 @@ function renderAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grad
       return '';
     }
     
-    // MODIFIED: Use course name instead of ID for folder display
+    // Use course name instead of ID for folder display
     const courseName = courseInfo.name;
     
-    // FIXED: assessmentsByCourse[courseId] is now an array, not an object with folders
+    // assessmentsByCourse is now an array, not an object with folders
     const courseAssessments = assessmentsByCourse[courseId] || [];
 
     const courseQuizzes = quizzes.filter(q => q.courseId?.toString() === courseId);
