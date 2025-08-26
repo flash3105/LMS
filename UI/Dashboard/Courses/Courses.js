@@ -491,7 +491,14 @@ async function renderSubmissions(courseId, contentArea) {
 
     // Fetch assessments to get their titles
     const assessmentsResponse = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
-    const assessments = await assessmentsResponse.json();
+    const assessmentsRaw = await assessmentsResponse.json();
+
+    // Normalize to flat array (works for both array and grouped object)
+    const assessments = assessmentsRaw && typeof assessmentsRaw === "object" && !Array.isArray(assessmentsRaw)
+      ? Object.values(assessmentsRaw).flat()
+      : Array.isArray(assessmentsRaw)
+        ? assessmentsRaw
+        : [];
 
     if (!submissions || submissions.length === 0) {
       submissionsContainer.innerHTML = '<div class="empty-message">You have no submissions for this course yet.</div>';

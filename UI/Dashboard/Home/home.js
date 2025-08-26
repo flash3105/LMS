@@ -664,16 +664,25 @@ function renderCourses(courseList, containerId) {
           fetch(`http://localhost:5000/api/resources/completions/${userFromEmail._id}`).then(res => res.json()).catch(() => [])
         ]).then(([quizzes, assignments, QuizSubmissions, assignmentSubmissions, resources, resourceCompletions]) => {
    
-    
+
+        // Normalize assignments to flat array (works for both array and grouped object)
+        const assignmentsArray = assignments && typeof assignments === "object"
+          ? Object.values(assignments).flat()
+          : (Array.isArray(assignments) ? assignments : []);
+
+        console.log("Assignment array: ", assignmentsArray);
+
         const quizzesCompleted = quizzes.filter(q =>
           QuizSubmissions.some(s => s.quizId === q._id)
         ).length || 0;
+
+        console.log("Quizzes completed: ", quizzesCompleted);
     
-        const assignmentsCompleted = Array.isArray(assignments) 
-        ? assignments.filter(a =>
-            assignmentSubmissions.some(s => s.assessmentId === a._id)
-          ).length 
-        : 0;
+        const assignmentsCompleted = assignmentsArray.filter(a =>
+          assignmentSubmissions.some(s => s.assessmentId === a._id)
+        ).length || 0;
+
+        console.log("Assignemnts completed: ", assignmentsCompleted);
     
         //const resourcesCompleted = resourceCompletions.length;
         const resourcesCompleted = resourceCompletions.filter(c =>
@@ -682,10 +691,11 @@ function renderCourses(courseList, containerId) {
 
         console.log("Resources completd: ", resourcesCompleted);
         //Calculating values to use for the progress bar
-        const totalItems = quizzes.length + assignments.length + resources.length;
+        const totalItems = quizzes.length + assignmentsArray.length + resources.length;
         const completedItems = quizzesCompleted + assignmentsCompleted + resourcesCompleted;
         const progressPercent = totalItems ? Math.round((completedItems / totalItems) * 100) : 0;
 
+        console.log("total items:", totalItems);
         // Update progress bar dynamically
         const progressFill = card.querySelector(".progress-bar-fill");
         const progressText = card.querySelector(".progress-text");
