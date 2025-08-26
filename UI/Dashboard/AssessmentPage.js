@@ -64,15 +64,12 @@ function loadAssessmentPageCSS() {
       margin: 0 0 1.5rem;
       padding-bottom: 0.75rem;
       border-bottom: 2px solid rgba(44, 62, 80, 0.1);
-      
-      
     }
     
     .assessments-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.95rem;
-      
     }
     
  .assessments-table thead {
@@ -139,8 +136,7 @@ function loadAssessmentPageCSS() {
       display: inline-block;
       margin-left: 0.5rem;
       padding: 0.2rem 0.5rem;
-      background-color: #ffebee;
-      color: #c62828;
+      background-color: #c62828;
       border-radius: 4px;
       font-size: 0.75rem;
       font-weight: 500;
@@ -165,6 +161,39 @@ function loadAssessmentPageCSS() {
     .error-message {
       color: #c62828;
     }
+
+    /* Folder styles for assessments */
+    .folder-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 0.8rem 1.2rem;
+      background: linear-gradient(90deg, #3182ce, #4299e1);
+      border-radius: 10px;
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      margin-bottom: 1rem;
+    }
+
+    .folder-header:hover {
+      background: linear-gradient(90deg, #2b6cb0, #3182ce);
+    }
+
+    .folder-content {
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .course-folder {
+      margin-bottom: 2.5rem;
+    }
+
+    .foldered-assessments {
+      margin-top: 1.5rem;
+    }
     
     @media (max-width: 768px) {
       .assessment-container {
@@ -180,6 +209,7 @@ function loadAssessmentPageCSS() {
   document.head.appendChild(style);
 }
 
+// Main function to render assessment page with course names
 export async function renderAssessmentPage(contentArea) {
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : (typeof currentUser !== 'undefined' ? currentUser : null);
   const userEmail = user && user.email ? user.email : null;
@@ -192,8 +222,6 @@ export async function renderAssessmentPage(contentArea) {
   loadAssessmentPageCSS();
 
   contentArea.innerHTML = `
-
-      
     <div class="profile-container">
       <div class="welcome">
         <h2>My Assessments</h2>
@@ -201,8 +229,8 @@ export async function renderAssessmentPage(contentArea) {
       </div>
       
       <div class="assessments-section">
-        <div class="section-title">All Assessments</div>
-        <div id="assessmentsTableContainer">
+        <div class="section-title">All Assessments by Course</div>
+        <div id="assessmentsContainer">
           <div class="empty-message">Loading assessments...</div>
         </div>
       </div>
@@ -210,15 +238,61 @@ export async function renderAssessmentPage(contentArea) {
   `;
 
   try {
-    const assessmentsArrays = [];
-    for (const course of my_courses) {
-      const courseId = typeof course === 'string' ? course : course._id;
-      if (courseId) {
-        const assessments = await fetchAssessments(courseId);
-        assessmentsArrays.push(assessments);
+    // Get courses from global data or fetch if not available
+    let courses = window.courses || [];
+    if (courses.length === 0) {
+      const response = await fetch(`${API_BASE_URL}/courses/all`);
+      if (response.ok) {
+        courses = await response.json();
+        window.courses = courses; // Store for future use
       }
     }
-    const assessments = assessmentsArrays.flat();
+
+    // Extract course IDs
+    const courseIds = my_courses.map(course => 
+      typeof course === 'string' ? course : course._id || course.id
+    ).filter(id => id);
+
+    if (courseIds.length === 0) {
+      document.getElementById('assessmentsContainer').innerHTML = `
+        <div class="empty-message">You are not enrolled in any courses.</div>
+      `;
+      return;
+    }
+
+    // Create course ID to name mapping using available course data
+    const courseInfoMap = new Map();
+    courseIds.forEach(courseId => {
+      const course = courses.find(c => 
+        c._id === courseId || c.id === courseId
+      );
+      
+      if (course) {
+        courseInfoMap.set(courseId, {
+          name: course.courseName || course.name || course.title || 
+                course.course_name || course.course_title || 
+                `Course ${courseId.substring(0, 8)}`,
+          id: courseId
+        });
+      } else {
+        courseInfoMap.set(courseId, {
+          name: `Course ${courseId.substring(0, 8)}`,
+          id: courseId
+        });
+      }
+    });
+    
+    // Fetch assessments for each course
+    const assessmentsByCourse = {};
+    for (const courseId of courseIds) {
+      try {
+        const assessments = await fetchAssessments(courseId);
+        assessmentsByCourse[courseId] = assessments;
+      } catch (error) {
+        console.error(`Error fetching assessments for course ${courseId}:`, error);
+        assessmentsByCourse[courseId] = [];
+      }
+    }
 
     const [quizzes, grades, ASSgrades] = await Promise.all([
       fetchAllQuizzes(),
@@ -226,12 +300,71 @@ export async function renderAssessmentPage(contentArea) {
       fetchAssessmentsGrades(userEmail)
     ]);
 
-    const courseIds = my_courses.map(c => typeof c === 'string' ? c : c._id);
     const filteredQuizzes = quizzes.filter(q =>
       courseIds.includes(q.courseId?.toString())
     );
 
-    const assessmentsWithGrades = assessments.map(a => {
+    // Render assessments with course name instead of ID
+    const assessmentsHtml = renderAssessmentsByCourse(
+      courseIds, 
+      assessmentsByCourse, 
+      filteredQuizzes, 
+      grades, 
+      ASSgrades,
+      courseInfoMap
+    );
+    
+    document.getElementById('assessmentsContainer').innerHTML = assessmentsHtml;
+
+    // Add folder toggle functionality
+    document.querySelectorAll('.folder-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const content = header.nextElementSibling;
+        const icon = header.querySelector('.fas.fa-chevron-down');
+
+        if (content.style.display === 'none' || content.style.display === '') {
+          content.style.display = 'block';
+          icon.style.transform = 'rotate(0deg)';
+        } else {
+          content.style.display = 'none';
+          icon.style.transform = 'rotate(-90deg)';
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('Error loading assessments:', error);
+    document.getElementById('assessmentsContainer').innerHTML = `
+      <div class="error-message">Failed to load assessments. ${error.message}</div>
+    `;
+  }
+}
+
+// Function to render assessments grouped by course
+function renderAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grades, ASSgrades, courseInfoMap) {
+  if (courseIds.length === 0) {
+    return `<div class="empty-message">You are not enrolled in any courses.</div>`;
+  }
+
+  let hasAssessments = false;
+
+  const coursesHtml = courseIds.map(courseId => {
+    const courseInfo = courseInfoMap.get(courseId);
+    
+    if (!courseInfo) {
+      return '';
+    }
+    
+    // Use course name instead of ID for folder display
+    const courseName = courseInfo.name;
+    
+    // assessmentsByCourse is now an array, not an object with folders
+    const courseAssessments = assessmentsByCourse[courseId] || [];
+
+    const courseQuizzes = quizzes.filter(q => q.courseId?.toString() === courseId);
+
+    // Process assessments with grades
+    const assessmentsWithGrades = courseAssessments.map(a => {
       const gradeObj = ASSgrades.find(g => (g.assessmentId === a._id || g.assessmentId === a.id));
       return {
         ...a,
@@ -241,7 +374,8 @@ export async function renderAssessmentPage(contentArea) {
       };
     });
 
-    const quizzesWithGrades = filteredQuizzes.map(q => {
+    // Process quizzes with grades
+    const quizzesWithGrades = courseQuizzes.map(q => {
       const gradeObj = grades.find(g => g.type === 'quiz' && (g.refId === q._id || g.refId === q.id));
       return {
         ...q,
@@ -259,13 +393,32 @@ export async function renderAssessmentPage(contentArea) {
       return aDate - bDate;
     });
 
-    const tableHtml = renderAssessmentsTable(allItems);
-    document.getElementById('assessmentsTableContainer').innerHTML = tableHtml;
-  } catch (error) {
-    document.getElementById('assessmentsTableContainer').innerHTML = `
-      <div class="error-message">Failed to load assessments.</div>
+    if (allItems.length > 0) {
+      hasAssessments = true;
+    }
+
+    return `
+      <div class="course-folder">
+        <div class="folder-header">
+          <span><i class="fas fa-folder-open" style="margin-right:8px;"></i> ${courseName}</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="folder-content" style="display:none;">
+          ${allItems.length > 0 ? renderAssessmentsTable(allItems) : '<div class="empty-message">No assessments for this course.</div>'}
+        </div>
+      </div>
     `;
+  }).join('');
+
+  if (!hasAssessments) {
+    return `<div class="empty-message">No assessments or quizzes found in any of your courses.</div>`;
   }
+
+  return `
+    <div class="foldered-assessments">
+      ${coursesHtml}
+    </div>
+  `;
 }
 
 function renderAssessmentsTable(items) {
@@ -274,7 +427,7 @@ function renderAssessmentsTable(items) {
   }
   return `
     <table class="assessments-table">
-  <thead style="background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);">
+      <thead style="background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);">
         <tr>
           <th>Type</th>
           <th>Name</th>

@@ -2,16 +2,18 @@ import { userData } from '../Data/data.js';
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 export async function renderProfileTab(contentArea, currentUser) {
-  // Fetch latest profile from backend to get bio
+  // Fetch latest profile from backend to get bio and milestones
   try {
     const res = await fetch(`${API_BASE_URL}/Profile/${currentUser.email}`);
     if (!res.ok) throw new Error('Failed to fetch profile');
     const profile = await res.json();
     currentUser.bio = profile.bio || '';
+    currentUser.milestones = profile.milestones || [];
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
   } catch (err) {
     console.error('Error fetching profile:', err);
     currentUser.bio = currentUser.bio || '';
+    currentUser.milestones = currentUser.milestones || [];
   }
 
   // Safely access userProgress
@@ -20,7 +22,11 @@ export async function renderProfileTab(contentArea, currentUser) {
     completedCourses: [],
   };
 
-  const milestones = ["The system will render your milestones when you achieve them"];
+  // Generate milestones list 
+  const milestones = currentUser.milestones.length > 0 
+    ? currentUser.milestones.map(m => m.title + (m.description ? ` - ${m.description}` : ''))
+    : ["The system will render your milestones when you achieve them"];
+
   const achievements = ["The system will render your achievements when you achieve them"];
 
   contentArea.innerHTML = `
