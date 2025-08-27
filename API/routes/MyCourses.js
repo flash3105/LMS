@@ -73,6 +73,58 @@ router.post(
   }
 );
 
+router.get('/user/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Find the MyCourses entry by user ID
+    const userCourses = await MyCourses.findOne({ userId }).populate('enrolledCourses');
+    if (!userCourses) {
+      return res.status(404).json({ message: 'No enrolled courses found for this user' });
+    }
+
+    // Fetch the actual User document
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const coursesWithEnrollment = [];
+
+    for (const course of userCourses.enrolledCourses) {
+      let enrollment = await Enrollment.findOne({ user: user._id, course: course._id });
+
+      // Create Enrollment if it doesn't exist (old courses)
+      if (!enrollment) {
+        enrollment = new Enrollment({
+          user: user._id,
+          course: course._id,
+          status: 'enrolled',
+          progress: 0,
+          certificateId: null,
+        });
+        await enrollment.save();
+      }
+
+      coursesWithEnrollment.push({
+        ...course.toObject(),
+        progress: enrollment.progress,
+        status: enrollment.status,
+        certificateId: enrollment.certificateId,
+      });
+    }
+
+    res.status(200).json({
+      _id: userCourses._id,
+      name: userCourses.name,
+      email: userCourses.email,
+      enrolledCourses: coursesWithEnrollment,
+      createdAt: userCourses.createdAt,
+    });
+  } catch (error) {
+    console.error('Error retrieving enrolled courses by userId:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Route to get enrolled courses for a user
 router.get('/:email', async (req, res) => {
   const { email } = req.params;
@@ -115,7 +167,7 @@ router.get('/:email', async (req, res) => {
     }
 
     res.status(200).json({
-      _id: userCourses._id,
+      _id: user._id,
       name: userCourses.name,
       email: userCourses.email,
       enrolledCourses: coursesWithEnrollment,
@@ -123,6 +175,61 @@ router.get('/:email', async (req, res) => {
     });
   } catch (error) {
     console.error('Error retrieving enrolled courses:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Route to get a single enrolled course by courseId for a user
+router.get('/:email/course/:courseId', async (req, res) => {
+  const { email, courseId } = req.params;
+
+  try {
+    // Fetch the user's enrolled courses
+    const userCourses = await MyCourses.findOne({ email }).populate('enrolledCourses');
+    if (!userCourses) {
+      return res.status(404).json({ message: 'No enrolled courses found for this user' });
+    }
+
+    // Fetch the user info
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Find the specific course
+    const course = userCourses.enrolledCourses.find(c => c._id.toString() === courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found in enrolled courses' });
+    }
+
+    // Check or create enrollment
+    let enrollment = await Enrollment.findOne({ user: user._id, course: course._id });
+    if (!enrollment) {
+      enrollment = new Enrollment({
+        user: user._id,
+        course: course._id,
+        status: 'enrolled',
+        progress: 0,
+        certificateId: null,
+      });
+      await enrollment.save();
+    }
+
+    // Merge course data with enrollment info
+    const courseWithEnrollment = {
+      ...course.toObject(),
+      progress: enrollment.progress,
+      status: enrollment.status,
+      certificateId: enrollment.certificateId,
+    };
+
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      course: courseWithEnrollment,
+    });
+
+  } catch (error) {
+    console.error('Error retrieving enrolled course:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

@@ -211,7 +211,6 @@ export async function renderCourseDetails(contentArea, course) {
     }
 
     // Submit Rating
-    // Submit Rating
     if (target.classList.contains('submit-rating-btn')) {
       const ratingInput = parseInt(ratingSection.querySelector('.rating-input').value);
       if (!ratingInput || ratingInput < 1 || ratingInput > 5) {

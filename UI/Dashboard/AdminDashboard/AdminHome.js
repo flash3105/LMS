@@ -337,8 +337,6 @@ async function renderUserAnalytics(container, email) {
           const quizzesRes = await fetch(`${API_BASE_URL}/courses/${course._id}/quizzes`);
           const quizzes = quizzesRes.ok ? await quizzesRes.json() : [];
 
-          console.log("Quizzes: ", quizzes);
-
           //Fetches assignments for this course and user
           const assRes = await fetch(`${API_BASE_URL}/courses/${course._id}/assessments`);
           const assessments = assRes.ok ? await assRes.json() : [];
@@ -351,24 +349,27 @@ async function renderUserAnalytics(container, email) {
           const assSubsRes = await fetch(`${API_BASE_URL}/course/${course._id}/${encodeURIComponent(email)}`);
           const assignmentSubmissions = assSubsRes.ok ? await assSubsRes.json() : [];
 
-          console.log("Quiz Submissions: ", QuizSubmissions);
-          console.log("Assignment submissions: ", assignmentSubmissions);
-
-          
+          //Fetches all the resources in a course
           const resourceRes = await fetch(`${API_BASE_URL}/courses/${course._id}/resources`);
           const resources = await resourceRes.json();
 
+          //Fetches a user using their email
           const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(email)}`);
           if (!res.ok) throw new Error('User not found');
           const user = await res.json();
           console.log('Fetched user:', user);
 
+          //Fetches all the completed resources for a user
           const compRes = await fetch(`http://localhost:5000/api/resources/completions/${user._id}`);
           const completions = (await compRes.json()).filter(c =>
             resources.some(r => r._id === c.resource)
           );
 
-          console.log("Completions: ", completions);
+          //Fetches each enrolled course of a user
+          const courseRes = await fetch(`http://localhost:5000/api/mycourses/${encodeURIComponent(email)}/course/${course._id}`)
+          const enrolledCourse = await courseRes.json();
+
+          console.log("The course: ", enrolledCourse);
 
           // Count quizzes that have submissions
           const quizzesTaken = quizzes.filter(q =>
@@ -376,9 +377,6 @@ async function renderUserAnalytics(container, email) {
           );
 
           allQuizzesTaken.push(...quizzesTaken);
-
-
-          console.log("Quizzes taken: ", quizzesTaken)
 
           const assignemntsSubmitted = assessments.filter(a =>
             assignmentSubmissions.some(s => s.assessmentId === a._id)
@@ -393,8 +391,6 @@ async function renderUserAnalytics(container, email) {
           const completedItems = quizzesTaken.length + assignemntsSubmitted + completedResources;
           const totalItems = totalQuizzes + totalAssessments + allResources;
 
-          const progress = totalItems ? Math.round((completedItems / totalItems) * 100) : 0;
-
           return {
             ...course,
             quizzesTaken: quizzesTaken.length || 0,
@@ -403,20 +399,21 @@ async function renderUserAnalytics(container, email) {
             totalAssessments,
             completedResources,
             allResources,
-            progress,
+            progress: enrolledCourse.course?.progress ?? 0,
+            status: enrolledCourse.course?.status ?? 'enrolled',
             assessments
           };
         } catch (err) {
           console.error('Failed fetching for', course.courseName, err);
-          return { ...course, quizzesTaken: 0, totalQuizzes: 0, assignemntsSubmitted: 0, totalAssessments: 0, progress: 0, assessments: [] };
+          return { ...course, quizzesTaken: 0, totalQuizzes: 0, assignemntsSubmitted: 0, totalAssessments: 0, progress: course.progress ?? 0, status: course.status ?? 'enrolled', assessments: [] };
         }
       })
     );
-
+    
     const totalCourses = userData.enrolledCourses.length;
     const totalQuizzes = coursesWithQuizzes.reduce((sum, c) => sum + (c.quizzesTaken || 0), 0);
     const totalAssignments = coursesWithQuizzes.reduce((sum, c) => sum + (c.assignemntsSubmitted || 0), 0);
-    const completedCourses = 0;
+    const completedCourses = coursesWithQuizzes.filter(course => course.progress === 100).length;
     const completedResources = coursesWithQuizzes.reduce((sum, c) => sum + (c.completedResources || 0), 0);
 
     // Base UI with buttons
@@ -448,7 +445,7 @@ async function renderUserAnalytics(container, email) {
     `;
 
     const tableContainer = document.getElementById("tableContainer");
-
+    console.log("Courses with quizzes: ", coursesWithQuizzes)
     // Courses Table
     function renderCoursesTable() {
       tableContainer.innerHTML = `
@@ -460,6 +457,7 @@ async function renderUserAnalytics(container, email) {
               <th>Assignments Done</th>
               <th>Resources completed</th>
               <th>Progress</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -478,6 +476,7 @@ async function renderUserAnalytics(container, email) {
                     </span>
                   </div>
                 </td>
+                <td>${c.status}</td>
               </tr>
             `).join('')}
           </tbody>
