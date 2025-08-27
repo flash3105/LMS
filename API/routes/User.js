@@ -72,4 +72,27 @@ router.get('/registered-users', async (req, res) => {
   }
 });
 
+//Get user by email
+router.get('/email/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    const user = await User.findOne({ email: email });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      enrolledCourses: user.enrolledCourses
+    });
+  } catch (err) {
+    console.error('Error fetching user by email:', err);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+
 module.exports = router;

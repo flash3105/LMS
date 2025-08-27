@@ -3,6 +3,8 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const MyCourses = require('../models/MyCourses');
 const Course = require('../models/Course');
+const Enrollment = require('../models/Enrollment');
+const User = require('../models/User');
 
 // Route to enroll in a course
 router.post(
@@ -46,6 +48,23 @@ router.post(
       }
 
       await userCourses.save();
+
+      // For enrollments, to track statusand progress
+      const user = await User.findOne({ email });
+      if (!user) return res.status(404).json({ message: 'User not found' });
+
+      let enrollment = await Enrollment.findOne({ user: user._id, course: courseId });
+      if (!enrollment) {
+          enrollment = new Enrollment({
+          user: user._id, // ObjectId of the user
+          course: courseId,
+          status: 'enrolled',
+          progress: 0,
+          certificateId: null,
+        });
+        await enrollment.save(); 
+      }
+
       res.status(200).json({ message: 'Enrolled successfully', myCourses: userCourses });
     } catch (error) {
       console.error('Error enrolling in course:', error);
@@ -64,7 +83,44 @@ router.get('/:email', async (req, res) => {
       return res.status(404).json({ message: 'No enrolled courses found for this user' });
     }
 
-    res.status(200).json(userCourses);
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const coursesWithEnrollment = [];
+
+    // Loop through all enrolled courses
+    for (const course of userCourses.enrolledCourses) {
+      // Try to find an existing Enrollment
+      let enrollment = await Enrollment.findOne({ user: user._id, course: course._id });
+
+      // If Enrollment doesn't exist (old courses), create a new one
+      if (!enrollment) {
+        enrollment = new Enrollment({
+          user: user._id, 
+          course: course._id,
+          status: 'enrolled',
+          progress: 0,
+          certificateId: null,
+        });
+        await enrollment.save();
+      }
+
+      // Merge course data with enrollment info
+      coursesWithEnrollment.push({
+        ...course.toObject(),
+        progress: enrollment.progress,
+        status: enrollment.status,
+        certificateId: enrollment.certificateId,
+      });
+    }
+
+    res.status(200).json({
+      _id: userCourses._id,
+      name: userCourses.name,
+      email: userCourses.email,
+      enrolledCourses: coursesWithEnrollment,
+      createdAt: userCourses.createdAt,
+    });
   } catch (error) {
     console.error('Error retrieving enrolled courses:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -88,5 +144,35 @@ router.get('/retrieve/:courseId', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
+// Route to update progress
+router.post('/update-progress-status', async (req, res) => {
+  const { userId, courseId, progress } = req.body;
+
+  try {
+    const enrollment = await Enrollment.findOne({ user: userId, course: courseId });
+    if (!enrollment) {
+      return res.status(404).json({ message: 'Enrollment not found' });
+    }
+
+    // Just update progress – middleware will handle status + certificate
+    enrollment.progress = progress;
+    await enrollment.save();
+
+    res.status(200).json({
+      message: 'Enrollment updated successfully',
+      progress: enrollment.progress,
+      status: enrollment.status,
+      certificateId: enrollment.certificateId || null
+    });
+  } catch (error) {
+    console.error('Error updating enrollment:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+
+
+
 
 module.exports = router;

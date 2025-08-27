@@ -147,7 +147,7 @@ export function renderHomeTab(contentArea, currentUser) {
         height: 1.5em;
         background: linear-gradient(to right, rgba(255, 255, 255, 0), white 50%);
       }
-      
+      z
       .progress-container {
         margin: 1rem 0;
       }
@@ -575,7 +575,7 @@ async function fetchEnrolledCourses() {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/mycourses/${email}`);
+    const response = await fetch(`http://localhost:5000/api/mycourses/${email}`);
     if (!response.ok) {
       throw new Error("Failed to fetch enrolled courses");
     }
@@ -612,7 +612,8 @@ function renderCourses(courseList, containerId) {
   const user = JSON.parse(localStorage.getItem('user')) || {};
   // Use userData if available, fallback to empty object
   const progressData = (userData[user.email] && userData[user.email].courseProgress) || {};
-
+  console.log("User data email: ", userData[user.email]);
+  console.log("progress data: ", progressData);
   courseList.forEach(course => {
     // Use course.title or course.courseName as the key
     const courseKey = course.title || course.courseName;
@@ -630,13 +631,13 @@ function renderCourses(courseList, containerId) {
         ${course.authorEmail ? `<p><strong>Author:</strong> ${course.authorEmail}</p>` : ""}
         ${course.courseCode ? `<p><strong>Course Code:</strong> ${course.courseCode}</p>` : ""}
         
-        <div class="progress-container">
+        <div> <!--this had the progress-container class -->
           <div class="progress-info">
-            <span>${progress}% Complete</span>
-            <span>${hoursSpent} hrs spent</span>
+            <span class="progress-text">0% Complete</span>
+            <span class="hours-text">${hoursSpent} hrs spent</span>
           </div>
           <div class="progress-bar">
-            <div class="progress-bar-fill" style="width: ${progress}%"></div>
+            <div class="progress-bar-fill" style="width: 0%"></div>
           </div>
         </div>
         
@@ -647,26 +648,93 @@ function renderCourses(courseList, containerId) {
       </div>
     `;
 
-    // Add click handler for the view details button
-    card.querySelector('.view-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (typeof renderCourseDetails === "function") {
-        renderCourseDetails(document.getElementById("contentArea"), course);
-      }
-    });
-
-    // Add click handler for the continue button
-    card.querySelector('.continue-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      const courseKey = e.target.getAttribute('data-course-key');
-      goToCourse(courseKey);
-    });
-
+    // Append card immediately
     container.appendChild(card);
-  });
-}
+  
+    fetch(`http://localhost:5000/api/email/${encodeURIComponent(user.email)}`)
+      .then(res => res.json())
+      .then(userFromEmail => {
+        // Fetch quizzes, assignments , resources and completed resources asynchronously
+        Promise.all([
+          fetch(`${API_BASE_URL}/courses/${course._id}/quizzes`).then(res => res.json()).catch(() => []),
+          fetch(`${API_BASE_URL}/courses/${course._id}/assessments`).then(res => res.json()).catch(() => []),
+          fetch(`http://localhost:5000/api/submissions/${course._id}/${encodeURIComponent(userFromEmail.email)}`).then(res => res.json()).catch(() => []),
+          fetch(`${API_BASE_URL}/course/${course._id}/${encodeURIComponent(userFromEmail.email)}`).then(res => res.json()).catch(() => []),
+          fetch(`${API_BASE_URL}/courses/${course._id}/resources`).then(res => res.json()).catch(() => []),
+          fetch(`http://localhost:5000/api/resources/completions/${userFromEmail._id}`).then(res => res.json()).catch(() => [])
+        ]).then(([quizzes, assignments, QuizSubmissions, assignmentSubmissions, resources, resourceCompletions]) => {
+   
+    
+        const quizzesCompleted = quizzes.filter(q =>
+          QuizSubmissions.some(s => s.quizId === q._id)
+        ).length || 0;
+    
+        const assignmentsCompleted =  assignments.filter(a =>
+          assignmentSubmissions.some(s => s.assessmentId === a._id)
+        ).length || 0;
+    
+        //const resourcesCompleted = resourceCompletions.length;
+        const resourcesCompleted = resourceCompletions.filter(c =>
+          resources.some(r => r._id === c.resource)
+        ).length || 0;
 
-async function loadTodos() {
+        console.log("Resources completd: ", resourcesCompleted);
+        //Calculating values to use for the progress bar
+        const totalItems = quizzes.length + assignments.length + resources.length;
+        const completedItems = quizzesCompleted + assignmentsCompleted + resourcesCompleted;
+        const progressPercent = totalItems ? Math.round((completedItems / totalItems) * 100) : 0;
+
+        // Update progress bar dynamically
+        const progressFill = card.querySelector(".progress-bar-fill");
+        const progressText = card.querySelector(".progress-text");
+        const hoursText = card.querySelector(".hours-text");
+
+        progressFill.style.width = progressPercent + "%";
+        progressText.textContent = progressPercent + "% Complete";
+        hoursText.textContent = Math.floor(progressPercent / 20) + " hrs spent"; // test ecample for calculating hours spent on a course
+        
+        //updates the status and progress of a course using the progressPercent calvulated above
+        fetch(`http://localhost:5000/api/mycourses/update-progress-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userFromEmail._id,
+          courseId: course._id,
+          progress: progressPercent
+        })
+      })
+      .then(res => res.json())
+      .then(data => console.log(`Course ${course._id} progress & status updated:`, data))
+      .catch(err => console.error("Error updating progress/status:", err));
+
+        // Update quizzes info
+        //const quizzesInfo = card.querySelector(".quizzes-info");
+        //quizzesInfo.textContent = `Quizzes: ${quizzesCompleted}/${quizzes.length}, Assignments: ${assignmentsCompleted}/${assignments.length}`;
+        });
+      })
+      .catch(err => console.error("Failed to fetch user or course data:", err));
+
+
+      // Add click handler for the view details button
+      card.querySelector('.view-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (typeof renderCourseDetails === "function") {
+          renderCourseDetails(document.getElementById("contentArea"), course);
+        }
+      });
+
+      // Add click handler for the continue button
+      card.querySelector('.continue-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const courseKey = e.target.getAttribute('data-course-key');
+        goToCourse(courseKey);
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  async function loadTodos() {
   const user = JSON.parse(localStorage.getItem('user'));
   const email = user.email;
   try {
