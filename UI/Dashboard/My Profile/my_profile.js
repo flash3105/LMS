@@ -22,10 +22,19 @@ export async function renderProfileTab(contentArea, currentUser) {
     completedCourses: [],
   };
 
-  // Generate milestones list 
-  const milestones = currentUser.milestones.length > 0 
-    ? currentUser.milestones.map(m => m.title + (m.description ? ` - ${m.description}` : ''))
-    : ["The system will render your milestones when you achieve them"];
+  // Generate milestones list
+  const milestones = currentUser.milestones && currentUser.milestones.length > 0 
+    ? currentUser.milestones.map(m => 
+        `<li class="milestone-item">
+          <i class="fas fa-check-circle"></i>
+          <div>
+            <strong>${m.title}</strong>
+            <div>${m.description}</div>
+            <small>${m.achievedOn ? new Date(m.achievedOn).toLocaleDateString() : ''}</small>
+          </div>
+        </li>`
+      ).join('')
+    : '<li class="milestone-item"><i class="fas fa-info-circle"></i><span>No milestones achieved yet</span></li>';
 
   const achievements = ["The system will render your achievements when you achieve them"];
 
@@ -168,10 +177,33 @@ export async function renderProfileTab(contentArea, currentUser) {
         border-bottom: none;
       }
       
-      .milestone-item i {
-        color:rgb(21, 81, 133);
-        font-size: 1.1rem;
-      }
+      .milestone-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #edf2f7;
+    }
+
+    .milestone-item > div {
+      flex: 1;
+    }
+
+    .milestone-item strong {
+      color: #2d3748;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .milestone-item div:not(:first-child) {
+      color: #4a5568;
+      font-size: 0.9rem;
+    }
+
+    .milestone-item small {
+      color: #718096;
+      font-size: 0.8rem;
+    }
       
       .achievement-item i {
         color: rgb(21, 81, 133);
@@ -298,7 +330,7 @@ export async function renderProfileTab(contentArea, currentUser) {
         <div class="card-header"><h3>Milestones</h3></div>
         <div class="card-body">
           <ul class="milestones-list">
-            ${milestones.map(m => `<li class="milestone-item"><i class="fas fa-check-circle"></i><span>${m}</span></li>`).join('')}
+            ${milestones}
           </ul>
         </div>
       </div>

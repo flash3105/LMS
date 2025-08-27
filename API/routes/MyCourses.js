@@ -5,6 +5,7 @@ const MyCourses = require('../models/MyCourses');
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const User = require('../models/User');
+const Profile = require('../models/Profile'); 
 
 // Route to enroll in a course
 router.post(
@@ -259,6 +260,10 @@ router.post('/update-progress-status', async (req, res) => {
     const enrollment = await Enrollment.findOne({ user: userId, course: courseId });
     if (!enrollment) return res.status(404).json({ message: 'Enrollment not found' });
 
+    // Get user email for milestone tracking
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
     // Update progress
     enrollment.progress = progress;
 
@@ -271,17 +276,96 @@ router.post('/update-progress-status', async (req, res) => {
       enrollment.status = 'completed';
     }
 
+    // Check and add milestones if needed
+    await addCourseProgressMilestone(user.email, courseId, progress, enrollment);
+
     await enrollment.save();
 
     res.status(200).json({ 
       message: 'Enrollment updated successfully', 
       progress: enrollment.progress, 
-      status: enrollment.status 
+      status: enrollment.status,
+      milestones: enrollment.milestones
     });
   } catch (error) {
     console.error('Error updating enrollment:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
+// Helper function to add course progress milestone
+async function addCourseProgressMilestone(email, courseId, progress, enrollment) {
+  try {
+    // Find the profile for the user
+    const profile = await Profile.findOne({ email });
+    if (!profile) {
+      console.log('Profile not found for email:', email);
+      return;
+    }
+
+    let milestoneTitle = '';
+    let milestoneDescription = '';
+    let shouldAddMilestone = false;
+    let milestoneType = 'course';
+
+    // Check progress thresholds and set appropriate milestone
+    if (progress >= 25 && !enrollment.milestones.term1) {
+      milestoneTitle = 'Term 1 Complete';
+      milestoneDescription = `Completed 25% of the course`;
+      enrollment.milestones.term1 = true;
+      shouldAddMilestone = true;
+    } else if (progress >= 50 && !enrollment.milestones.term2) {
+      milestoneTitle = 'Term 2 Complete';
+      milestoneDescription = `Completed 50% of the course`;
+      enrollment.milestones.term2 = true;
+      shouldAddMilestone = true;
+    } else if (progress >= 75 && !enrollment.milestones.term3) {
+      milestoneTitle = 'Term 3 Complete';
+      milestoneDescription = `Completed 75% of the course`;
+      enrollment.milestones.term3 = true;
+      shouldAddMilestone = true;
+    } else if (progress === 100 && !enrollment.milestones.term4) {
+      milestoneTitle = 'Course Completed';
+      milestoneDescription = `Completed 100% of the course`;
+      enrollment.milestones.term4 = true;
+      shouldAddMilestone = true;
+    }
+
+    if (shouldAddMilestone) {
+      // Check if milestone already exists for this course progress
+      const existingMilestone = profile.milestones.find(m => 
+        m.title === milestoneTitle && m.courseId && m.courseId.toString() === courseId.toString()
+      );
+
+      if (existingMilestone) {
+        console.log('Milestone already exists for this course progress');
+        return; // Milestone already exists
+      }
+
+      // Add new milestone to profile
+      const milestone = {
+        title: milestoneTitle,
+        description: milestoneDescription,
+        achievedOn: new Date(),
+        courseId: courseId,
+        type: milestoneType,
+        score: progress // Store the progress percentage as score
+      };
+
+      await Profile.findOneAndUpdate(
+        { email },
+        { $push: { milestones: milestone } },
+        { new: true, upsert: true }
+      );
+
+      console.log(`Added milestone for ${email}: ${milestoneTitle}`);
+      
+      // Save the updated enrollment with milestone flags
+      await enrollment.save();
+    }
+  } catch (err) {
+    console.error('Error adding course progress milestone:', err);
+  }
+}
 
 module.exports = router;

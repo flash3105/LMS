@@ -1,7 +1,9 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const QuizSubmit = require('../models/QuizSubmit');
-const Profile = require('../models/Profile'); // Import Profile model
+const Profile = require('../models/Profile');
+const Quiz = require('../models/Quiz'); 
 
 // Submit a quiz
 router.post('/:quizId/submit', async (req, res) => {
@@ -13,8 +15,8 @@ router.post('/:quizId/submit', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields.' });
     }
 
-    // Get the quiz to check answers
-    const quiz = await mongoose.model('Quiz').findById(quizId);
+    // Get the quiz to check answers - use the imported Quiz model
+    const quiz = await Quiz.findById(quizId);
     if (!quiz) {
       return res.status(404).json({ error: 'Quiz not found.' });
     }
@@ -37,7 +39,7 @@ router.post('/:quizId/submit', async (req, res) => {
       courseId,
       email,
       answers,
-      grade // Store the grade with the submission
+      grade
     });
 
     await submission.save();
@@ -64,6 +66,11 @@ async function addQuizMilestone(email, quizTitle, score, courseId) {
   try {
     // Check if milestone already exists for this quiz
     const profile = await Profile.findOne({ email });
+    if (!profile) {
+      console.log('Profile not found for email:', email);
+      return;
+    }
+
     const existingMilestone = profile.milestones.find(m => 
       m.title.includes(quizTitle) && m.description.includes(`Scored ${score}%`)
     );
