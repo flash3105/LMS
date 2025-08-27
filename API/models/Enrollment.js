@@ -9,6 +9,12 @@ const EnrollmentSchema = new mongoose.Schema({
     default: 'enrolled' 
   },
   progress: { type: Number, default: 0 },
+  milestones: {
+    term1: { type: Boolean, default: false },
+    term2: { type: Boolean, default: false },
+    term3: { type: Boolean, default: false },
+    term4: { type: Boolean, default: false }
+  },
   enrolledAt: { type: Date, default: Date.now },
   completedAt: { type: Date },
   certificateId: { type: String }, // for certificates
