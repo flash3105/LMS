@@ -1,12 +1,10 @@
 const { Storage } = require('@google-cloud/storage');
-const path = require('path');
 
-// Path to your service account JSON
-const keyFile = path.join(__dirname, 'thuto-lms-e3abedcba630.json');
+// Parse JSON from environment variable
+const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
 
 // Initialize GCS
-const storage = new Storage({ keyFilename: keyFile });
-
+const storage = new Storage({ credentials });
 
 const bucketName = 'resources-thuto-lms';
 const bucket = storage.bucket(bucketName);

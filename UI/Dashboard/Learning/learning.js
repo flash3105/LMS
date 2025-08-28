@@ -187,7 +187,7 @@ export async function renderLearningTab(contentArea) {
 
   try {
     await fetchCourses();
-    console.log("Fetched Courses:", courses);
+   
     renderCourses(courses, "availableCoursesContainer");
     await fetchEnrolledCourses();
   } catch (error) {
@@ -262,7 +262,7 @@ async function fetchEnrolledCourses() {
 
     const userData = await response.json();
     const enrolledCourses = userData.enrolledCourses || [];
-    console.log("Enrolled Courses:", enrolledCourses);
+   
 
     if (enrolledCourses.length > 0) {
       renderCourses(enrolledCourses, "enrolledCoursesContainer");
@@ -299,7 +299,7 @@ async function handleEnrollClick(event) {
 
     const data = await response.json();
     alert('Enrolled successfully!');
-    console.log('Enrollment response:', data);
+ 
     await fetchEnrolledCourses(); // Refresh enrolled courses list
   } catch (error) {
     console.error('Error enrolling:', error);

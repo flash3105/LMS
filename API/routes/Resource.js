@@ -70,8 +70,7 @@ async function deleteFromGCS(filePath) {
 
 // POST /api/courses/:courseId/resources
 router.post('/courses/:courseId/resources', upload.single('file'), async (req, res) => {
-  console.log('POST /courses/:courseId/resources called');
-  
+ 
   try {
     const { title, type, description, link, folder } = req.body;
     const { courseId } = req.params;
