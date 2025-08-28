@@ -218,20 +218,30 @@ export async function renderSetAssessment(container) {
                 <th>Due Date</th>
                 <th>Description</th>
                 <th>Document</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody>
-              ${assessments.map(a => `
-                <tr>
-                  <td>${a.title}</td>
-                  <td>${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : ''}</td>
-                  <td>${a.description || ''}</td>
-                  <td>
-                    ${a.filePath ? `<a href="${API_BASE_URL.replace('/api', '')}/${a.filePath.replace(/\\/g, '/')}" target="_blank">View</a>` : '—'}
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
+   <tbody>
+    ${assessments.map(a => `
+        <tr>
+            <td>${a.title}</td>
+            <td>${a.dueDate ? new Date(a.dueDate).toLocaleDateString() : ''}</td>
+            <td>${a.description || ''}</td>
+            <td>
+                ${a.downloadUrl ? `
+                    <a href="${a.downloadUrl}" target="_blank" class="btn-view">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                ` : '—'}
+            </td>
+            <td>
+               <button class="btn-delete" data-id="${a._id}" style="color: #e53e3e; cursor: pointer; margin-left: 10px; border: none; background: none;">
+                <i class="fas fa-trash"></i> Delete  
+    </button>
+            </td>
+        </tr>
+    `).join('')}
+</tbody>
           </table>
         </div>
       `;
@@ -239,6 +249,7 @@ export async function renderSetAssessment(container) {
       tableDiv.innerHTML = '<div class="error-message">Failed to load assessments.</div>';
     }
   }
+
 
   const submissionCourseSelect = container.querySelector('#submissionCourse');
   submissionCourseSelect.addEventListener('change', async () => {
@@ -248,7 +259,46 @@ export async function renderSetAssessment(container) {
       return;
     }
     await renderSubmissions(courseId);
+    const tableDiv = container.querySelector('#currentAssessments');
+     tableDiv.addEventListener('click', (e) => {
+    if (e.target.closest('.btn-delete')) {
+        const button = e.target.closest('.btn-delete');
+        const assessmentId = button.dataset.id;
+        deleteAssessment(assessmentId);
+    }
+});
   });
+
+  // Delete assessment function
+async function deleteAssessment(assessmentId) {
+  if (!confirm('Are you sure you want to delete this assessment?')) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/assessments/${assessmentId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAuthToken()}`
+      }
+    });
+
+    if (response.ok) {
+      const button = document.querySelector(`.btn-delete[data-id="${assessmentId}"]`);
+      if (button) {
+        const row = button.closest('tr');
+        if (row) row.remove();
+      }
+      showNotification('Assessment deleted successfully', 'success');
+    } else {
+      const error = await response.json();
+      showNotification(`Error deleting assessment: ${error.message}`, 'error');
+    }
+  } catch (error) {
+    console.error('Error deleting assessment:', error);
+    showNotification('Error deleting assessment', 'error');
+  }
+}
+
 
   async function renderSubmissions(courseId) {
     const submissionsContent = container.querySelector('#submissionsContent');
@@ -302,14 +352,12 @@ export async function renderSetAssessment(container) {
                           <td>${sub.email}</td>
                           <td>${new Date(sub.submittedAt).toLocaleString()}</td>
                           <td>
-                            ${sub.filePath ? `
-                              <a href="${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}" 
-                                 download="${sub.email}_${item.title.replace(/[^a-z0-9]/gi, '_')}.${sub.filePath.split('.').pop()}" 
-                                 class="download-link">
-                                Download
-                              </a>
-                            ` : 'No file'}
-                          </td>
+                ${sub.downloadUrl ? `
+                    <a href="${sub.downloadUrl}" target="_blank" class="btn-view">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                ` : '—'}
+            </td>
                           <td>
                             <input type="text" 
                                    class="grade-input" 

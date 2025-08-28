@@ -327,9 +327,10 @@ async function loadCourseResources(courseId, selectedFolder = null) {
         else if (resource.type === 'video' || ['mp4','mov','avi','mkv','webm'].includes(ext)) category = 'videos';
         else if (resource.type === 'document' || ['pdf','doc','docx','ppt','pptx','txt','xls','xlsx'].includes(ext)) category = 'documents';
         
-        const fileUrl = resource.type === 'link'
+       const fileUrl = resource.type === 'link'
           ? resource.link
-          : (resource.filePath ? `${API_BASE_URL.replace('/api','')}/${resource.filePath.replace(/\\/g,'/')}` : '#');
+          : resource.downloadUrl || '#';
+
 
         const displayDate = resource.createdAt 
           ? new Date(resource.createdAt).toLocaleDateString() 
@@ -343,7 +344,7 @@ async function loadCourseResources(courseId, selectedFolder = null) {
         // Store current resources globally so we can find them on click
 
 
-
+        
         const canView = resource.filePath && ['pdf','png','jpg','jpeg','gif'].includes(ext);
 
         return `
@@ -357,7 +358,7 @@ async function loadCourseResources(courseId, selectedFolder = null) {
             <p>${resource.description || 'No description'}</p>
             <div class="resource-actions">
               ${resource.type === 'link' ? `<a href="${resource.link}" target="_blank" class="primary-button" style="margin-right:8px;">Open Link</a>` : ''}
-              ${resource.filePath && resource.type !== 'link' ? `<a href="${fileUrl}" target="_blank" class="primary-button" style="margin-right:8px;">${canView ? 'View' : 'Download'}</a>` : ''}
+              ${resource.filePath && resource.type !== 'link' ? `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="primary-button" style="margin-right:8px;">${canView ? 'View' : 'Download'}</a>` : ''}
               <button class="edit-resource" data-id="${resource._id}">Edit</button>
               <button class="delete-resource" data-id="${resource._id}">Delete</button>
             </div>

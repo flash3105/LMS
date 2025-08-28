@@ -8,6 +8,12 @@ const bucket = require('../config/gcs');
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+/**
+ * Upload a file to Google Cloud Storage.
+ *
+ * @param {Object} file Multer file object.
+ * @returns {Promise} Promise that resolves with the file path.
+ */
 async function uploadToGCS(file) {
   const uniqueName = Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
   const blob = bucket.file(`resources/${uniqueName}`);
