@@ -350,13 +350,6 @@ async function renderReportsPage(container, pageSize = 20) {
   });
 }
 
-
-
-
-
-
-
-
 async function renderUserAnalytics(container, email) {
   let userData;
 
@@ -548,7 +541,7 @@ async function renderUserAnalytics(container, email) {
 
         <div>
           <button id="showCourses" class="btn btn-primary">Courses</button>
-        <button id="showQuizzes" class="btn btn-outline-primary">Quizzes</button>
+        <!-- <button id="showQuizzes" class="btn btn-outline-primary">Quizzes</button> -->
         </div>
 
         <div id="tableContainer"></div>
@@ -787,6 +780,7 @@ async function renderUserAnalytics(container, email) {
       document.getElementById("showQuizzes").classList.remove("btn-primary");
     });
 
+    /*
     document.getElementById("showQuizzes").addEventListener("click", () => {
       renderQuizzesTable();
       document.getElementById("showQuizzes").classList.add("btn-primary");
@@ -794,7 +788,8 @@ async function renderUserAnalytics(container, email) {
       document.getElementById("showCourses").classList.add("btn-outline-primary");
       document.getElementById("showCourses").classList.remove("btn-primary");
     });
-
+    */
+   
     //document.getElementById("showAssessments").addEventListener("click", () => {
       //renderAssessmentsTable();
       //document.getElementById("showAssessments").classList.add("btn-primary");
