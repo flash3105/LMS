@@ -2,18 +2,24 @@ import { userData } from '../Data/data.js';
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 export async function renderProfileTab(contentArea, currentUser) {
-  // Fetch latest profile from backend to get bio and milestones
+  let certificates = [];
+
+  // Fetch latest profile from backend (bio + milestones + certificates)
   try {
     const res = await fetch(`${API_BASE_URL}/Profile/${currentUser.email}`);
     if (!res.ok) throw new Error('Failed to fetch profile');
+
     const profile = await res.json();
     currentUser.bio = profile.bio || '';
     currentUser.milestones = profile.milestones || [];
+    certificates = profile.certificates || [];
+
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
   } catch (err) {
     console.error('Error fetching profile:', err);
     currentUser.bio = currentUser.bio || '';
     currentUser.milestones = currentUser.milestones || [];
+    certificates = [];
   }
 
   // Safely access userProgress
@@ -21,9 +27,11 @@ export async function renderProfileTab(contentArea, currentUser) {
     enrolledCourses: [],
     completedCourses: [],
   };
+// Certificates come from profile fetch earlier
+currentUser.certificates = certificates;
 
-  // Generate milestones list
-  const milestones = currentUser.milestones && currentUser.milestones.length > 0 
+// Generate milestones list dynamically
+const milestones = currentUser.milestones && currentUser.milestones.length > 0 
     ? currentUser.milestones.map(m => 
         `<li class="milestone-item">
           <i class="fas fa-check-circle"></i>
@@ -67,9 +75,18 @@ export async function renderProfileTab(contentArea, currentUser) {
       
       .profile-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 1.5rem;
+        grid-template-areas:
+          "account milestones"
+          "achievements goals";
       }
+
+      .profile-card:nth-child(1) { grid-area: account; }
+      .profile-card:nth-child(2) { grid-area: milestones; }
+      .profile-card:nth-child(3) { grid-area: achievements; }
+      .profile-card:nth-child(4) { grid-area: goals; }
       
       .profile-card {
         background: white;
@@ -301,7 +318,57 @@ export async function renderProfileTab(contentArea, currentUser) {
         .detail-label {
           min-width: auto;
         }
+          
       }
+      
+    .certificates-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .certificate-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #d4af37;
+    }
+    .certificate-item i {
+      font-size: 1.5rem;
+      margin-right: 1rem;
+      color: #d4af37;
+    }
+    .certificate-info {
+      flex: 1;
+    }
+    .certificate-info h4 {
+      margin: 0 0 0.25rem 0;
+      color: #2d3748;
+    }
+    .certificate-info p {
+      margin: 0;
+      color: #718096;
+      font-size: 0.9rem;
+    }
+    .view-certificate-btn {
+      background: #1a5276;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .view-certificate-btn:hover {
+      background: #154360;
+    }
+    .no-certificates {
+      text-align: center;
+      color: #718096;
+      font-style: italic;
+    }
+      
     </style>
     
     <div class="welcome">
@@ -335,15 +402,31 @@ export async function renderProfileTab(contentArea, currentUser) {
         </div>
       </div>
 
-      <!-- Card 3: Achievements -->
-      <div class="profile-card">
-        <div class="card-header"><h3>Achievements & Certificates</h3></div>
-        <div class="card-body">
-          <ul class="achievements-list">
-            ${achievements.map(a => `<li class="achievement-item"><i class="fas fa-trophy"></i><span>${a}</span></li>`).join('')}
-          </ul>
-        </div>
+      <!-- Card 3: Achievements & Certificates -->
+    <div class="profile-card">
+      <div class="card-header"><h3>Achievements & Certificates</h3></div>
+      <div class="card-body">
+        ${certificates.length > 0 ? `
+          <div class="certificates-list">
+            ${certificates.map(cert => `
+              <div class="certificate-item">
+                <i class="fas fa-certificate"></i>
+                <div class="certificate-info">
+                  <h4>${cert.courseName}</h4>
+                  <p>Completed on: ${new Date(cert.completionDate).toLocaleDateString()}</p>
+                  <p>Grade: ${cert.grade}</p>
+                </div>
+                <button class="view-certificate-btn" data-certificate-url="${cert.certificateUrl}">
+                  View Certificate
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <p class="no-certificates">No certificates yet. Complete a course to earn certificates!</p>
+        `}
       </div>
+    </div>
 
       <!-- Card 4: Goals -->
       <div class="profile-card">
@@ -370,6 +453,13 @@ export async function renderProfileTab(contentArea, currentUser) {
     </div>
   `;
 
+   // Event listeners for certificate buttons
+  contentArea.querySelectorAll('.view-certificate-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const certificateUrl = e.target.dataset.certificateUrl;
+     window.open(`http://localhost:5000${certificateUrl}`, '_blank');
+    });
+  });
   // Bio edit button
   const editBtn = contentArea.querySelector('.edit-btn');
   if (editBtn) {

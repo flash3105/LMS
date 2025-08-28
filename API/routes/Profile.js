@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Profile = require('../models/Profile');
+const { generateCertificatePDF } = require('../Utils/certificateGenerator');
 
 // Get a user's profile by email
 router.get('/:email', async (req, res) => {
@@ -9,7 +10,7 @@ router.get('/:email', async (req, res) => {
     let profile = await Profile.findOne({ email });
 
     if (!profile) {
-      profile = await Profile.create({ email, achievements: [], milestones: [], goals: [] });
+      profile = await Profile.create({ email, achievements: [], milestones: [], goals: [], certificates: [] });
     }
 
     res.json(profile);
@@ -92,6 +93,86 @@ router.delete("/:email/goals/:index", async (req, res) => {
     res.json(profile);
   } catch (err) {
     console.error("Error deleting goal:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//Certificate route
+router.post('/:email/test-certificate', async (req, res) => {
+  try {
+    const { email } = req.params;
+    const { studentName, courseName } = req.body;
+    
+    let profile = await Profile.findOne({ email });
+    if (!profile) {
+      profile = new Profile({ email, certificates: [] });
+    }
+    
+    const certificateId = `TEST-${Date.now()}`;
+    const certificateUrl = await generateCertificatePDF({
+      certificateId,
+      studentName: studentName || "Test Student",
+      courseName: courseName || "Test Course",
+      grade: "Grade 10",
+      completionDate: new Date(),
+      status: "completed"
+    });
+    
+    profile.certificates.push({
+      certificateId,
+      title: `${courseName || "Test Course"} Certificate`,
+      courseName: courseName || "Test Course",
+      grade: "Grade 10",
+      issueDate: new Date(),
+      completionDate: new Date(),
+      certificateUrl,
+      status: "completed"
+    });
+    
+    await profile.save();
+    
+    res.json({ 
+      message: 'Test certificate created successfully',
+      certificate: profile.certificates[profile.certificates.length - 1]
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get certificates for a user
+router.get('/:email/certificates', async (req, res) => {
+  try {
+    const email = req.params.email;
+    const profile = await Profile.findOne({ email });
+    
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+    
+    res.json(profile.certificates || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get a specific certificate
+router.get('/:email/certificates/:certificateId', async (req, res) => {
+  try {
+    const { email, certificateId } = req.params;
+    const profile = await Profile.findOne({ email });
+    
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+    
+    const certificate = profile.certificates.id(certificateId);
+    if (!certificate) {
+      return res.status(404).json({ error: 'Certificate not found' });
+    }
+    
+    res.json(certificate);
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

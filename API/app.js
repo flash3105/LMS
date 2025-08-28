@@ -2,6 +2,7 @@ require('dotenv').config(); // this loads .env variables
 const cors = require('cors');
 const path = require('path');
 
+
 const express = require('express');
 const connectDB = require('./config/db');
 const app = express();
@@ -20,6 +21,8 @@ connectDB();
 // Middleware
 app.use(express.json());
 
+app.use(express.static('public'));
+
 app.use((req, res, next) => {
   console.log(req.method, req.originalUrl);
   next();
@@ -27,6 +30,7 @@ app.use((req, res, next) => {
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/certificates', express.static(path.join(__dirname, 'certificates')));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));

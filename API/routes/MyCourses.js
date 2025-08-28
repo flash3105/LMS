@@ -253,14 +253,16 @@ router.get('/retrieve/:courseId', async (req, res) => {
   }
 });
 
+// Route to update progress
 router.post('/update-progress-status', async (req, res) => {
   const { userId, courseId, progress } = req.body;
 
   try {
-    const enrollment = await Enrollment.findOne({ user: userId, course: courseId });
+    // Fetch enrollment
+    let enrollment = await Enrollment.findOne({ user: userId, course: courseId });
     if (!enrollment) return res.status(404).json({ message: 'Enrollment not found' });
 
-    // Get user email for milestone tracking
+    // Fetch user
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -268,23 +270,29 @@ router.post('/update-progress-status', async (req, res) => {
     enrollment.progress = progress;
 
     // Update status based on progress
-    if (progress === 0) {
-      enrollment.status = 'enrolled';
-    } else if (progress > 0 && progress < 100) {
-      enrollment.status = 'in progress';
-    } else if (progress === 100) {
+    if (progress === 0) enrollment.status = 'enrolled';
+    else if (progress > 0 && progress < 100) enrollment.status = 'in progress';
+    else if (progress === 100) {
       enrollment.status = 'completed';
+      enrollment.completedAt = new Date();
+
+      // Generate certificate if it doesn't exist yet
+      if (!enrollment.certificateId) {
+        await enrollment.generateCertificate();
+      }
     }
 
-    // Check and add milestones if needed
+    // Update milestones
     await addCourseProgressMilestone(user.email, courseId, progress, enrollment);
 
+    // Save enrollment
     await enrollment.save();
 
-    res.status(200).json({ 
-      message: 'Enrollment updated successfully', 
-      progress: enrollment.progress, 
+    res.status(200).json({
+      message: 'Enrollment updated successfully',
+      progress: enrollment.progress,
       status: enrollment.status,
+      certificateId: enrollment.certificateId || null,
       milestones: enrollment.milestones
     });
   } catch (error) {
@@ -296,7 +304,6 @@ router.post('/update-progress-status', async (req, res) => {
 // Helper function to add course progress milestone
 async function addCourseProgressMilestone(email, courseId, progress, enrollment) {
   try {
-    // Find the profile for the user
     const profile = await Profile.findOne({ email });
     if (!profile) {
       console.log('Profile not found for email:', email);
@@ -308,7 +315,6 @@ async function addCourseProgressMilestone(email, courseId, progress, enrollment)
     let shouldAddMilestone = false;
     let milestoneType = 'course';
 
-    // Check progress thresholds and set appropriate milestone
     if (progress >= 25 && !enrollment.milestones.term1) {
       milestoneTitle = 'Term 1 Complete';
       milestoneDescription = `Completed 25% of the course`;
@@ -332,24 +338,22 @@ async function addCourseProgressMilestone(email, courseId, progress, enrollment)
     }
 
     if (shouldAddMilestone) {
-      // Check if milestone already exists for this course progress
       const existingMilestone = profile.milestones.find(m => 
         m.title === milestoneTitle && m.courseId && m.courseId.toString() === courseId.toString()
       );
 
       if (existingMilestone) {
         console.log('Milestone already exists for this course progress');
-        return; // Milestone already exists
+        return;
       }
 
-      // Add new milestone to profile
       const milestone = {
         title: milestoneTitle,
         description: milestoneDescription,
         achievedOn: new Date(),
         courseId: courseId,
         type: milestoneType,
-        score: progress // Store the progress percentage as score
+        score: progress
       };
 
       await Profile.findOneAndUpdate(
@@ -359,8 +363,6 @@ async function addCourseProgressMilestone(email, courseId, progress, enrollment)
       );
 
       console.log(`Added milestone for ${email}: ${milestoneTitle}`);
-      
-      // Save the updated enrollment with milestone flags
       await enrollment.save();
     }
   } catch (err) {
