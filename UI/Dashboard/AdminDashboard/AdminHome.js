@@ -207,7 +207,7 @@ function renderAnalyticsLayout(container, activeTab, bodyContent = "") {
 
   // Back button
   document.getElementById("backButton").addEventListener("click", () => {
-    renderHomeTab(container, { name: "User", role: "user" }); // adjust to real currentUser
+    renderHomeTab(container, { name: "User", role: "user" }); // 
   });
 
   // Tab buttons
@@ -264,13 +264,12 @@ async function renderReportsPage(container, pageSize = 20) {
     const tbody = document.getElementById("users-table-body");
     const paginationContainer = document.getElementById("pagination");
 
-    // STEP 1: Fetch users
     const usersRes = await fetch(`${API_BASE_URL}/auth/registered-users`);
     const users = await usersRes.json();
     const studentUsers = users.users.filter(u => u.role === "Student" || u.role === "Intern");
     const totalPages = Math.ceil(studentUsers.length / pageSize);
 
-    // Initialize placeholders
+    // Initialise placeholders
     studentUsers.forEach(u => {
       u.courseCount = 0;
       u.completedCount = 0;
@@ -324,9 +323,9 @@ async function renderReportsPage(container, pageSize = 20) {
       }
     }
 
-    renderPage(1); // Initial render with placeholders
+    renderPage(1); //Initial render with placeholders
 
-    // STEP 2: Fetch each user's courses (in parallel) and update KPI incrementally
+    //Fetch each user's courses (in parallel) and update KPI incrementally
     await Promise.all(studentUsers.map(async u => {
       try {
         const res = await fetch(`http://localhost:5000/api/mycourses/${encodeURIComponent(u.email)}`);
@@ -351,458 +350,218 @@ async function renderReportsPage(container, pageSize = 20) {
 }
 
 async function renderUserAnalytics(container, email) {
-  let userData;
-
-  // Fallback if user courses fetch fails
-  try {
-    const res = await fetch(`${API_BASE_URL}/mycourses/${encodeURIComponent(email)}`);
-    if (!res.ok) throw new Error('Failed to fetch user courses');
-    userData = await res.json();
-  } catch (err) {
-    console.warn('Failed to fetch user courses, using empty fallback:', err);
-    userData = {
-      name: 'Unknown User',
-      enrolledCourses: []
-    };
-  }
-
+  let userData = { name: 'Unknown User', enrolledCourses: [] };
+  let user = null;
+  let allCompletions = [];
   let allQuizzesTaken = [];
 
   try {
-    // Fetch quizzes + submissions for each course
-    const coursesWithQuizzes = await Promise.all(
-      userData.enrolledCourses.map(async (course) => {
-        try {
-          //Fetches quizzes for thic course and user
-          const quizzesRes = await fetch(`${API_BASE_URL}/courses/${course._id}/quizzes`);
-          const quizzes = quizzesRes.ok ? await quizzesRes.json() : [];
+    const res = await fetch(`${API_BASE_URL}/mycourses/${encodeURIComponent(email)}`);
+    if (res.ok) userData = await res.json();
+  } catch (err) {
+    console.warn('Failed to fetch user courses:', err);
+  }
 
-          //Fetches assignments for this course and user
-          const assRes = await fetch(`${API_BASE_URL}/courses/${course._id}/assessments`);
-          const assessments = assRes.ok ? await assRes.json() : [];
+  try {
+    const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(email)}`);
+    if (res.ok) {
+      user = await res.json();
+      const compRes = await fetch(`http://localhost:5000/api/resources/completions/${user._id}`);
+      if (compRes.ok) allCompletions = await compRes.json();
+    }
+  } catch (err) {
+    console.warn('Failed fetching user or completions:', err);
+  }
 
-          // Fetches quiz submissions for this course and user
-          const quizSubsRes = await fetch(`http://localhost:5000/api/submissions/${course._id}/${encodeURIComponent(email)}`);
-          const QuizSubmissions = quizSubsRes.ok ? await quizSubsRes.json() : [];
-
-          //Fetches assignments submissions for this course and user
-          const assSubsRes = await fetch(`${API_BASE_URL}/course/${course._id}/${encodeURIComponent(email)}`);
-          const assignmentSubmissions = assSubsRes.ok ? await assSubsRes.json() : [];
-
-          //Fetches all the resources in a course
-          const resourceRes = await fetch(`${API_BASE_URL}/courses/${course._id}/resources`);
-          const resources = await resourceRes.json();
-
-          //Fetches a user using their email
-          const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(email)}`);
-          if (!res.ok) throw new Error('User not found');
-          const user = await res.json();
-          console.log('Fetched user:', user);
-
-          //Fetches all the completed resources for a user
-          const compRes = await fetch(`http://localhost:5000/api/resources/completions/${user._id}`);
-          const completions = (await compRes.json()).filter(c =>
-            resources.some(r => r._id === c.resource)
-          );
-
-          //Fetches each enrolled course of a user
-          const courseRes = await fetch(`http://localhost:5000/api/mycourses/${encodeURIComponent(email)}/course/${course._id}`)
-          const enrolledCourse = await courseRes.json();
-
-          console.log("The course: ", enrolledCourse);
-
-          // Count quizzes that have submissions
-          const quizzesTaken = quizzes.filter(q =>
-            QuizSubmissions.some(s => s.quizId === q._id)
-          );
-
-          allQuizzesTaken.push(...quizzesTaken);
-
-          const assignemntsSubmitted = assessments.filter(a =>
-            assignmentSubmissions.some(s => s.assessmentId === a._id)
-          ).length;
-
-          const totalQuizzes = quizzes.length;
-          const totalAssessments = assessments.length;
-
-          const completedResources = completions.length
-          const allResources = resources.length;
-
-          return {
-            ...course,
-            quizzesTaken: quizzesTaken.length || 0,
-            totalQuizzes,
-            assignemntsSubmitted,
-            totalAssessments,
-            completedResources,
-            allResources,
-            progress: enrolledCourse.course?.progress ?? 0,
-            status: enrolledCourse.course?.status ?? 'enrolled',
-            assessments
-          };
-        } catch (err) {
-          console.error('Failed fetching for', course.courseName, err);
-          return { ...course, quizzesTaken: 0, totalQuizzes: 0, assignemntsSubmitted: 0, totalAssessments: 0, progress: course.progress ?? 0, status: course.status ?? 'enrolled', assessments: [] };
-        }
-      })
-    );
-    
-    const totalCourses = userData.enrolledCourses.length;
-    const totalQuizzes = coursesWithQuizzes.reduce((sum, c) => sum + (c.quizzesTaken || 0), 0);
-    const totalAssignments = coursesWithQuizzes.reduce((sum, c) => sum + (c.assignemntsSubmitted || 0), 0);
-    const completedCourses = coursesWithQuizzes.filter(course => course.progress === 100).length;
-    const notStartedCourses = coursesWithQuizzes.filter(course => course.progress === 0).length;
-    const inProgressCourses = coursesWithQuizzes.filter(course => course.progress > 0 && course.progress < 100).length;
-    const completedResources = coursesWithQuizzes.reduce((sum, c) => sum + (c.completedResources || 0), 0);
-
-    const overallProgress = totalCourses > 0 
-      ? Math.round((completedCourses / totalCourses) * 100) 
-      : 0;
-
-    // Base UI with buttons and KPIs
-    container.innerHTML = `
-      <div class="user-analytics card">
-        <div class="mb-3 d-flex gap-2">
-          <button id="backToReports" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back
-          </button>
-        </div>
-
-        <h2 class="card-header">Analytics for ${userData.name}</h2>
-        <div class="card-body">
-
-          <!-- KPI Cards -->
-          <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap: wrap;">
-
-          <!-- Overall Progress Wheel -->
-          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
-            <h6 style="margin:0 0 0.2rem 0;">Overall Progress</h6>
-            <svg width="80" height="80" viewBox="0 0 36 36" style="margin:0 auto;">
-              <path
-                d="M18 2.0845
-                a 15.9155 15.9155 0 0 1 0 31.831
-                a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e0e0e0"
-                stroke-width="3"
-              />
-              <path
-                d="M18 2.0845
-                a 15.9155 15.9155 0 0 1 0 31.831
-                a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#2196f3"
-                stroke-width="3"
-                stroke-dasharray="${overallProgress}, 100"
-              />
-              <text x="18" y="20.35" text-anchor="middle" font-size="5" fill="#333">
-                ${overallProgress}%
-              </text>
-            </svg>
-          </div>
-
-          <!-- Other KPI Cards -->
-          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
-            <h6 style="margin:0 0 0.2rem 0;">Enrolled Courses</h6>
-            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${totalCourses}</p>
-          </div>
-  
-          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
-            <h6 style="margin:0 0 0.2rem 0;">Completed Courses</h6>
-            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${completedCourses}</p>
-          </div>
-  
-          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
-            <h6 style="margin:0 0 0.2rem 0;">In Progress</h6>
-            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${inProgressCourses}</p>
-          </div>
-  
-          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
-            <h6 style="margin:0 0 0.2rem 0;">Not Started</h6>
-            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${notStartedCourses}</p>
-          </div>
-
-          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
-            <h6 style="margin:0 0 0.2rem 0;">Quizzes Taken</h6>
-            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${totalQuizzes}</p>
-          </div>
-  
-          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
-            <h6 style="margin:0 0 0.2rem 0;">Assignments Submitted</h6>
-            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${totalAssignments}</p>
-          </div>
-  
-          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
-            <h6 style="margin:0 0 0.2rem 0;">Resources Completed</h6>
-            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${completedResources}</p>
-          </div>
-
-        </div>
-
+  // Render base UI (KPIs) immediately
+  const totalCourses = userData.enrolledCourses.length;
+  container.innerHTML = `
+    <div class="user-analytics card">
+      <div class="mb-3 d-flex gap-2">
+        <button id="backToReports" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+      </div>
+      <h2 class="card-header">Analytics for ${userData.name}</h2>
+      <div class="card-body">
+        <div id="kpiCards" style="display:flex; gap:0.5rem; flex-wrap: wrap;">Loading KPIs...</div>
         <div>
           <button id="showCourses" class="btn btn-primary">Courses</button>
-        <!-- <button id="showQuizzes" class="btn btn-outline-primary">Quizzes</button> -->
         </div>
-
-        <div id="tableContainer"></div>
+        <div style="display:flex; gap:20px; margin-top: 1rem;">
+          <div id="tableContainer" style="flex:2;"></div>
+          <div id="chartContainer" style="flex:1; min-width:250px;">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
       </div>
     </div>
   `;
 
-    // Courses Table and Chart side by side
-    const tableChartContainer = document.createElement("div");
-    tableChartContainer.style.display = "flex";
-    tableChartContainer.style.gap = "20px"; // space between table and chart
 
-    // Table
-    const tableDiv = document.createElement("div");
-    tableDiv.style.flex = "1"; // table takes remaining width
-    tableDiv.id = "tableContainer"; 
-    tableChartContainer.appendChild(tableDiv);
+  document.getElementById("backToReports").addEventListener("click", () => renderReportsPage(container));
 
-    // Chart
-    const chartDiv = document.createElement("div");
-    chartDiv.style.width = "300px"; // fixed width for chart
-    chartDiv.innerHTML = `<canvas id="statusChart"></canvas>`;
-    tableChartContainer.appendChild(chartDiv);
+  //Fetch per-course details in parallel (6 requests per course) ---
+  const coursesWithQuizzes = await Promise.all(
+    userData.enrolledCourses.map(async (course) => {
+      try {
+        const [quizzesRes, assRes, quizSubsRes, assSubsRes, resourceRes, courseRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/courses/${course._id}/quizzes`),
+          fetch(`${API_BASE_URL}/courses/${course._id}/assessments`),
+          fetch(`http://localhost:5000/api/submissions/${course._id}/${encodeURIComponent(email)}`),
+          fetch(`${API_BASE_URL}/course/${course._id}/${encodeURIComponent(email)}`),
+          fetch(`${API_BASE_URL}/courses/${course._id}/resources`),
+          fetch(`http://localhost:5000/api/mycourses/${encodeURIComponent(email)}/course/${course._id}`)
+        ]);
 
+        const [quizzes, assessments, quizSubs, assignmentSubs, resources, enrolledCourse] = await Promise.all([
+          quizzesRes.ok ? quizzesRes.json() : [],
+          assRes.ok ? assRes.json() : [],
+          quizSubsRes.ok ? quizSubsRes.json() : [],
+          assSubsRes.ok ? assSubsRes.json() : [],
+          resourceRes.ok ? resourceRes.json() : [],
+          courseRes.ok ? courseRes.json() : {}
+        ]);
 
-    // Append the container to card body
-    container.querySelector(".card-body").appendChild(tableChartContainer);
+        // Filter completions efficiently using a Set
+        const resourceIds = new Set(resources.map(r => r._id));
+        const completions = allCompletions.filter(c => resourceIds.has(c.resource));
 
-    console.log("Courses with quizzes: ", coursesWithQuizzes)
-    // Courses Table
-    function renderCoursesTable() {
-      tableDiv.innerHTML = `
-        <div style="display:inline-block; max-height: 300px; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px; padding: 8px;">
-          <table class="table table-striped" style="margin:0;">
-            <thead>
-              <tr>
-                <th>Course</th>
-                <th>Quizzes Taken</th>
-                <th>Assignments Done</th>
-                <th>Resources completed</th>
-                <th>Progress</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${coursesWithQuizzes.map(c => `
-                <tr>
-                  <td>${c.courseName}</td>
-                  <td>${c.quizzesTaken} / ${c.totalQuizzes}</td>
-                  <td>${c.assignemntsSubmitted} / ${c.totalAssessments}</td>
-                  <td>${c.completedResources} / ${c.allResources}</td>
-                  <td>
-                    <div class="progress" style="width:100%; background:#eee; border:1px solid #ccc; border-radius:5px; height:12px; position:relative; overflow:hidden;">
-                      <div class="progress-bar" role="progressbar" style="width: ${c.progress || 0}%; background:#2196f3; height:100%;"></div>
-                      <span style="position:absolute; top:0; left:50%; transform:translateX(-50%); font-size:10px; line-height:12px; font-weight:bold; color:#000;">
-                        ${c.progress || 0}%
-                      </span>
-                    </div>
-                  </td>
-                  <td>${c.status}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
-    }
+        const quizzesTaken = quizzes.filter(q => quizSubs.some(s => s.quizId === q._id));
+        allQuizzesTaken.push(...quizzesTaken);
 
-    // Dynamically load Chart.js if not already loaded
-    async function loadChartJS() {
-      if (typeof Chart !== "undefined") return; // already loaded
+        const assignmentsSubmitted = assessments.filter(a => assignmentSubs.some(s => s.assessmentId === a._id)).length;
 
-      return new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/npm/chart.js";
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-    }
-
-    // Add this at the end of your renderUserAnalytics function
-    await loadChartJS(); // ensure Chart.js is loaded
-
-    // Add a container for the chart
-    const chartContainer = document.createElement("div");
-    chartContainer.style.width = "300px";
-    chartContainer.style.marginTop = "20px";
-    chartContainer.innerHTML = `<canvas id="statusChart"></canvas>`;
-    container.querySelector(".card-body").appendChild(chartContainer);
-
-    // Build status counts
-    const statusCounts = coursesWithQuizzes.reduce((acc, c) => {
-      acc[c.status] = (acc[c.status] || 0) + 1;
-      if(acc[c.status] === "enrolled"){
-        acc[c.status] = "not started";
+        return {
+          ...course,
+          quizzesTaken: quizzesTaken.length,
+          totalQuizzes: quizzes.length,
+          assignemntsSubmitted: assignmentsSubmitted,
+          totalAssessments: assessments.length,
+          completedResources: completions.length,
+          allResources: resources.length,
+          progress: enrolledCourse.course?.progress ?? 0,
+          status: enrolledCourse.course?.status ?? 'enrolled',
+          assessments
+        };
+      } catch (err) {
+        console.error('Error fetching course:', course.courseName, err);
+        return { ...course, quizzesTaken: 0, totalQuizzes: 0, assignemntsSubmitted: 0, totalAssessments: 0, completedResources: 0, allResources: 0, progress: 0, status: 'enrolled', assessments: [] };
       }
-      return acc;
-    }, {});
+    })
+  );
 
-    const labels = Object.keys(statusCounts);
-    const data = Object.values(statusCounts);
+  //Calculate KPI values
+  const totalQuizzes = coursesWithQuizzes.reduce((sum, c) => sum + c.quizzesTaken, 0);
+  const totalAssignments = coursesWithQuizzes.reduce((sum, c) => sum + c.assignemntsSubmitted, 0);
+  const completedCourses = coursesWithQuizzes.filter(c => c.progress === 100).length;
+  const notStartedCourses = coursesWithQuizzes.filter(c => c.progress === 0).length;
+  const inProgressCourses = coursesWithQuizzes.filter(c => c.progress > 0 && c.progress < 100).length;
+  const completedResources = coursesWithQuizzes.reduce((sum, c) => sum + c.completedResources, 0);
+  const overallProgress = totalCourses ? Math.round((completedCourses / totalCourses) * 100) : 0;
 
-    const ctx = document.getElementById("statusChart").getContext("2d");
+  //Render KPI cards and prgress wheel
+  const kpiCardsDiv = document.getElementById("kpiCards");
+  kpiCardsDiv.innerHTML = `
+    <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center;">
+      <h6>Overall Progress</h6>
+      <svg width="80" height="80" viewBox="0 0 36 36" style="margin:0 auto;">
+        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e0e0e0" stroke-width="3"/>
+        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#2196f3" stroke-width="3" stroke-dasharray="${overallProgress}, 100"/>
+        <text x="18" y="20.35" text-anchor="middle" font-size="5" fill="#333">${overallProgress}%</text>
+      </svg>
+    </div>
+    <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center;">
+      <h6>Enrolled Courses</h6><p style="font-weight:bold">${totalCourses}</p>
+    </div>
+    <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center;">
+      <h6>Completed Courses</h6><p style="font-weight:bold">${completedCourses}</p>
+    </div>
+    <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center;">
+      <h6>In Progress</h6><p style="font-weight:bold">${inProgressCourses}</p>
+    </div>
+    <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center;">
+      <h6>Not Started</h6><p style="font-weight:bold">${notStartedCourses}</p>
+    </div>
+    <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center;">
+      <h6>Quizzes Taken</h6><p style="font-weight:bold">${totalQuizzes}</p>
+    </div>
+    <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center;">
+      <h6>Assignments Submitted</h6><p style="font-weight:bold">${totalAssignments}</p>
+    </div>
+    <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center;">
+      <h6>Resources Completed</h6><p style="font-weight:bold">${completedResources}</p>
+    </div>
+  `;
 
-    // Destroy previous chart if exists
-    if (window.statusChartInstance) {
-      window.statusChartInstance.destroy();
-    }
-
-    window.statusChartInstance = new Chart(ctx, {
-      type: "doughnut",
-        data: {
-        labels: labels,
-        datasets: [{
-          data: data,
-          backgroundColor: ["#4caf50", "#ff9800", "#f44336", "#2196f3"],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        plugins: {
-          legend: { position: "bottom" },
-          tooltip: { enabled: true }
-        }
-      }
-    });
-
-    function renderQuizzesTable() {
-      // Clear the container first
-      tableContainer.innerHTML = "<p>Loading quizzes...</p>";
-
-       if (document.getElementById("chartContainer")) {
-    chartDiv.remove();
-  }
-
-      // Fetch additional info for all quizzes asynchronously
-      Promise.all(
-        allQuizzesTaken.map(async (q) => {
-          const courseRes = await fetch(`${API_BASE_URL}/mycourses/retrieve/${q.courseId}`);
-          const courses = courseRes.ok ? await courseRes.json() : {};
-          const gradeRes = await fetch(`${API_BASE_URL}/grades/course/${q.courseId}`);
-          const grades = gradeRes.ok ? await gradeRes.json() : {};
-          
-          const quizGrade = grades.find(g => g.refId === q._id);
-          console.log("Courses: ", courses);
-          console.log("Grades: ", grades);
-          console.log("Quiz grade: ", quizGrade);
-          return {
-            ...q,
-            dueDate: courses.dueDate || q.dueDate,
-            courseName: courses.courseName,
-            grade: quizGrade ? quizGrade.grade : "-",
-            feedback: quizGrade ? quizGrade.feedback : ""
-          };
-        })
-      )
-      .then(quizzesWithExtra => {
-        const rows = quizzesWithExtra.map(q => `
-          <tr>
-            <td>${q.title || "-"}</td>
-            <td>${q.dueDate ? new Date(q.dueDate).toLocaleDateString() : "-"}</td>
-            <td>${q.courseName || "-"}</td>
-            <td>${q.grade}</td>
-            <td>${q.feedback}</td>
-          </tr>
-        `);
-
-        tableDiv.innerHTML = `
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Due Date</th>
-                <th>Course</th>
-                <th>Grade</th>
-                <th>Feedback</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows.length ? rows.join('') : "<tr><td colspan='3'>No quizzes found</td></tr>"}
-            </tbody>
-          </table>
-        `;
-      })
-      .catch(err => {
-        console.error("Failed fetching extra quiz data:", err);
-        tableContainer.innerHTML = "<p>Failed to load quizzes.</p>";
-      });
-    }
-
-    // Assessments Table
-    function renderAssessmentsTable() {
-      assessments.map(a => `
-        <tr>
-          <td>${a.name || "-"}</td>
-          <td>${a.type || "Unknown"}</td>
-          <td>${a.highestGrade ?? "-"}</td>
-          <td>${a.attempts ?? 0}</td>
-          <td>${a.timeTaken ?? "-"}</td>
-          <td>${a.dateSubmitted ? new Date(a.dateSubmitted).toLocaleString() : "-"}</td>
-        </tr>
-      `);
-      tableContainer.innerHTML = `
-        <table class="table table-striped">
+  //Render courses table
+  const tableDiv = document.getElementById("tableContainer");
+  function renderCoursesTable() {
+    tableDiv.innerHTML = `
+      <div style="max-height:300px; overflow-y:auto; border:1px solid #ccc; border-radius:8px; padding:8px;">
+        <table class="table table-striped" style="margin:0;">
           <thead>
             <tr>
-              <th>Assessment</th>z
-              <th>Type</th>
-              <th>Highest Grade</th>
-              <th>Attempts</th>
-              <th>Time Taken</th>
-              <th>Date Submitted</th>
+              <th>Course</th>
+              <th>Quizzes Taken</th>
+              <th>Assignments Done</th>
+              <th>Resources Completed</th>
+              <th>Progress</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            ${rows.length ? rows.join('') : "<tr><td colspan='5'>No assessments found</td></tr>"}
+            ${coursesWithQuizzes.map(c => `
+              <tr>
+                <td>${c.courseName}</td>
+                <td>${c.quizzesTaken} / ${c.totalQuizzes}</td>
+                <td>${c.assignemntsSubmitted} / ${c.totalAssessments}</td>
+                <td>${c.completedResources} / ${c.allResources}</td>
+                <td>
+                  <div class="progress" style="width:100%; background:#eee; border-radius:5px; height:12px; position:relative;">
+                    <div class="progress-bar" style="width:${c.progress}%; background:#2196f3; height:100%;"></div>
+                    <span style="position:absolute; top:0; left:50%; transform:translateX(-50%); font-size:10px; line-height:12px; font-weight:bold;">${c.progress}%</span>
+                  </div>
+                </td>
+                <td>${c.status}</td>
+              </tr>
+            `).join('')}
           </tbody>
         </table>
-      `;
-    }
-
-    // Default to courses
-    renderCoursesTable();
-
-    // Event listeners
-    document.getElementById("backToReports").addEventListener("click", () => {
-      renderReportsPage(container);
-    });
-
-    document.getElementById("showCourses").addEventListener("click", () => {
-      renderCoursesTable();
-      document.getElementById("showCourses").classList.add("btn-primary");
-      document.getElementById("showCourses").classList.remove("btn-outline-primary");
-      document.getElementById("showQuizzes").classList.add("btn-outline-primary");
-      document.getElementById("showQuizzes").classList.remove("btn-primary");
-    });
-
-    /*
-    document.getElementById("showQuizzes").addEventListener("click", () => {
-      renderQuizzesTable();
-      document.getElementById("showQuizzes").classList.add("btn-primary");
-      document.getElementById("showQuizzes").classList.remove("btn-outline-primary");
-      document.getElementById("showCourses").classList.add("btn-outline-primary");
-      document.getElementById("showCourses").classList.remove("btn-primary");
-    });
-    */
-   
-    //document.getElementById("showAssessments").addEventListener("click", () => {
-      //renderAssessmentsTable();
-      //document.getElementById("showAssessments").classList.add("btn-primary");
-      //document.getElementById("showAssessments").classList.remove("btn-outline-primary");
-      //document.getElementById("showCourses").classList.add("btn-outline-primary");
-      //document.getElementById("showCourses").classList.remove("btn-primary");
-    //});
-
-  } catch (err) {
-    console.error("Error loading user analytics:", err);
-    container.innerHTML = `<div class="alert alert-danger">Failed to load analytics: ${err.message}</div>`;
+      </div>
+    `;
   }
+
+  renderCoursesTable();
+
+  //course status chart
+  if (typeof Chart === "undefined") {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/chart.js";
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  const statusCounts = coursesWithQuizzes.reduce((acc, c) => {
+    const status = c.status === 'enrolled' ? 'not started' : c.status;
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const ctx = document.getElementById("statusChart").getContext("2d");
+  if (window.statusChartInstance) window.statusChartInstance.destroy();
+  window.statusChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: Object.keys(statusCounts), datasets: [{ data: Object.values(statusCounts), backgroundColor: ["#4caf50","#ff9800","#f44336","#2196f3"], borderWidth: 1 }] },
+    options: { plugins: { legend: { position: 'bottom' }, tooltip: { enabled: true } } }
+  });
+
+  document.getElementById("showCourses").addEventListener("click", renderCoursesTable);
 }
+
 
 async function renderCoursesAnalytics(container) {
   renderAnalyticsLayout(container, "courses", `<div class="text-muted">Courses analytics coming soon...</div>`);
