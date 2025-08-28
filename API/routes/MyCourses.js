@@ -5,6 +5,7 @@ const MyCourses = require('../models/MyCourses');
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const User = require('../models/User');
+const Profile = require('../models/Profile'); 
 
 // Route to enroll in a course
 router.post(
@@ -73,6 +74,58 @@ router.post(
   }
 );
 
+router.get('/user/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Find the MyCourses entry by user ID
+    const userCourses = await MyCourses.findOne({ userId }).populate('enrolledCourses');
+    if (!userCourses) {
+      return res.status(404).json({ message: 'No enrolled courses found for this user' });
+    }
+
+    // Fetch the actual User document
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const coursesWithEnrollment = [];
+
+    for (const course of userCourses.enrolledCourses) {
+      let enrollment = await Enrollment.findOne({ user: user._id, course: course._id });
+
+      // Create Enrollment if it doesn't exist (old courses)
+      if (!enrollment) {
+        enrollment = new Enrollment({
+          user: user._id,
+          course: course._id,
+          status: 'enrolled',
+          progress: 0,
+          certificateId: null,
+        });
+        await enrollment.save();
+      }
+
+      coursesWithEnrollment.push({
+        ...course.toObject(),
+        progress: enrollment.progress,
+        status: enrollment.status,
+        certificateId: enrollment.certificateId,
+      });
+    }
+
+    res.status(200).json({
+      _id: userCourses._id,
+      name: userCourses.name,
+      email: userCourses.email,
+      enrolledCourses: coursesWithEnrollment,
+      createdAt: userCourses.createdAt,
+    });
+  } catch (error) {
+    console.error('Error retrieving enrolled courses by userId:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Route to get enrolled courses for a user
 router.get('/:email', async (req, res) => {
   const { email } = req.params;
@@ -115,7 +168,7 @@ router.get('/:email', async (req, res) => {
     }
 
     res.status(200).json({
-      _id: userCourses._id,
+      _id: user._id,
       name: userCourses.name,
       email: userCourses.email,
       enrolledCourses: coursesWithEnrollment,
@@ -123,6 +176,61 @@ router.get('/:email', async (req, res) => {
     });
   } catch (error) {
     console.error('Error retrieving enrolled courses:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Route to get a single enrolled course by courseId for a user
+router.get('/:email/course/:courseId', async (req, res) => {
+  const { email, courseId } = req.params;
+
+  try {
+    // Fetch the user's enrolled courses
+    const userCourses = await MyCourses.findOne({ email }).populate('enrolledCourses');
+    if (!userCourses) {
+      return res.status(404).json({ message: 'No enrolled courses found for this user' });
+    }
+
+    // Fetch the user info
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Find the specific course
+    const course = userCourses.enrolledCourses.find(c => c._id.toString() === courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found in enrolled courses' });
+    }
+
+    // Check or create enrollment
+    let enrollment = await Enrollment.findOne({ user: user._id, course: course._id });
+    if (!enrollment) {
+      enrollment = new Enrollment({
+        user: user._id,
+        course: course._id,
+        status: 'enrolled',
+        progress: 0,
+        certificateId: null,
+      });
+      await enrollment.save();
+    }
+
+    // Merge course data with enrollment info
+    const courseWithEnrollment = {
+      ...course.toObject(),
+      progress: enrollment.progress,
+      status: enrollment.status,
+      certificateId: enrollment.certificateId,
+    };
+
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      course: courseWithEnrollment,
+    });
+
+  } catch (error) {
+    console.error('Error retrieving enrolled course:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -150,20 +258,42 @@ router.post('/update-progress-status', async (req, res) => {
   const { userId, courseId, progress } = req.body;
 
   try {
-    const enrollment = await Enrollment.findOne({ user: userId, course: courseId });
-    if (!enrollment) {
-      return res.status(404).json({ message: 'Enrollment not found' });
+    // Fetch enrollment
+    let enrollment = await Enrollment.findOne({ user: userId, course: courseId });
+    if (!enrollment) return res.status(404).json({ message: 'Enrollment not found' });
+
+    // Fetch user
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Update progress
+    enrollment.progress = progress;
+
+    // Update status based on progress
+    if (progress === 0) enrollment.status = 'enrolled';
+    else if (progress > 0 && progress < 100) enrollment.status = 'in progress';
+    else if (progress === 100) {
+      enrollment.status = 'completed';
+      enrollment.completedAt = new Date();
+
+      // Generate certificate if it doesn't exist yet
+      if (!enrollment.certificateId) {
+        await enrollment.generateCertificate();
+      }
     }
 
-    // Just update progress – middleware will handle status + certificate
-    enrollment.progress = progress;
+    // Update milestones
+    await addCourseProgressMilestone(user.email, courseId, progress, enrollment);
+
+    // Save enrollment
     await enrollment.save();
 
     res.status(200).json({
       message: 'Enrollment updated successfully',
       progress: enrollment.progress,
       status: enrollment.status,
-      certificateId: enrollment.certificateId || null
+      certificateId: enrollment.certificateId || null,
+      milestones: enrollment.milestones
     });
   } catch (error) {
     console.error('Error updating enrollment:', error);
@@ -171,8 +301,73 @@ router.post('/update-progress-status', async (req, res) => {
   }
 });
 
+// Helper function to add course progress milestone
+async function addCourseProgressMilestone(email, courseId, progress, enrollment) {
+  try {
+    const profile = await Profile.findOne({ email });
+    if (!profile) {
+      console.log('Profile not found for email:', email);
+      return;
+    }
 
+    let milestoneTitle = '';
+    let milestoneDescription = '';
+    let shouldAddMilestone = false;
+    let milestoneType = 'course';
 
+    if (progress >= 25 && !enrollment.milestones.term1) {
+      milestoneTitle = 'Term 1 Complete';
+      milestoneDescription = `Completed 25% of the course`;
+      enrollment.milestones.term1 = true;
+      shouldAddMilestone = true;
+    } else if (progress >= 50 && !enrollment.milestones.term2) {
+      milestoneTitle = 'Term 2 Complete';
+      milestoneDescription = `Completed 50% of the course`;
+      enrollment.milestones.term2 = true;
+      shouldAddMilestone = true;
+    } else if (progress >= 75 && !enrollment.milestones.term3) {
+      milestoneTitle = 'Term 3 Complete';
+      milestoneDescription = `Completed 75% of the course`;
+      enrollment.milestones.term3 = true;
+      shouldAddMilestone = true;
+    } else if (progress === 100 && !enrollment.milestones.term4) {
+      milestoneTitle = 'Course Completed';
+      milestoneDescription = `Completed 100% of the course`;
+      enrollment.milestones.term4 = true;
+      shouldAddMilestone = true;
+    }
 
+    if (shouldAddMilestone) {
+      const existingMilestone = profile.milestones.find(m => 
+        m.title === milestoneTitle && m.courseId && m.courseId.toString() === courseId.toString()
+      );
+
+      if (existingMilestone) {
+        console.log('Milestone already exists for this course progress');
+        return;
+      }
+
+      const milestone = {
+        title: milestoneTitle,
+        description: milestoneDescription,
+        achievedOn: new Date(),
+        courseId: courseId,
+        type: milestoneType,
+        score: progress
+      };
+
+      await Profile.findOneAndUpdate(
+        { email },
+        { $push: { milestones: milestone } },
+        { new: true, upsert: true }
+      );
+
+      console.log(`Added milestone for ${email}: ${milestoneTitle}`);
+      await enrollment.save();
+    }
+  } catch (err) {
+    console.error('Error adding course progress milestone:', err);
+  }
+}
 
 module.exports = router;

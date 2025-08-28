@@ -211,7 +211,6 @@ export async function renderCourseDetails(contentArea, course) {
     }
 
     // Submit Rating
-    // Submit Rating
     if (target.classList.contains('submit-rating-btn')) {
       const ratingInput = parseInt(ratingSection.querySelector('.rating-input').value);
       if (!ratingInput || ratingInput < 1 || ratingInput > 5) {
@@ -491,7 +490,14 @@ async function renderSubmissions(courseId, contentArea) {
 
     // Fetch assessments to get their titles
     const assessmentsResponse = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
-    const assessments = await assessmentsResponse.json();
+    const assessmentsRaw = await assessmentsResponse.json();
+
+    // Normalize to flat array (works for both array and grouped object)
+    const assessments = assessmentsRaw && typeof assessmentsRaw === "object" && !Array.isArray(assessmentsRaw)
+      ? Object.values(assessmentsRaw).flat()
+      : Array.isArray(assessmentsRaw)
+        ? assessmentsRaw
+        : [];
 
     if (!submissions || submissions.length === 0) {
       submissionsContainer.innerHTML = '<div class="empty-message">You have no submissions for this course yet.</div>';
@@ -1043,9 +1049,18 @@ async function renderQuizzes(courseId) {
               answers
             })
           });
+          
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Submission failed');
-          form.querySelector('.quiz-submit-message').innerHTML = '<span style="color:green;">Quiz submitted!</span>';
+          
+          // Show grade and milestone message if applicable
+          let message = `<span style="color:green;">Quiz submitted! Grade: ${data.grade}% (${data.correctCount}/${data.totalQuestions})</span>`;
+          
+          if (data.grade >= 80) {
+            message += `<br><span style="color:gold; font-weight:bold;">🎉 Achievement unlocked! This score has been added to your milestones.</span>`;
+          }
+          
+          form.querySelector('.quiz-submit-message').innerHTML = message;
           form.querySelectorAll('button[type="submit"]').forEach(btn => btn.disabled = true);
 
           // Auto-marking logic

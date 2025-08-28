@@ -2,20 +2,24 @@ import { userData } from '../Data/data.js';
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 export async function renderProfileTab(contentArea, currentUser) {
-  let profileData = {};
   let certificates = [];
-  
-  // Fetch latest profile from backend
+
+  // Fetch latest profile from backend (bio + milestones + certificates)
   try {
     const res = await fetch(`${API_BASE_URL}/Profile/${currentUser.email}`);
-    if (res.ok) {
-      profileData = await res.json();
-      currentUser.bio = profileData.bio || '';
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    }
+    if (!res.ok) throw new Error('Failed to fetch profile');
+
+    const profile = await res.json();
+    currentUser.bio = profile.bio || '';
+    currentUser.milestones = profile.milestones || [];
+    certificates = profile.certificates || [];
+
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
   } catch (err) {
     console.error('Error fetching profile:', err);
     currentUser.bio = currentUser.bio || '';
+    currentUser.milestones = currentUser.milestones || [];
+    certificates = [];
   }
 
   // Safely access userProgress
@@ -23,11 +27,23 @@ export async function renderProfileTab(contentArea, currentUser) {
     enrolledCourses: [],
     completedCourses: [],
   };
+// Certificates come from profile fetch earlier
+currentUser.certificates = certificates;
 
-  // Fetch certificates
-certificates = profileData.certificates || [];
+// Generate milestones list dynamically
+const milestones = currentUser.milestones && currentUser.milestones.length > 0 
+    ? currentUser.milestones.map(m => 
+        `<li class="milestone-item">
+          <i class="fas fa-check-circle"></i>
+          <div>
+            <strong>${m.title}</strong>
+            <div>${m.description}</div>
+            <small>${m.achievedOn ? new Date(m.achievedOn).toLocaleDateString() : ''}</small>
+          </div>
+        </li>`
+      ).join('')
+    : '<li class="milestone-item"><i class="fas fa-info-circle"></i><span>No milestones achieved yet</span></li>';
 
-  const milestones = ["The system will render your milestones when you achieve them"];
   const achievements = ["The system will render your achievements when you achieve them"];
 
   contentArea.innerHTML = `
@@ -178,10 +194,33 @@ certificates = profileData.certificates || [];
         border-bottom: none;
       }
       
-      .milestone-item i {
-        color:rgb(21, 81, 133);
-        font-size: 1.1rem;
-      }
+      .milestone-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #edf2f7;
+    }
+
+    .milestone-item > div {
+      flex: 1;
+    }
+
+    .milestone-item strong {
+      color: #2d3748;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .milestone-item div:not(:first-child) {
+      color: #4a5568;
+      font-size: 0.9rem;
+    }
+
+    .milestone-item small {
+      color: #718096;
+      font-size: 0.8rem;
+    }
       
       .achievement-item i {
         color: rgb(21, 81, 133);
@@ -358,7 +397,7 @@ certificates = profileData.certificates || [];
         <div class="card-header"><h3>Milestones</h3></div>
         <div class="card-body">
           <ul class="milestones-list">
-            ${milestones.map(m => `<li class="milestone-item"><i class="fas fa-check-circle"></i><span>${m}</span></li>`).join('')}
+            ${milestones}
           </ul>
         </div>
       </div>

@@ -9,6 +9,12 @@ const EnrollmentSchema = new mongoose.Schema({
     default: 'enrolled' 
   },
   progress: { type: Number, default: 0 },
+  milestones: {
+    term1: { type: Boolean, default: false },
+    term2: { type: Boolean, default: false },
+    term3: { type: Boolean, default: false },
+    term4: { type: Boolean, default: false }
+  },
   enrolledAt: { type: Date, default: Date.now },
   completedAt: { type: Date },
   certificateId: { type: String },
@@ -22,18 +28,6 @@ EnrollmentSchema.pre('save', async function (next) {
       this.status = 'completed';
       this.completedAt = new Date();
 
-      // Only generate a certificate if one doesn’t exist yet
-      if (!this.certificateId) {
-        // Ensure user and course are populated
-        if (!this.populated('user')) {
-          await this.populate('user');
-        }
-        if (!this.populated('course')) {
-          await this.populate('course');
-        }
-
-        await this.generateCertificate();
-      }
     }
     // If progress > 0 but < 100
     else if (this.isModified('progress') && this.progress > 0 && this.progress < 100) {

@@ -15,11 +15,30 @@ if (!fs.existsSync(uploadDir)) {
 // Set up multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir);
+    const { courseId } = req.params;
+    const { folder } = req.body;
+    
+    // Create course-specific directory if it doesn't exist
+    const courseDir = path.join(uploadDir, courseId);
+    if (!fs.existsSync(courseDir)) {
+      fs.mkdirSync(courseDir, { recursive: true });
+    }
+    
+    // Create folder directory if specified
+    if (folder && folder.trim() !== '') {
+      const folderDir = path.join(courseDir, folder);
+      if (!fs.existsSync(folderDir)) {
+        fs.mkdirSync(folderDir, { recursive: true });
+      }
+      cb(null, folderDir);
+    } else {
+      cb(null, courseDir);
+    }
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const sanitizedFileName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, uniqueSuffix + '-' + sanitizedFileName);
   }
 });
 const upload = multer({ storage: storage });
@@ -27,12 +46,23 @@ const upload = multer({ storage: storage });
 // Route: Add a new assessment to a course
 router.post('/courses/:courseId/assessments', upload.single('file'), async (req, res) => {
   try {
-    const { title, description, dueDate } = req.body;
+    const { title, description, dueDate, points, status, folder } = req.body;
     const { courseId } = req.params;
 
     // Validate required fields
     if (!title || !dueDate) {
       return res.status(400).json({ message: 'Title and due date are required.' });
+    }
+
+    let filePath = null;
+    let originalName = null;
+    
+    if (req.file) {
+      filePath = path.relative(
+        path.join(__dirname, '..'),
+        req.file.path
+      ).replace(/\\/g, '/');
+      originalName = req.file.originalname;
     }
 
     // Create assessment document
@@ -41,36 +71,72 @@ router.post('/courses/:courseId/assessments', upload.single('file'), async (req,
       title,
       description,
       dueDate,
-      filePath: req.file ? req.file.path : undefined,
-      originalName: req.file ? req.file.originalname : undefined
+      points: points || 0,
+      status: status || 'pending',
+      folder: folder || "General",
+      filePath,
+      originalName
     });
     await assessment.save();
 
-    res.status(201).json({ message: 'Assessment created successfully', assessment });
+    // Add assessment to course
+    await Course.findByIdAndUpdate(courseId, { $push: { assessments: assessment._id } });
+
+    res.status(201).json({ 
+      message: 'Assessment created successfully', 
+      assessment: {
+        ...assessment.toObject(),
+        downloadUrl: filePath ? `/api/assessments/${assessment._id}/download` : null
+      }
+    });
   } catch (error) {
     console.error('Error adding assessment:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Route: Get all assessments for a course
+// Route: Get all assessments for a course with folder structure, includes course name
 router.get('/courses/:courseId/assessments', async (req, res) => {
   try {
     const { courseId } = req.params;
-    const assessments = await Assessment.find({ course: courseId });
-    console.log('path',assessments.filePath);
-    res.status(200).json(assessments);
+    
+    // Populate course information to get the course name
+    const assessments = await Assessment.find({ course: courseId }).populate('course', 'name courseName title');
+    
+    // Group assessments by folder
+    const assessmentsByFolder = {};
+    assessments.forEach(assessment => {
+      const folder = assessment.folder || "General";
+      if (!assessmentsByFolder[folder]) {
+        assessmentsByFolder[folder] = [];
+      }
+      
+      //Include course name in the response for frontend use
+      assessmentsByFolder[folder].push({
+        ...assessment.toObject(),
+        downloadUrl: assessment.filePath ? `/api/assessments/${assessment._id}/download` : null,
+        // Course name for frontend display
+        courseName: assessment.course?.name || assessment.course?.courseName || assessment.course?.title || `Course ${courseId.substring(0, 8)}`
+      });
+    });
+
+    res.status(200).json(assessmentsByFolder);
   } catch (error) {
     console.error('Error fetching assessments:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Route: Get all assessments (for all courses)
+// Route: Get all assessments (for all courses) - flattened
 router.get('/assessments', async (req, res) => {
   try {
     const assessments = await Assessment.find({});
-    res.status(200).json(assessments);
+    const flattenedAssessments = assessments.map(assessment => ({
+      ...assessment.toObject(),
+      downloadUrl: assessment.filePath ? `/api/assessments/${assessment._id}/download` : null
+    }));
+    
+    res.status(200).json(flattenedAssessments);
   } catch (error) {
     console.error('Error fetching all assessments:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -92,73 +158,46 @@ router.get('/assessments/count', async (req, res) => {
 router.get('/assessments/:assessmentId/download', async (req, res) => {
   try {
     const assessment = await Assessment.findById(req.params.assessmentId);
-    console.log('path', assessment.filePath);
-    if (!assessment || !assessment.filePath) 
-      return res.status(404).json({ message: 'File not found' });
-
-    res.download(assessment.filePath, assessment.originalName);
+    if (!assessment || !assessment.filePath) return res.status(404).json({ message: 'File not found' });
+    
+    const absolutePath = path.join(__dirname, '..', assessment.filePath);
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).json({ message: 'File not found on server' });
+    }
+    
+    res.download(absolutePath, assessment.originalName || 'assessment_file');
   } catch (error) {
     console.error('Error downloading assessment file:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-
-// Route: Update an assessment
-router.put('/assessments/:assessmentId', upload.single('file'), async (req, res) => {
+// Route: Update assessment folder
+router.patch('/assessments/:assessmentId/folder', async (req, res) => {
   try {
-    const { title, description, dueDate } = req.body;
-    const { assessmentId } = req.params;
+    const { folder } = req.body;
 
-    const assessment = await Assessment.findById(assessmentId);
+    if (!folder || folder.trim() === "") {
+      return res.status(400).json({ error: 'Folder name is required' });
+    }
+
+    const assessment = await Assessment.findByIdAndUpdate(
+      req.params.assessmentId,
+      { folder },
+      { new: true }
+    );
+
     if (!assessment) {
-      return res.status(404).json({ message: 'Assessment not found' });
+      return res.status(404).json({ error: 'Assessment not found' });
     }
 
-    // If a new file is uploaded, delete the old one
-    if (req.file && assessment.filePath && fs.existsSync(assessment.filePath)) {
-      fs.unlinkSync(assessment.filePath);
-    }
-
-    // Update fields
-    assessment.title = title || assessment.title;
-    assessment.description = description || assessment.description;
-    assessment.dueDate = dueDate || assessment.dueDate;
-    if (req.file) {
-      assessment.filePath = req.file.path;
-      assessment.originalName = req.file.originalname;
-    }
-
-    await assessment.save();
-    res.status(200).json({ message: 'Assessment updated successfully', assessment });
-
-  } catch (error) {
-    console.error('Error updating assessment:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// Route: Delete an assessment
-router.delete('/assessments/:assessmentId', async (req, res) => {
-  try {
-    const { assessmentId } = req.params;
-
-    const assessment = await Assessment.findById(assessmentId);
-    if (!assessment) {
-      return res.status(404).json({ message: 'Assessment not found' });
-    }
-
-    // Delete the file if it exists
-    if (assessment.filePath && fs.existsSync(assessment.filePath)) {
-      fs.unlinkSync(assessment.filePath);
-    }
-
-    await Assessment.findByIdAndDelete(assessmentId);
-    res.status(200).json({ message: 'Assessment deleted successfully' });
-
-  } catch (error) {
-    console.error('Error deleting assessment:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(200).json({
+      message: 'Folder updated successfully',
+      assessment
+    });
+  } catch (err) {
+    console.error('Error updating folder:', err);
+    res.status(500).json({ error: 'Failed to update folder' });
   }
 });
 
