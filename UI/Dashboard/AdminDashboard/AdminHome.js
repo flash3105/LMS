@@ -31,14 +31,17 @@ function renderQuickLinks(currentUser) {
 async function renderStatistics() {
   try {
     const [assessmentsRes, usersRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/assessments/count`),
+      fetch(`http://localhost:5000/api/assessments/count`),
       fetch(`${API_BASE_URL}/auth/registered-users`)
     ]);
-
+  
     if (!assessmentsRes.ok || !usersRes.ok) throw new Error('Failed to fetch data');
 
     const assessments = await assessmentsRes.json();
     const users = await usersRes.json();
+
+    
+  
 
     return `
       <div class="statistics card">
