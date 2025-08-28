@@ -218,95 +218,142 @@ function renderAnalyticsLayout(container, activeTab, bodyContent = "") {
 }
 
 
-// Reports Page
-async function renderReportsPage(container) {
+async function renderReportsPage(container, pageSize = 20) {
   try {
-    const [assessmentsRes, usersRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/assessments/count`),
-      fetch(`${API_BASE_URL}/auth/registered-users`),
-    ]);
-
-    if (!assessmentsRes.ok || !usersRes.ok) throw new Error('Failed to fetch data');
-
-    const assessments = await assessmentsRes.json();
-    const users = await usersRes.json();
-
-    // Fetch courses per user
-    const usersWithCourses = await Promise.all(
-      users.users.map(async (u) => {
-        if (u.role === 'Student' || u.role === 'Intern') {
-          const res = await fetch(`${API_BASE_URL}/mycourses/${encodeURIComponent(u.email)}`);
-          const courses = res.ok ? await res.json() : { enrolledCourses: [] };
-          console.log("Course count: ", courses.enrolledCourses.length);
-          return { ...u, courseCount: courses.enrolledCourses.length };
-        }
-        return { ...u, courseCount: 0 };
-      })
-    );
-
-    // Prepare the table HTML
-    const tableHTML = `
-      <ul>
-        <li>User progress over time</li>
-        <table class="table table-striped">
+    // Render skeleton table immediately
+    renderAnalyticsLayout(container, "user", `
+      <div id="kpi-cards" style="display:flex; gap:1rem; margin-bottom:1rem;">
+        <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.5rem; text-align:center;">
+          <h5>Total Enrolled Courses</h5>
+          <p id="total-courses" style="font-weight:bold; font-size:1.5rem; margin:0;">--</p>
+        </div>
+        <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.5rem; text-align:center;">
+          <h5>Completed Courses</h5>
+          <p id="total-completed" style="font-weight:bold; font-size:1.5rem; margin:0;">--</p>
+        </div>
+        <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.5rem; text-align:center;">
+          <h5>Overall Progress</h5>
+          <svg width="100" height="100" viewBox="0 0 36 36">
+            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e0e0e0" stroke-width="3"/>
+            <path id="progress-path" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#2196f3" stroke-width="3" stroke-dasharray="0,100"/>
+            <text id="progress-text" x="18" y="20.35" text-anchor="middle" font-size="6" fill="#333">--%</text>
+          </svg>
+        </div>
+      </div>
+      <div style="max-height:300px; overflow:auto; border:1px solid #ccc; border-radius:8px; display:inline-block;">
+        <table class="table table-striped" style="border-collapse:collapse;">
           <thead>
             <tr>
               <th>#</th>
               <th>Email</th>
               <th>Name</th>
               <th>Role</th>
-              <th>Courses</th>
+              <th>Total Courses</th>
+              <th>Completed Courses</th>
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
-            ${usersWithCourses
-              .filter(u => u.role === 'Student' || u.role === 'Intern')
-              .map((u, i) => `
-                <tr>
-                  <td>${i + 1}</td>
-                  <td>${u.email}</td>
-                  <td>${u.name}</td>
-                  <td>${u.role}</td>
-                  <td>${u.courseCount}</td>
-                  <td>
-                    <button class="btn btn-primary btn-sm details-btn" data-email="${u.email}">
-                      Details
-                    </button>
-                  </td>
-                </tr>
-              `).join('')}
+          <tbody id="users-table-body">
+            <tr><td colspan="7" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading users...</td></tr>
           </tbody>
         </table>
-      </ul>
-      <div class="text-muted mt-3">
-        <i class="fas fa-spinner fa-spin"></i> More analytics coming soon...
       </div>
-    `;
+      <div id="pagination" style="margin-top:1rem; text-align:center;"></div>
+    `);
 
-    // Render the layout once
-    renderAnalyticsLayout(container, "user", tableHTML);
+    const tbody = document.getElementById("users-table-body");
+    const paginationContainer = document.getElementById("pagination");
 
-    // Add per-user details buttons
-    document.querySelectorAll(".details-btn").forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        const email = e.currentTarget.dataset.email;
-        await renderUserAnalytics(container, email);
-      });
+    // STEP 1: Fetch users
+    const usersRes = await fetch(`${API_BASE_URL}/auth/registered-users`);
+    const users = await usersRes.json();
+    const studentUsers = users.users.filter(u => u.role === "Student" || u.role === "Intern");
+    const totalPages = Math.ceil(studentUsers.length / pageSize);
+
+    // Initialize placeholders
+    studentUsers.forEach(u => {
+      u.courseCount = 0;
+      u.completedCount = 0;
     });
 
+    function updateKPI() {
+      const totalCoursesEl = document.getElementById("total-courses");
+      const totalCompletedEl = document.getElementById("total-completed");
+      const progressTextEl = document.getElementById("progress-text");
+      const progressPathEl = document.getElementById("progress-path");
+
+      if (!totalCoursesEl || !totalCompletedEl || !progressTextEl || !progressPathEl) return;
+
+      const totalCourses = studentUsers.reduce((sum, u) => sum + u.courseCount, 0);
+      const totalCompleted = studentUsers.reduce((sum, u) => sum + u.completedCount, 0);
+      const overallProgress = totalCourses ? Math.round((totalCompleted / totalCourses) * 100) : 0;
+
+      totalCoursesEl.textContent = totalCourses;
+      totalCompletedEl.textContent = totalCompleted;
+      progressTextEl.textContent = overallProgress + "%";
+      progressPathEl.setAttribute("stroke-dasharray", `${overallProgress},100`);
+    }
+
+
+    function renderPage(page) {
+      const start = (page - 1) * pageSize;
+      const pageUsers = studentUsers.slice(start, start + pageSize);
+      tbody.innerHTML = pageUsers.map((u, i) => `
+        <tr>
+          <td>${start + i + 1}</td>
+          <td>${u.email}</td>
+          <td>${u.name}</td>
+          <td>${u.role}</td>
+          <td>${u.courseCount}</td>
+          <td>${u.completedCount}</td>
+          <td><button class="btn btn-primary btn-sm details-btn" data-email="${u.email}">Details</button></td>
+        </tr>
+      `).join("");
+
+      document.querySelectorAll(".details-btn").forEach(btn => {
+        btn.addEventListener("click", async e => await renderUserAnalytics(container, e.currentTarget.dataset.email));
+      });
+
+      paginationContainer.innerHTML = "";
+      for (let p = 1; p <= totalPages; p++) {
+        const btn = document.createElement("button");
+        btn.textContent = p;
+        btn.className = p === page ? "btn btn-primary btn-sm mx-1" : "btn btn-secondary btn-sm mx-1";
+        btn.addEventListener("click", () => renderPage(p));
+        paginationContainer.appendChild(btn);
+      }
+    }
+
+    renderPage(1); // Initial render with placeholders
+
+    // STEP 2: Fetch each user's courses (in parallel) and update KPI incrementally
+    await Promise.all(studentUsers.map(async u => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/mycourses/${encodeURIComponent(u.email)}`);
+        const data = res.ok ? await res.json() : { enrolledCourses: [] };
+        u.courseCount = data.enrolledCourses.length;
+        u.completedCount = data.enrolledCourses.filter(c => c.status === 'completed').length;
+        updateKPI();
+        renderPage(1); // re-render current page with updated data
+      } catch (err) {
+        console.error(`Failed to fetch courses for ${u.email}:`, err);
+      }
+    }));
+
   } catch (err) {
-    console.error('Statistics load error:', err);
-    container.innerHTML = `
-      <div class="statistics card">
-        <div class="alert alert-danger">Failed to load statistics: ${err.message}</div>
-      </div>`;
+    console.error("Statistics load error:", err);
+    container.innerHTML = `<div class="statistics card"><div class="alert alert-danger">Failed to load statistics: ${err.message}</div></div>`;
   }
 
-  document.getElementById('backButton').addEventListener('click', () => {
-    renderHomeTab(container, { name: 'User', role: 'user' }); // Replace with actual currentUser
+  document.getElementById("backButton")?.addEventListener("click", () => {
+    renderHomeTab(container, { name: "User", role: "user" });
   });
 }
+
+
+
+
+
 
 
 
@@ -388,9 +435,6 @@ async function renderUserAnalytics(container, email) {
           const completedResources = completions.length
           const allResources = resources.length;
 
-          const completedItems = quizzesTaken.length + assignemntsSubmitted + completedResources;
-          const totalItems = totalQuizzes + totalAssessments + allResources;
-
           return {
             ...course,
             quizzesTaken: quizzesTaken.length || 0,
@@ -414,9 +458,15 @@ async function renderUserAnalytics(container, email) {
     const totalQuizzes = coursesWithQuizzes.reduce((sum, c) => sum + (c.quizzesTaken || 0), 0);
     const totalAssignments = coursesWithQuizzes.reduce((sum, c) => sum + (c.assignemntsSubmitted || 0), 0);
     const completedCourses = coursesWithQuizzes.filter(course => course.progress === 100).length;
+    const notStartedCourses = coursesWithQuizzes.filter(course => course.progress === 0).length;
+    const inProgressCourses = coursesWithQuizzes.filter(course => course.progress > 0 && course.progress < 100).length;
     const completedResources = coursesWithQuizzes.reduce((sum, c) => sum + (c.completedResources || 0), 0);
 
-    // Base UI with buttons
+    const overallProgress = totalCourses > 0 
+      ? Math.round((completedCourses / totalCourses) * 100) 
+      : 0;
+
+    // Base UI with buttons and KPIs
     container.innerHTML = `
       <div class="user-analytics card">
         <div class="mb-3 d-flex gap-2">
@@ -427,68 +477,213 @@ async function renderUserAnalytics(container, email) {
 
         <h2 class="card-header">Analytics for ${userData.name}</h2>
         <div class="card-body">
-          <!-- KPI Cards -->
-          <div class="kpi-cards d-flex gap-3 mb-4">
-            <div class="card p-2 text-center">Enrolled Courses: ${totalCourses}</div>
-            <div class="card p-2 text-center">Completed Courses: ${completedCourses} </div>
-            <div class="card p-2 text-center">Quizzes Taken: ${totalQuizzes}</div>
-            <div class="card p-2 text-center">Assignments Submitted: ${totalAssignments}</div>
-            <div class="card p-2 text center">Resources completed: ${completedResources}</div>
-          </div>
-          <div>
-            <button id="showCourses" class="btn btn-primary">Courses</button>
-            <button id="showQuizzes" class="btn btn-outline-primary">Quizzes</button>
-          </div>
-          <div id="tableContainer"></div>
-        </div>
-      </div>
-    `;
 
-    const tableContainer = document.getElementById("tableContainer");
+          <!-- KPI Cards -->
+          <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap: wrap;">
+
+          <!-- Overall Progress Wheel -->
+          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
+            <h6 style="margin:0 0 0.2rem 0;">Overall Progress</h6>
+            <svg width="80" height="80" viewBox="0 0 36 36" style="margin:0 auto;">
+              <path
+                d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#e0e0e0"
+                stroke-width="3"
+              />
+              <path
+                d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#2196f3"
+                stroke-width="3"
+                stroke-dasharray="${overallProgress}, 100"
+              />
+              <text x="18" y="20.35" text-anchor="middle" font-size="5" fill="#333">
+                ${overallProgress}%
+              </text>
+            </svg>
+          </div>
+
+          <!-- Other KPI Cards -->
+          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
+            <h6 style="margin:0 0 0.2rem 0;">Enrolled Courses</h6>
+            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${totalCourses}</p>
+          </div>
+  
+          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
+            <h6 style="margin:0 0 0.2rem 0;">Completed Courses</h6>
+            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${completedCourses}</p>
+          </div>
+  
+          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
+            <h6 style="margin:0 0 0.2rem 0;">In Progress</h6>
+            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${inProgressCourses}</p>
+          </div>
+  
+          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
+            <h6 style="margin:0 0 0.2rem 0;">Not Started</h6>
+            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${notStartedCourses}</p>
+          </div>
+
+          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
+            <h6 style="margin:0 0 0.2rem 0;">Quizzes Taken</h6>
+            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${totalQuizzes}</p>
+          </div>
+  
+          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
+            <h6 style="margin:0 0 0.2rem 0;">Assignments Submitted</h6>
+            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${totalAssignments}</p>
+          </div>
+  
+          <div style="flex:1; border:1px solid #ccc; border-radius:6px; padding:0.3rem; text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:100px;">
+            <h6 style="margin:0 0 0.2rem 0;">Resources Completed</h6>
+            <p style="font-weight:bold; font-size:1.2rem; margin:0;">${completedResources}</p>
+          </div>
+
+        </div>
+
+        <div>
+          <button id="showCourses" class="btn btn-primary">Courses</button>
+        <button id="showQuizzes" class="btn btn-outline-primary">Quizzes</button>
+        </div>
+
+        <div id="tableContainer"></div>
+      </div>
+    </div>
+  `;
+
+    // Courses Table and Chart side by side
+    const tableChartContainer = document.createElement("div");
+    tableChartContainer.style.display = "flex";
+    tableChartContainer.style.gap = "20px"; // space between table and chart
+
+    // Table
+    const tableDiv = document.createElement("div");
+    tableDiv.style.flex = "1"; // table takes remaining width
+    tableDiv.id = "tableContainer"; 
+    tableChartContainer.appendChild(tableDiv);
+
+    // Chart
+    const chartDiv = document.createElement("div");
+    chartDiv.style.width = "300px"; // fixed width for chart
+    chartDiv.innerHTML = `<canvas id="statusChart"></canvas>`;
+    tableChartContainer.appendChild(chartDiv);
+
+
+    // Append the container to card body
+    container.querySelector(".card-body").appendChild(tableChartContainer);
+
     console.log("Courses with quizzes: ", coursesWithQuizzes)
     // Courses Table
     function renderCoursesTable() {
-      tableContainer.innerHTML = `
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Course</th>
-              <th>Quizzes Taken</th>
-              <th>Assignments Done</th>
-              <th>Resources completed</th>
-              <th>Progress</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${coursesWithQuizzes.map(c => `
+      tableDiv.innerHTML = `
+        <div style="display:inline-block; max-height: 300px; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px; padding: 8px;">
+          <table class="table table-striped" style="margin:0;">
+            <thead>
               <tr>
-                <td>${c.courseName}</td>
-                <td>${c.quizzesTaken} / ${c.totalQuizzes}</td>
-                <td>${c.assignemntsSubmitted} / ${c.totalAssessments}</td>
-                <td>${c.completedResources} / ${c.allResources} </td>
-                <td>
-                  <div class="progress" style="width:100%; background:#eee; border:1px solid #ccc; border-radius:5px; height:12px; position:relative; overflow:hidden;">
-                    <div class="progress-bar" role="progressbar" style="width: ${c.progress || 0}%; background:#2196f3; height:100%;">
-                  </div>
-                    <span style="position:absolute; top:0; left:50%; transform:translateX(-50%); font-size:10px; line-height:12px; font-weight:bold; color:#000;">
-                      ${c.progress || 0}%
-                    </span>
-                  </div>
-                </td>
-                <td>${c.status}</td>
+                <th>Course</th>
+                <th>Quizzes Taken</th>
+                <th>Assignments Done</th>
+                <th>Resources completed</th>
+                <th>Progress</th>
+                <th>Status</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${coursesWithQuizzes.map(c => `
+                <tr>
+                  <td>${c.courseName}</td>
+                  <td>${c.quizzesTaken} / ${c.totalQuizzes}</td>
+                  <td>${c.assignemntsSubmitted} / ${c.totalAssessments}</td>
+                  <td>${c.completedResources} / ${c.allResources}</td>
+                  <td>
+                    <div class="progress" style="width:100%; background:#eee; border:1px solid #ccc; border-radius:5px; height:12px; position:relative; overflow:hidden;">
+                      <div class="progress-bar" role="progressbar" style="width: ${c.progress || 0}%; background:#2196f3; height:100%;"></div>
+                      <span style="position:absolute; top:0; left:50%; transform:translateX(-50%); font-size:10px; line-height:12px; font-weight:bold; color:#000;">
+                        ${c.progress || 0}%
+                      </span>
+                    </div>
+                  </td>
+                  <td>${c.status}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
       `;
     }
+
+    // Dynamically load Chart.js if not already loaded
+    async function loadChartJS() {
+      if (typeof Chart !== "undefined") return; // already loaded
+
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/chart.js";
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    // Add this at the end of your renderUserAnalytics function
+    await loadChartJS(); // ensure Chart.js is loaded
+
+    // Add a container for the chart
+    const chartContainer = document.createElement("div");
+    chartContainer.style.width = "300px";
+    chartContainer.style.marginTop = "20px";
+    chartContainer.innerHTML = `<canvas id="statusChart"></canvas>`;
+    container.querySelector(".card-body").appendChild(chartContainer);
+
+    // Build status counts
+    const statusCounts = coursesWithQuizzes.reduce((acc, c) => {
+      acc[c.status] = (acc[c.status] || 0) + 1;
+      if(acc[c.status] === "enrolled"){
+        acc[c.status] = "not started";
+      }
+      return acc;
+    }, {});
+
+    const labels = Object.keys(statusCounts);
+    const data = Object.values(statusCounts);
+
+    const ctx = document.getElementById("statusChart").getContext("2d");
+
+    // Destroy previous chart if exists
+    if (window.statusChartInstance) {
+      window.statusChartInstance.destroy();
+    }
+
+    window.statusChartInstance = new Chart(ctx, {
+      type: "doughnut",
+        data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: ["#4caf50", "#ff9800", "#f44336", "#2196f3"],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { position: "bottom" },
+          tooltip: { enabled: true }
+        }
+      }
+    });
 
     function renderQuizzesTable() {
       // Clear the container first
       tableContainer.innerHTML = "<p>Loading quizzes...</p>";
 
-      
+       if (document.getElementById("chartContainer")) {
+    chartDiv.remove();
+  }
 
       // Fetch additional info for all quizzes asynchronously
       Promise.all(
@@ -522,7 +717,7 @@ async function renderUserAnalytics(container, email) {
           </tr>
         `);
 
-        tableContainer.innerHTML = `
+        tableDiv.innerHTML = `
           <table class="table table-striped">
             <thead>
               <tr>

@@ -368,4 +368,64 @@ async function addCourseProgressMilestone(email, courseId, progress, enrollment)
   }
 }
 
+router.post('/summary', async (req, res) => {
+  const { emails } = req.body;
+
+  if (!Array.isArray(emails) || emails.length === 0) {
+    return res.status(400).json({ message: 'Emails array is required' });
+  }
+
+  try {
+    // Fetch all users in one go
+    const users = await User.find({ email: { $in: emails } });
+    const userMap = {};
+    users.forEach(u => userMap[u.email] = u);
+
+    // Fetch all MyCourses entries in one go
+    const myCoursesList = await MyCourses.find({ email: { $in: emails } }).populate('enrolledCourses');
+    const result = {};
+
+    for (const userCourses of myCoursesList) {
+      const email = userCourses.email;
+      const user = userMap[email];
+      if (!user) continue;
+
+      const coursesWithEnrollment = [];
+
+      for (const course of userCourses.enrolledCourses) {
+        // Fetch enrollment for each course
+        let enrollment = await Enrollment.findOne({ user: user._id, course: course._id });
+
+        // If Enrollment doesn't exist (legacy data), create a default
+        if (!enrollment) {
+          enrollment = new Enrollment({
+            user: user._id,
+            course: course._id,
+            status: 'enrolled',
+            progress: 0,
+            certificateId: null,
+          });
+          await enrollment.save();
+        }
+
+        coursesWithEnrollment.push({
+          _id: course._id,
+          title: course.title,
+          progress: enrollment.progress,
+          status: enrollment.status,
+          certificateId: enrollment.certificateId,
+        });
+      }
+
+      result[email] = coursesWithEnrollment;
+    }
+
+    res.status(200).json(result);
+
+  } catch (err) {
+    console.error('Error fetching course summaries:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;
