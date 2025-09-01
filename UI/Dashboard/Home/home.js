@@ -601,21 +601,24 @@ async function fetchEnrolledCourses() {
 
 function renderCourses(courseList, containerId) {
   const container = document.getElementById(containerId);
-  if (!container) {
-    console.error(`Container with ID "${containerId}" not found.`);
-    return;
-  }
+  if (!container) return;
+  container.innerHTML = "";
 
-  container.innerHTML = ""; // Clear the container
-
-  // Get user progress from localStorage or userData
   const user = JSON.parse(localStorage.getItem('user')) || {};
-  // Use userData if available, fallback to empty object
   const progressData = (userData[user.email] && userData[user.email].courseProgress) || {};
-  console.log("User data email: ", userData[user.email]);
-  console.log("progress data: ", progressData);
+
+  // Removed duplicate courses by title/courseName
+  const uniqueCoursesMap = new Map();
   courseList.forEach(course => {
-    // Use course.title or course.courseName as the key
+    const key = course.title || course.courseName;
+    if (!uniqueCoursesMap.has(key)) uniqueCoursesMap.set(key, course);
+  });
+  const uniqueCourses = Array.from(uniqueCoursesMap.values());
+
+  // Creates cards in-memory first (to reduce reflows)
+  const fragment = document.createDocumentFragment();
+
+  uniqueCourses.forEach(course => {
     const courseKey = course.title || course.courseName;
     const progress = progressData[courseKey] || 0;
     const hoursSpent = Math.floor(progress / 20);
@@ -630,8 +633,7 @@ function renderCourses(courseList, containerId) {
         </div>
         ${course.authorEmail ? `<p><strong>Author:</strong> ${course.authorEmail}</p>` : ""}
         ${course.courseCode ? `<p><strong>Course Code:</strong> ${course.courseCode}</p>` : ""}
-        
-        <div> <!--this had the progress-container class -->
+        <div>
           <div class="progress-info">
             <span class="progress-text">0% Complete</span>
             <span class="hours-text">${hoursSpent} hrs spent</span>
@@ -640,7 +642,6 @@ function renderCourses(courseList, containerId) {
             <div class="progress-bar-fill" style="width: 0%"></div>
           </div>
         </div>
-        
         <div class="course-actions">
           <button class="continue-btn" data-course-key="${courseKey}">Continue</button>
           <button class="view-btn" data-course-id="${course._id}">View Details</button>
@@ -648,103 +649,69 @@ function renderCourses(courseList, containerId) {
       </div>
     `;
 
-    // Append card immediately
-    container.appendChild(card);
+    fragment.appendChild(card);
+
+    // Attach buttons after card creation
+    card.querySelector('.view-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      renderCourseDetails(document.getElementById("contentArea"), course);
+    });
+
+    card.querySelector('.continue-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      goToCourse(courseKey);
+    });
+  });
+
+  container.appendChild(fragment);
+
+  // Fetch all course data in parallel to avoid sequential requests
+  const email = user.email;
+  const userPromise = fetch(`${API_BASE_URL}/email/${encodeURIComponent(email)}`).then(r => r.json());
   
-    fetch(`http://localhost:5000/api/email/${encodeURIComponent(user.email)}`)
-      .then(res => res.json())
-      .then(userFromEmail => {
-        // Fetch quizzes, assignments , resources and completed resources asynchronously
-        Promise.all([
-          fetch(`${API_BASE_URL}/courses/${course._id}/quizzes`).then(res => res.json()).catch(() => []),
-          fetch(`${API_BASE_URL}/courses/${course._id}/assessments`).then(res => res.json()).catch(() => []),
-          fetch(`http://localhost:5000/api/submissions/${course._id}/${encodeURIComponent(userFromEmail.email)}`).then(res => res.json()).catch(() => []),
-          fetch(`${API_BASE_URL}/course/${course._id}/${encodeURIComponent(userFromEmail.email)}`).then(res => res.json()).catch(() => []),
-          fetch(`${API_BASE_URL}/courses/${course._id}/resources`).then(res => res.json()).catch(() => []),
-          fetch(`http://localhost:5000/api/resources/completions/${userFromEmail._id}`).then(res => res.json()).catch(() => [])
-        ]).then(([quizzes, assignments, QuizSubmissions, assignmentSubmissions, resources, resourceCompletions]) => {
-   
+  userPromise.then(userFromEmail => {
+    const courseDataPromises = uniqueCourses.map(course => {
+      const courseId = course._id;
+      return Promise.all([
+        fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`).then(r => r.json()).catch(() => []),
+        fetch(`${API_BASE_URL}/courses/${courseId}/assessments`).then(r => r.json()).catch(() => []),
+        fetch(`${API_BASE_URL}/submissions/${courseId}/${encodeURIComponent(userFromEmail.email)}`).then(r => r.json()).catch(() => []),
+        fetch(`${API_BASE_URL}/course/${courseId}/${encodeURIComponent(userFromEmail.email)}`).then(r => r.json()).catch(() => []),
+        fetch(`${API_BASE_URL}/courses/${courseId}/resources`).then(r => r.json()).catch(() => []),
+        fetch(`${API_BASE_URL}/resources/completions/${userFromEmail._id}`).then(r => r.json()).catch(() => [])
+      ]).then(([quizzes, assignments, QuizSubmissions, assignmentSubmissions, resources, resourceCompletions]) => {
+        const assignmentsArray = Array.isArray(assignments) ? assignments : Object.values(assignments).flat();
 
-        // Normalize assignments to flat array (works for both array and grouped object)
-        const assignmentsArray = assignments && typeof assignments === "object"
-          ? Object.values(assignments).flat()
-          : (Array.isArray(assignments) ? assignments : []);
+        const quizzesCompleted = quizzes.filter(q => QuizSubmissions.some(s => s.quizId === q._id)).length;
+        const assignmentsCompleted = assignmentsArray.filter(a => assignmentSubmissions.some(s => s.assessmentId === a._id)).length;
+        const resourcesCompleted = resourceCompletions.filter(c => resources.some(r => r._id === c.resource)).length;
 
-        console.log("Assignment array: ", assignmentsArray);
-
-        const quizzesCompleted = quizzes.filter(q =>
-          QuizSubmissions.some(s => s.quizId === q._id)
-        ).length || 0;
-
-        console.log("Quizzes completed: ", quizzesCompleted);
-    
-        const assignmentsCompleted = assignmentsArray.filter(a =>
-          assignmentSubmissions.some(s => s.assessmentId === a._id)
-        ).length || 0;
-
-        console.log("Assignemnts completed: ", assignmentsCompleted);
-    
-        //const resourcesCompleted = resourceCompletions.length;
-        const resourcesCompleted = resourceCompletions.filter(c =>
-          resources.some(r => r._id === c.resource)
-        ).length || 0;
-
-        console.log("Resources completd: ", resourcesCompleted);
-        //Calculating values to use for the progress bar
         const totalItems = quizzes.length + assignmentsArray.length + resources.length;
         const completedItems = quizzesCompleted + assignmentsCompleted + resourcesCompleted;
         const progressPercent = totalItems ? Math.round((completedItems / totalItems) * 100) : 0;
 
-        console.log("total items:", totalItems);
-        // Update progress bar dynamically
+        // Update card progress
+        const card = document.querySelector(`.continue-btn[data-course-key="${course.title || course.courseName}"]`).closest('.course-card');
         const progressFill = card.querySelector(".progress-bar-fill");
         const progressText = card.querySelector(".progress-text");
         const hoursText = card.querySelector(".hours-text");
 
         progressFill.style.width = progressPercent + "%";
         progressText.textContent = progressPercent + "% Complete";
-        hoursText.textContent = Math.floor(progressPercent / 20) + " hrs spent"; // test ecample for calculating hours spent on a course
-        
-        //updates the status and progress of a course using the progressPercent calvulated above
-        fetch(`http://localhost:5000/api/mycourses/update-progress-status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userFromEmail._id,
-          courseId: course._id,
-          progress: progressPercent
-        })
-      })
-      .then(res => res.json())
-      .then(data => console.log(`Course ${course._id} progress & status updated:`, data))
-      .catch(err => console.error("Error updating progress/status:", err));
+        hoursText.textContent = Math.floor(progressPercent / 20) + " hrs spent";
 
-        // Update quizzes info
-        //const quizzesInfo = card.querySelector(".quizzes-info");
-        //quizzesInfo.textContent = `Quizzes: ${quizzesCompleted}/${quizzes.length}, Assignments: ${assignmentsCompleted}/${assignments.length}`;
-        });
-      })
-      .catch(err => console.error("Failed to fetch user or course data:", err));
-
-
-      // Add click handler for the view details button
-      card.querySelector('.view-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (typeof renderCourseDetails === "function") {
-          renderCourseDetails(document.getElementById("contentArea"), course);
-        }
+        // Update server with progress
+        fetch(`${API_BASE_URL}/mycourses/update-progress-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userFromEmail._id, courseId: courseId, progress: progressPercent })
+        }).catch(err => console.error("Error updating progress/status:", err));
       });
-
-      // Add click handler for the continue button
-      card.querySelector('.continue-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        const courseKey = e.target.getAttribute('data-course-key');
-        goToCourse(courseKey);
-      });
-
-      container.appendChild(card);
     });
-  }
+
+    Promise.all(courseDataPromises).catch(err => console.error("Error fetching course data:", err));
+  }).catch(err => console.error("Failed to fetch user:", err));
+}
 
   async function loadTodos() {
   const user = JSON.parse(localStorage.getItem('user'));
