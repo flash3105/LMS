@@ -5,6 +5,9 @@ const path = require('path');
 const fs = require('fs');
 const Resource = require('../models/Resource');
 const Course = require('../models/Course');
+const ResourceCompletion = require('../models/ResourceCompletion');
+const ResourceRating = require('../models/ResourceRating');
+
 
 // Ensure resources directory exists
 const resourcesDir = path.join(__dirname, '..', 'uploads', 'resources');
@@ -310,5 +313,124 @@ router.put('/resources/:resourceId', upload.single('file'), async (req, res) => 
     res.status(500).json({ error: 'Failed to update resource' });
   }
 });
+
+router.patch('/resources/:resourceId/mark-played', async (req, res) => {
+  try {
+    const { email } = req.body; // email of the user who played
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const resource = await Resource.findById(req.params.resourceId);
+    if (!resource) return res.status(404).json({ error: 'Resource not found' });
+
+    if (!resource.playedBy.includes(email)) {
+      resource.playedBy.push(email);
+      await resource.save();
+    }
+
+    res.status(200).json({ message: 'Resource marked as played', playedBy: resource.playedBy });
+  } catch (err) {
+    console.error('Error marking resource as played:', err);
+    res.status(500).json({ error: 'Failed to mark as played' });
+  }
+});
+
+//Route for marking a resource as complete
+router.patch('/resources/:resourceId/complete', async (req, res) => {
+  try {
+    const { userId } = req.body; // in real app, take from auth middleware
+    if (!userId) return res.status(400).json({ error: 'User ID is required' });
+
+    await ResourceCompletion.updateOne(
+      { user: userId, resource: req.params.resourceId },
+      { $setOnInsert: { completedAt: new Date() } },
+      { upsert: true }
+    );
+
+    res.status(200).json({ message: 'Resource marked as complete' });
+  } catch (err) {
+    console.error('Error marking complete:', err);
+    res.status(500).json({ error: 'Failed to mark resource as complete' });
+  }
+});
+
+//Route for rating a resource
+router.post('/resources/:resourceId/rating', async (req, res) => {
+  try {
+    const { userId, user, rating, feedback } = req.body;
+    const finalUserId = userId || user;
+
+    if (!finalUserId || rating == null) { // allow 0 check
+      return res.status(400).json({ error: 'User ID and rating are required' });
+    }
+
+    const numericRating = Number(rating);
+    if (numericRating < 1 || numericRating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+
+    const savedRating = await ResourceRating.findOneAndUpdate(
+      { user: finalUserId, resource: req.params.resourceId },
+      { rating: numericRating, feedback, ratedAt: new Date() },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({ message: 'Rating saved', rating: savedRating });
+  } catch (err) {
+    console.error('Error saving rating:', err);
+    res.status(500).json({ error: 'Failed to save rating' });
+  }
+});
+
+
+//Route for getting resource completions
+router.get('/resources/completions/:userId', async (req, res) => {
+  try {
+    const completions = await ResourceCompletion.find({ user: req.params.userId });
+    res.status(200).json(completions);
+  } catch (err) {
+    console.error('Error fetching completions:', err);
+    res.status(500).json({ error: 'Failed to fetch completions' });
+  }
+});
+
+//Route for getting resource ratings
+router.get('/resources/ratings/:userId', async (req, res) => {
+  try {
+    const ratings = await ResourceRating.find({ user: req.params.userId });
+    res.status(200).json(ratings);
+  } catch (err) {
+    console.error('Error fetching ratings:', err);
+    res.status(500).json({ error: 'Failed to fetch ratings' });
+  }
+});
+
+//Mark a resource as uncomplete
+router.patch('/resources/:resourceId/uncomplete', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'User ID is required' });
+
+    await ResourceCompletion.deleteOne({ user: userId, resource: req.params.resourceId });
+
+    res.status(200).json({ message: 'Resource marked as uncomplete' });
+  } catch (err) {
+    console.error('Error uncompleting resource:', err);
+    res.status(500).json({ error: 'Failed to uncomplete resource' });
+  }
+});
+
+// Delete user rating for a resource
+router.delete('/resources/:resourceId/rating', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'User ID is required' });
+    await ResourceRating.deleteOne({ user: userId, resource: req.params.resourceId });
+    res.status(200).json({ message: 'Rating deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete rating' });
+  }
+});
+
 
 module.exports = router;

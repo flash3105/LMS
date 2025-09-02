@@ -7,10 +7,28 @@ const AchievementSchema = new mongoose.Schema({
   date: Date,
 });
 
+const CertificateSchema = new mongoose.Schema({
+  certificateId: { type: String, required: true },
+  title: { type: String, required: true },
+  courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
+  courseName: { type: String, required: true },
+  grade: { type: String, required: true },
+  issueDate: { type: Date, default: Date.now },
+  completionDate: { type: Date, required: true },
+  certificateUrl: { type: String },
+  status: { type: String, enum: ['enrolled', 'completed'], default: 'enrolled' }
+});
 const MilestoneSchema = new mongoose.Schema({
   title: String,
   description: String,
   achievedOn: Date,
+  courseId: mongoose.Schema.Types.ObjectId, // Reference to course
+  type: {
+    type: String,
+    enum: ['quiz', 'course', 'streak', 'other'],
+    default: 'other'
+  },
+  score: Number, // score that triggers the milestone
 });
 
 
@@ -44,6 +62,7 @@ const GoalSchema = new mongoose.Schema({
 const ProfileSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   bio: { type: String, default: "" },
+  certificates: [CertificateSchema],
   achievements: [AchievementSchema],
   milestones: [MilestoneSchema],
   goals: [GoalSchema],

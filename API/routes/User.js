@@ -4,6 +4,8 @@ const User = require('../models/User');
 const Course = require('../models/Course');
 const Assessment = require('../models/Assessment');
 const Quiz = require('../models/Quiz');
+const MyCourses = require('../models/MyCourses');
+const Enrollment = require('../models/Enrollment');
 
 // GET: Return user's enrolled courses
 router.get('/:userId/enrolled-courses', async (req, res) => {
@@ -71,5 +73,65 @@ router.get('/registered-users', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
+//Get user by email
+router.get('/email/:email', async (req, res) => {
+  const { email } = req.params;
+  
+  try {
+    // Fetch the user’s enrolled courses
+    const userCourses = await MyCourses.findOne({ email }).populate('enrolledCourses');
+    if (!userCourses) {
+      return res.status(404).json({ message: 'No enrolled courses found for this user' });
+    }
+
+    // Fetch the user info
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const coursesWithEnrollment = [];
+
+    // Loop through all enrolled courses
+    for (const course of userCourses.enrolledCourses) {
+      // Find existing enrollment
+      let enrollment = await Enrollment.findOne({ user: user._id, course: course._id });
+
+      // Create enrollment if it doesn’t exist
+      if (!enrollment) {
+        enrollment = new Enrollment({
+          user: user._id,
+          course: course._id,
+          status: 'enrolled',
+          progress: 0,
+          certificateId: null,
+        });
+        await enrollment.save();
+      }
+
+      // Merge course data with enrollment info
+      coursesWithEnrollment.push({
+        ...course.toObject(),
+        progress: enrollment.progress,
+        status: enrollment.status,
+        certificateId: enrollment.certificateId,
+      });
+    }
+
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      surname: user.surname,
+      email: user.email,
+      role: user.role,
+      level: user.level,
+      enrolledCourses: coursesWithEnrollment,
+      createdAt: userCourses.createdAt,
+    });
+  } catch (err) {
+    console.error('Error fetching user by email:', err);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
 
 module.exports = router;

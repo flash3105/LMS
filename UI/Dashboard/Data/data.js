@@ -91,14 +91,30 @@ export async function fetchCourseDetails(courseId) {
   }
 }
 
-// Fetch assessments for a course from the database
+// Fetch assessments for a course from the database - now includes course name handling
 export async function fetchAssessments(courseId) {
   try {
     const response = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
     if (!response.ok) {
       throw new Error('Failed to fetch assessments');
     }
-    return await response.json();
+    const data = await response.json();
+    
+    // Convert object to flat array
+    const flatAssessments = [];
+    
+    Object.keys(data).forEach(folder => {
+      data[folder].forEach(assessment => {
+        assessment.courseId = courseId;
+        if (!assessment.courseName) {
+          assessment.courseName = `Course ${courseId.substring(0, 8)}`;
+        }
+        assessment.folderType = folder; // Keep folder info if needed
+        flatAssessments.push(assessment);
+      });
+    });
+    
+    return flatAssessments; // Now returns an array
   } catch (error) {
     console.error('Error fetching assessments:', error);
     throw error;
@@ -152,4 +168,3 @@ export async function fetchUserQuizzes(userId) {
     throw error;
   }
 }
-
