@@ -3,46 +3,54 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const bucket = require('../config/gcs');
 const AssessmentSubmission = require('../models/Submit');
 
-// Ensure submissions directory exists
-const submissionsDir = path.join(__dirname, '..', 'uploads', 'submissions');
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-if (!fs.existsSync(submissionsDir)) {
-  fs.mkdirSync(submissionsDir, { recursive: true });
+// Upload file to GCS
+async function uploadToGCS(file) {
+  const uniqueName = Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const blob = bucket.file(`submissions/${uniqueName}`);
+  const stream = blob.createWriteStream({
+    resumable: false,
+    contentType: file.mimetype,
+  });
+
+  return new Promise((resolve, reject) => {
+    stream.on('finish', () => resolve({ filePath: uniqueName }));
+    stream.on('error', reject);
+    stream.end(file.buffer);
+  });
 }
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, submissionsDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const sanitizedFileName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, uniqueSuffix + '-' + sanitizedFileName);
-  }
-});
+// Generate signed URL
+async function getSignedUrl(filePath) {
+  if (!filePath) return null;
+  const file = bucket.file(`submissions/${filePath}`);
+  const [exists] = await file.exists();
+  if (!exists) return null;
 
-const upload = multer({ storage: storage });
+  const options = {
+    version: 'v4',
+    action: 'read',
+    expires: Date.now() + 4 * 24 * 60 * 60 * 1000, // 4 days
+  };
+  const [url] = await file.getSignedUrl(options);
+  return url;
+}
 
-// POST /api/assessments/:assessmentId/submit
+// POST submission
 router.post('/assessments/:assessmentId/submit', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'File is required.' });
-    }
+    if (!req.file) return res.status(400).json({ error: 'File is required.' });
 
     const { username, email, comment, courseId } = req.body;
-    
-    if (!username || !email || !courseId) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
+    if (!username || !email || !courseId) return res.status(400).json({ error: 'Missing required fields' });
 
-    // Convert absolute path to relative path
-    const relativePath = path.relative(
-      path.join(__dirname, '..'), // Base directory (project root)
-      req.file.path              // Full absolute path
-    ).replace(/\\/g, '/');      // Normalize to forward slashes
+    // Upload to GCS
+    const uploadResult = await uploadToGCS(req.file);
 
     const submission = new AssessmentSubmission({
       assessmentId: req.params.assessmentId,
@@ -52,18 +60,21 @@ router.post('/assessments/:assessmentId/submit', upload.single('file'), async (r
       comment: comment || '',
       fileName: req.file.filename,
       originalFileName: req.file.originalname,
-      filePath: relativePath, // Store relative path
+      filePath: uploadResult.filePath,
       submittedAt: new Date()
     });
 
     await submission.save();
 
+    // Generate download URL
+    const downloadUrl = await getSignedUrl(submission.filePath);
+
     res.status(201).json({
       message: 'Submission successful',
       submission: {
         id: submission._id,
-        filePath: submission.filePath, // Verify this is relative
-        // ... other fields
+        downloadUrl,
+        ...submission.toObject()
       }
     });
   } catch (err) {
@@ -72,63 +83,17 @@ router.post('/assessments/:assessmentId/submit', upload.single('file'), async (r
   }
 });
 
-// GET /api/submissions/file/:filename
-router.get('/file/:filename', (req, res) => {
-  try {
-    const filename = req.params.filename;
-    const filePath = path.join(submissionsDir, filename);
-    
-    if (!fs.existsSync(filePath)) {
-      console.error(`File not found: ${filePath}`);
-      return res.status(404).json({ error: 'File not found' });
-    }
-
-    // Get the original filename from the database if available
-    AssessmentSubmission.findOne({ fileName: filename })
-      .then(submission => {
-        const originalFileName = submission?.originalFileName || filename;
-        
-        // Set headers for file download
-        res.setHeader('Content-Disposition', `attachment; filename="${originalFileName}"`);
-        res.setHeader('Content-Type', 'application/octet-stream');
-        
-        // Create read stream and pipe to response
-        const fileStream = fs.createReadStream(filePath);
-        fileStream.pipe(res);
-        
-        fileStream.on('error', (err) => {
-          console.error('File stream error:', err);
-          res.status(500).json({ error: 'Error streaming file' });
-        });
-      })
-      .catch(err => {
-        console.error('Database lookup error:', err);
-        // Fallback if database lookup fails
-        res.download(filePath, err => {
-          if (err) {
-            console.error('Error downloading file:', err);
-            res.status(500).json({ error: 'Failed to download file' });
-          }
-        });
-      });
-  } catch (err) {
-    console.error('Error serving file:', err);
-    res.status(500).json({ error: 'Failed to serve file' });
-  }
-});
-
+// GET submission by course
 router.get('/course/:courseId', async (req, res) => {
   try {
     const { courseId } = req.params;
     const submissions = await AssessmentSubmission.find({ courseId });
-    
-    // Add download URLs to each submission
-    const submissionsWithUrls = submissions.map(sub => ({
-      ...sub.toObject(),
-      downloadUrl: `/api/submissions/file/${sub.fileName}`
-    }));
 
-    console.log('Fetched submissions for course:', courseId, 'Count:', submissions.length);
+    const submissionsWithUrls = await Promise.all(submissions.map(async sub => ({
+      ...sub.toObject(),
+      downloadUrl: await getSignedUrl(sub.filePath)
+    })));
+
     res.status(200).json(submissionsWithUrls);
   } catch (err) {
     console.error('Error fetching submissions:', err);
@@ -136,74 +101,60 @@ router.get('/course/:courseId', async (req, res) => {
   }
 });
 
-// GET /api/submissions/course/:courseId/:email
+// GET submissions by course and student
 router.get('/course/:courseId/:email', async (req, res) => {
   try {
     const { courseId, email } = req.params;
-
-    // Find submissions that match both courseId and email
     const submissions = await AssessmentSubmission.find({ courseId, email });
 
-    // Add download URLs to each submission
-    const submissionsWithUrls = submissions.map(sub => ({
+    const submissionsWithUrls = await Promise.all(submissions.map(async sub => ({
       ...sub.toObject(),
-      downloadUrl: `/api/submissions/file/${sub.fileName}`
-    }));
+      downloadUrl: await getSignedUrl(sub.filePath)
+    })));
 
-    console.log(`Fetched ${submissions.length} submissions for course ${courseId} and student ${email}`);
     res.status(200).json(submissionsWithUrls);
   } catch (err) {
-    console.error('Error fetching submissions for course and student:', err);
+    console.error('Error fetching submissions:', err);
     res.status(500).json({ error: 'Failed to fetch submissions' });
   }
 });
 
-// PUT /api/submissions/:submissionId/grade
+// PUT grade & feedback
 router.put('/submissions/:submissionId/grade', async (req, res) => {
   try {
     const { submissionId } = req.params;
     const { grade, feedback } = req.body;
 
-    if (grade == null) {
-      return res.status(400).json({ error: 'Grade is required' });
-    }
-
-    const updateData = { grade };
-    if (feedback !== undefined) {
-      updateData.feedback = feedback;
-    }
+    if (grade == null) return res.status(400).json({ error: 'Grade is required' });
 
     const updated = await AssessmentSubmission.findByIdAndUpdate(
       submissionId,
-      updateData,
+      { grade, feedback },
       { new: true }
     );
 
-    if (!updated) {
-      return res.status(404).json({ error: 'Submission not found' });
-    }
+    if (!updated) return res.status(404).json({ error: 'Submission not found' });
 
-    res.status(200).json({ message: 'Grade and feedback updated successfully', updated });
+    const downloadUrl = await getSignedUrl(updated.filePath);
+
+    res.status(200).json({ message: 'Grade and feedback updated successfully', updated: { ...updated.toObject(), downloadUrl } });
   } catch (err) {
     console.error('Error updating grade and feedback:', err);
     res.status(500).json({ error: 'Failed to update grade and feedback' });
   }
 });
 
-// GET /api/submissions/graded/:email/all
+// GET all graded submissions for student
 router.get('/graded/:email/all', async (req, res) => {
   try {
     const { email } = req.params;
-
     const submissions = await AssessmentSubmission.find({ email });
 
-    // Add download URLs to each submission
-    const submissionsWithUrls = submissions.map(sub => ({
+    const submissionsWithUrls = await Promise.all(submissions.map(async sub => ({
       ...sub.toObject(),
-      downloadUrl: `/api/submissions/file/${sub.fileName}`
-    }));
+      downloadUrl: await getSignedUrl(sub.filePath)
+    })));
 
-    console.log(`Fetched ${submissions.length} submissions for student ${email}`);
     res.status(200).json(submissionsWithUrls);
   } catch (err) {
     console.error('Error fetching student submissions:', err);

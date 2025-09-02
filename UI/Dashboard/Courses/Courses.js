@@ -20,6 +20,295 @@ export async function renderCourseDetails(contentArea, course) {
 
     // Render the course details page with tabs for resources, assessments, and submissions
     contentArea.innerHTML = `
+
+        <style>
+        .course-details-container {
+          padding: 2rem;
+          max-width: 1200px;
+          margin: 0 auto;
+          background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+          min-height: 100vh;
+        }
+        
+        .course-header {
+          background: white;
+          border-radius: 12px;
+          padding: 2rem;
+          margin-bottom: 2rem;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .course-title {
+          color: rgb(26, 115, 150);
+          font-size: 2rem;
+          margin-bottom: 1rem;
+          font-weight: 700;
+        }
+        
+        .course-description {
+          color: #4a5568;
+          font-size: 1.1rem;
+          line-height: 1.6;
+          margin-bottom: 1.5rem;
+        }
+        
+        .course-meta {
+          display: flex;
+          gap: 1rem;
+          align-items: center;
+        }
+        
+        .badge {
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          font-weight: 600;
+        }
+        
+        .bg-primary {
+          background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+          color: white;
+        }
+        
+        .text-muted {
+          color: #718096 !important;
+        }
+        
+        .nav-tabs {
+          border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+          margin-bottom: 2rem;
+        }
+        
+        .nav-link {
+          color: white;
+          font-weight: 500;
+          padding: 1rem 1.5rem;
+          border: none;
+          background: transparent;
+          position: relative;
+        }
+        
+        .nav-link.active {
+          color: white;
+          background: transparent;
+          border: none;
+        }
+        
+        .nav-link.active:after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 100%;
+          height: 3px;
+          background: white;
+          border-radius: 3px 3px 0 0;
+        }
+        
+        .nav-link:hover {
+          color: rgba(255, 255, 255, 0.8);
+          border: none;
+        }
+        
+        .tab-content {
+          background: white;
+          border-radius: 12px;
+          padding: 2rem;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .section-title {
+          color: rgb(26, 115, 150);
+          font-size: 1.5rem;
+          margin-bottom: 1.5rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .empty-message {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 2rem;
+          text-align: center;
+          color: #64748b;
+          font-size: 1rem;
+        }
+        
+        .resource-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          gap: 24px;
+        }
+        
+        .resource-card {
+          background: #fff;
+          border-radius: 14px;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+          padding: 1.5rem 1.2rem;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          border: 1px solid #e2e8f0;
+        }
+        
+        .resource-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+        }
+        
+        .folder-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          cursor: pointer;
+          padding: 0.8rem 1.2rem;
+          background: linear-gradient(90deg, #1e88e5, #42a5f5);
+          border-radius: 10px;
+          color: white;
+          font-weight: 600;
+          font-size: 1.1rem;
+          transition: all 0.3s ease;
+          margin-bottom: 1rem;
+        }
+        
+        .folder-content {
+          margin-top: 1rem;
+        }
+        
+        .assessment-item {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+          padding: 1.5rem;
+          margin-bottom: 1.5rem;
+          border: 1px solid #e2e8f0;
+        }
+        
+        .btn {
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          font-weight: 500;
+          cursor: pointer;
+          text-align: center;
+          transition: all 0.2s;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 42px;
+          box-sizing: border-box;
+          border: none;
+        }
+        
+        .btn-primary {
+          background: rgb(54, 126, 186);
+          color: white;
+        }
+        
+        .btn-primary:hover {
+          background: rgb(21, 81, 133);
+        }
+        
+        .btn-success {
+          background: #38a169;
+          color: white;
+        }
+        
+        .btn-outline-primary {
+          background: white;
+          color: rgb(54, 126, 186);
+          border: 1px solid rgb(54, 126, 186);
+        }
+        
+        .btn-outline-primary:hover {
+          background: #f7fafc;
+        }
+        
+        .btn-sm {
+          padding: 0.4rem 0.8rem;
+          font-size: 0.9rem;
+          min-height: 36px;
+        }
+        
+        .form-control {
+          padding: 0.5rem 0.75rem;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          font-size: 1rem;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        .form-label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 500;
+          color: #4a5568;
+        }
+        
+        .mb-2 {
+          margin-bottom: 0.5rem;
+        }
+        
+        .mb-3 {
+          margin-bottom: 1rem;
+        }
+        
+        .mt-2 {
+          margin-top: 0.5rem;
+        }
+        
+        .mt-3 {
+          margin-top: 1rem;
+        }
+        
+        .table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+          padding: 0.75rem;
+          border-bottom: 1px solid #e2e8f0;
+          text-align: left;
+        }
+        
+        .table th {
+          background: #f7fafc;
+          font-weight: 600;
+          color: #4a5568;
+        }
+        
+        .table-responsive {
+          overflow-x: auto;
+        }
+        
+        .loading-message {
+          text-align: center;
+          padding: 2rem;
+          color: #718096;
+        }
+        
+        @media (max-width: 768px) {
+          .course-details-container {
+            padding: 1rem;
+          }
+          
+          .resource-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .course-meta {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+        }
+      </style>
+
+
+    
+
       <div class="course-details-container">
         <!-- Course Header Section -->
         <div class="course-header">
@@ -441,8 +730,14 @@ function renderResources(resources) {
               gap: 24px;">
               ${folders[folderName].map(resource => {
                 const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
-                const fileUrl = resource.filePath ? `${API_BASE_URL.replace('/api', '')}/${resource.filePath.replace(/\\/g, '/')}` : '';
-                const canView = resource.filePath && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
+
+               
+                const fileUrl = resource.type === 'link'
+                       ? resource.link
+                        : resource.downloadUrl || '#';
+
+                const canView = fileUrl && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
+
                 const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
 
                 // YouTube
@@ -594,9 +889,13 @@ async function renderAssessments(assessments, courseId) {
         }
 
         // Show file link if filePath exists
-        let fileLink = '';
+
+        let fileLink ='';
+        const fileUrl = assessment.downloadUrl ;
+        
         if (assessment.filePath) {
-          const fileUrl = `${API_BASE_URL.replace('/api', '')}/${assessment.filePath.replace(/\\/g, '/')}`;
+          
+
           const ext = assessment.originalName ? assessment.originalName.split('.').pop().toLowerCase() : '';
           const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
           if (canView) {
