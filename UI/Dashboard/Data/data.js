@@ -17,7 +17,7 @@ export async function fetchCourses() {
 
     // Optionally, store courses in localStorage for offline access
     localStorage.setItem('courses', JSON.stringify(courses));
-    console.log('Courses fetched and stored globally:', courses);
+ 
   } catch (error) {
     console.error('Error fetching courses:', error);
 
@@ -25,7 +25,7 @@ export async function fetchCourses() {
     const storedCourses = localStorage.getItem('courses');
     if (storedCourses) {
       courses = JSON.parse(storedCourses);
-      console.log('Loaded courses from localStorage:', courses);
+   
     }
   }
 }
@@ -41,7 +41,7 @@ export async function fetchUserData(userId) {
 
     // Optionally, store user data in localStorage for offline access
     localStorage.setItem('userData', JSON.stringify(userData));
-    console.log('User data fetched and stored globally:', userData);
+    
   } catch (error) {
     console.error('Error fetching user data:', error);
 
@@ -49,7 +49,7 @@ export async function fetchUserData(userId) {
     const storedUserData = localStorage.getItem('userData');
     if (storedUserData) {
       userData = JSON.parse(storedUserData);
-      console.log('Loaded user data from localStorage:', userData);
+    
     }
   }
 }

@@ -147,7 +147,7 @@ export function renderHomeTab(contentArea, currentUser) {
         height: 1.5em;
         background: linear-gradient(to right, rgba(255, 255, 255, 0), white 50%);
       }
-      
+      z
       .progress-container {
         margin: 1rem 0;
       }
@@ -575,7 +575,7 @@ async function fetchEnrolledCourses() {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/mycourses/${email}`);
+    const response = await fetch(`http://localhost:5000/api/mycourses/${email}`);
     if (!response.ok) {
       throw new Error("Failed to fetch enrolled courses");
     }
@@ -601,20 +601,24 @@ async function fetchEnrolledCourses() {
 
 function renderCourses(courseList, containerId) {
   const container = document.getElementById(containerId);
-  if (!container) {
-    console.error(`Container with ID "${containerId}" not found.`);
-    return;
-  }
+  if (!container) return;
+  container.innerHTML = "";
 
-  container.innerHTML = ""; // Clear the container
-
-  // Get user progress from localStorage or userData
   const user = JSON.parse(localStorage.getItem('user')) || {};
-  // Use userData if available, fallback to empty object
   const progressData = (userData[user.email] && userData[user.email].courseProgress) || {};
 
+  // Removed duplicate courses by title/courseName
+  const uniqueCoursesMap = new Map();
   courseList.forEach(course => {
-    // Use course.title or course.courseName as the key
+    const key = course.title || course.courseName;
+    if (!uniqueCoursesMap.has(key)) uniqueCoursesMap.set(key, course);
+  });
+  const uniqueCourses = Array.from(uniqueCoursesMap.values());
+
+  // Creates cards in-memory first (to reduce reflows)
+  const fragment = document.createDocumentFragment();
+
+  uniqueCourses.forEach(course => {
     const courseKey = course.title || course.courseName;
     const progress = progressData[courseKey] || 0;
     const hoursSpent = Math.floor(progress / 20);
@@ -629,17 +633,15 @@ function renderCourses(courseList, containerId) {
         </div>
         ${course.authorEmail ? `<p><strong>Author:</strong> ${course.authorEmail}</p>` : ""}
         ${course.courseCode ? `<p><strong>Course Code:</strong> ${course.courseCode}</p>` : ""}
-        
-        <div class="progress-container">
+        <div>
           <div class="progress-info">
-            <span>${progress}% Complete</span>
-            <span>${hoursSpent} hrs spent</span>
+            <span class="progress-text">0% Complete</span>
+            <span class="hours-text">${hoursSpent} hrs spent</span>
           </div>
           <div class="progress-bar">
-            <div class="progress-bar-fill" style="width: ${progress}%"></div>
+            <div class="progress-bar-fill" style="width: 0%"></div>
           </div>
         </div>
-        
         <div class="course-actions">
           <button class="continue-btn" data-course-key="${courseKey}">Continue</button>
           <button class="view-btn" data-course-id="${course._id}">View Details</button>
@@ -647,26 +649,71 @@ function renderCourses(courseList, containerId) {
       </div>
     `;
 
-    // Add click handler for the view details button
-    card.querySelector('.view-btn').addEventListener('click', (e) => {
+    fragment.appendChild(card);
+
+    // Attach buttons after card creation
+    card.querySelector('.view-btn').addEventListener('click', e => {
       e.stopPropagation();
-      if (typeof renderCourseDetails === "function") {
-        renderCourseDetails(document.getElementById("contentArea"), course);
-      }
+      renderCourseDetails(document.getElementById("contentArea"), course);
     });
 
-    // Add click handler for the continue button
-    card.querySelector('.continue-btn').addEventListener('click', (e) => {
+    card.querySelector('.continue-btn').addEventListener('click', e => {
       e.stopPropagation();
-      const courseKey = e.target.getAttribute('data-course-key');
       goToCourse(courseKey);
     });
-
-    container.appendChild(card);
   });
+
+  container.appendChild(fragment);
+
+  // Fetch all course data in parallel to avoid sequential requests
+  const email = user.email;
+  const userPromise = fetch(`${API_BASE_URL}/email/${encodeURIComponent(email)}`).then(r => r.json());
+  
+  userPromise.then(userFromEmail => {
+    const courseDataPromises = uniqueCourses.map(course => {
+      const courseId = course._id;
+      return Promise.all([
+        fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`).then(r => r.json()).catch(() => []),
+        fetch(`${API_BASE_URL}/courses/${courseId}/assessments`).then(r => r.json()).catch(() => []),
+        fetch(`${API_BASE_URL}/submissions/${courseId}/${encodeURIComponent(userFromEmail.email)}`).then(r => r.json()).catch(() => []),
+        fetch(`${API_BASE_URL}/course/${courseId}/${encodeURIComponent(userFromEmail.email)}`).then(r => r.json()).catch(() => []),
+        fetch(`${API_BASE_URL}/courses/${courseId}/resources`).then(r => r.json()).catch(() => []),
+        fetch(`${API_BASE_URL}/resources/completions/${userFromEmail._id}`).then(r => r.json()).catch(() => [])
+      ]).then(([quizzes, assignments, QuizSubmissions, assignmentSubmissions, resources, resourceCompletions]) => {
+        const assignmentsArray = Array.isArray(assignments) ? assignments : Object.values(assignments).flat();
+
+        const quizzesCompleted = quizzes.filter(q => QuizSubmissions.some(s => s.quizId === q._id)).length;
+        const assignmentsCompleted = assignmentsArray.filter(a => assignmentSubmissions.some(s => s.assessmentId === a._id)).length;
+        const resourcesCompleted = resourceCompletions.filter(c => resources.some(r => r._id === c.resource)).length;
+
+        const totalItems = quizzes.length + assignmentsArray.length + resources.length;
+        const completedItems = quizzesCompleted + assignmentsCompleted + resourcesCompleted;
+        const progressPercent = totalItems ? Math.round((completedItems / totalItems) * 100) : 0;
+
+        // Update card progress
+        const card = document.querySelector(`.continue-btn[data-course-key="${course.title || course.courseName}"]`).closest('.course-card');
+        const progressFill = card.querySelector(".progress-bar-fill");
+        const progressText = card.querySelector(".progress-text");
+        const hoursText = card.querySelector(".hours-text");
+
+        progressFill.style.width = progressPercent + "%";
+        progressText.textContent = progressPercent + "% Complete";
+        hoursText.textContent = Math.floor(progressPercent / 20) + " hrs spent";
+
+        // Update server with progress
+        fetch(`${API_BASE_URL}/mycourses/update-progress-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userFromEmail._id, courseId: courseId, progress: progressPercent })
+        }).catch(err => console.error("Error updating progress/status:", err));
+      });
+    });
+
+    Promise.all(courseDataPromises).catch(err => console.error("Error fetching course data:", err));
+  }).catch(err => console.error("Failed to fetch user:", err));
 }
 
-async function loadTodos() {
+  async function loadTodos() {
   const user = JSON.parse(localStorage.getItem('user'));
   const email = user.email;
   try {

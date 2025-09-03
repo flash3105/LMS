@@ -12,6 +12,70 @@ export async function renderCourseDetails(contentArea, course) {
     </div>
   `;
 
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userId = user._id;
+
+  console.log("User: ", user)
+
+
+
+  const response = await fetch(`http://localhost:5000/api/mycourses/${user.email}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch enrolled courses");
+    }
+
+    const courses = await response.json();
+
+    console.log("Enrolled Courses: ", courses);
+    courses.enrolledCourses.forEach(course => {
+      console.log("Course:", course.courseName, "Status:", course.status, "Progress:", course.progress);
+    });
+
+  //Fetches user by email
+  const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(user.email)}`);
+  if (!res.ok) throw new Error('User not found');
+  const userFromEmail = await res.json();
+  console.log('Fetched user:', userFromEmail)
+
+  //Fetches resource completion, resource ratings and resources asynchronously
+  const [completionsRes, ratingsRes, resourcesRes] = await Promise.all([
+    fetch(`http://localhost:5000/api/resources/completions/${userFromEmail._id}`),
+    fetch(`http://localhost:5000/api/resources/ratings/${userFromEmail._id}`),
+    fetch(`${API_BASE_URL}/courses/${course._id}/resources`)
+  ]);
+  const resources = await resourcesRes.json();
+  const completions = (await completionsRes.json()).filter(c =>
+    resources.some(r => r._id === c.resource)
+  );
+
+  const ratings = (await ratingsRes.json()).filter(r =>
+    resources.some(res => res._id === r.resource)
+  );
+
+  console.log('Completions JSON:', completions);
+  console.log('Ratings JSON:', ratings);
+
+
+
+  // Render resources
+  resources.forEach(resource => {
+    const completed = completions.some(c => c.resource === resource._id);
+    const rating = ratings.find(r => r.resource === resource._id)?.rating;
+
+    const parent = document.querySelector(`[data-resource-id="${resource._id}"]`);
+    if (!parent) return;
+
+    if (completed) {
+      parent.querySelector('.mark-complete-btn').style.display = 'none';
+      parent.querySelector('.rating-section').style.display = 'block';
+    }
+
+    if (rating) {
+      parent.querySelector('.rating-input').value = rating;
+      parent.querySelector('.submit-rating-btn').disabled = true;
+    }
+  });
+
   try {
     // Fetch detailed course information including resources
     const courseDetails = await fetchCourseDetails(course._id);
@@ -358,6 +422,182 @@ export async function renderCourseDetails(contentArea, course) {
         </div>
       </div>
     `;
+
+    const resourcesContainer = document.getElementById('resourcesContainer');
+
+    // Apply completion & rating states
+    resources.forEach(resource => {
+      const parent = resourcesContainer.querySelector(`[data-resource-id="${resource._id}"]`);
+      if (!parent) return;
+
+      const completed = completions.some(c => c.resource === resource._id);
+      const rating = ratings.find(r => r.resource === resource._id)?.rating;
+
+      const completeBtn = parent.querySelector('.mark-complete-btn');
+      const ratingSection = parent.querySelector('.rating-section');
+
+      if (completed) {
+        if (completeBtn) completeBtn.style.display = 'none';
+        ratingSection.style.display = 'block';
+        updateResourceUI(resource._id, true, rating);
+      } else if (rating) {
+        ratingSection.querySelector('.rating-input').value = rating;
+        ratingSection.querySelector('.submit-rating-btn').disabled = true;
+      }
+    });
+
+    // Event delegation for buttons inside resourcesContainer
+    resourcesContainer.addEventListener('click', async (e) => {
+      const target = e.target;
+      const parent = target.closest('.resource-completion');
+      if (!parent) return;
+      const resourceId = parent.dataset.resourceId;
+      const ratingSection = parent.querySelector('.rating-section');
+
+      const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(user.email)}`);
+      if (!res.ok) throw new Error('User not found');
+      const userFromEmail = await res.json();
+
+      // Mark Complete
+      if (target.classList.contains('mark-complete-btn')) {
+        try {
+          await fetch(`http://localhost:5000/api/resources/${resourceId}/complete`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userFromEmail._id })
+          });
+          updateResourceUI(resourceId, true);
+        } catch (err) {
+          console.error(err);
+          showToast('Error marking complete', 'danger');
+        }
+      }
+
+      // Mark Uncomplete
+      if (target.classList.contains('mark-uncomplete-btn')) {
+      try {
+        await fetch(`http://localhost:5000/api/resources/${resourceId}/uncomplete`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userFromEmail._id })
+        });
+
+        // Delete rating if it exists
+        const ratingInputVal = ratingSection.querySelector('.rating-input').value;
+        if (ratingInputVal) {
+          await fetch(`http://localhost:5000/api/resources/${resourceId}/rating`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userFromEmail._id })
+          });
+        }
+
+        updateResourceUI(resourceId, false);
+      } catch (err) {
+        console.error(err);
+        showToast('Error marking uncomplete', 'danger');
+      }
+    }
+
+    // Submit Rating
+    if (target.classList.contains('submit-rating-btn')) {
+      const ratingInput = parseInt(ratingSection.querySelector('.rating-input').value);
+      if (!ratingInput || ratingInput < 1 || ratingInput > 5) {
+        return showToast('Select a valid rating (1-5)', 'warning');
+      }
+
+      if (!userFromEmail || !userFromEmail._id) {
+      return showToast('User not found', 'danger');
+    }
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/resources/${resourceId}/rating`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userFromEmail._id,
+          rating: ratingInput,
+          feedback: '' // optional
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error(data);
+        return showToast(data.error || 'Error submitting rating', 'danger');
+      }
+
+      updateResourceUI(resourceId, true, ratingInput);
+      showToast('Rating submitted');
+    } catch (err) {
+      console.error(err);
+      showToast('Error submitting rating', 'danger');
+    }
+  }
+
+    // Change Rating
+    if (target.classList.contains('change-rating-btn')) {
+      ratingSection.style.display = 'block';
+      ratingSection.querySelector('.submit-rating-btn').disabled = false;
+    }
+  });
+
+  // Update UI function
+  function updateResourceUI(resourceId, completed = false, rating = null) {
+    const parent = document.querySelector(`[data-resource-id="${resourceId}"]`);
+    if (!parent) return;
+
+    const completeBtn = parent.querySelector('.mark-complete-btn');
+    const ratingSection = parent.querySelector('.rating-section');
+
+    // Remove old status row if exists
+    const oldStatusRow = parent.querySelector('.status-row');
+    if (oldStatusRow) oldStatusRow.remove();
+
+    if (completed) {
+      if (completeBtn) completeBtn.style.display = 'none';
+      ratingSection.style.display = 'block';
+
+      // Add status row
+      let statusRow = document.createElement('div');
+      statusRow.className = 'status-row d-flex align-items-center gap-2 mt-2';
+
+      let completeMsg = document.createElement('span');
+      completeMsg.className = 'completion-msg text-success fw-bold';
+      completeMsg.textContent = 'Marked as completed';
+      statusRow.appendChild(completeMsg);
+
+      if (rating !== null) {
+        let ratingMsg = document.createElement('span');
+        ratingMsg.className = 'rating-msg text-primary fw-semibold';
+        ratingMsg.textContent = `Rating: ${rating}`;
+        statusRow.appendChild(ratingMsg);
+
+        let changeBtn = document.createElement('button');
+        changeBtn.className = 'btn btn-sm btn-outline-info ms-2 change-rating-btn';
+        changeBtn.textContent = 'Change Rating';
+        statusRow.appendChild(changeBtn);
+      }
+
+      let uncompleteBtn = document.createElement('button');
+      uncompleteBtn.className = 'btn btn-sm btn-outline-danger ms-2 mark-uncomplete-btn';
+      uncompleteBtn.textContent = 'Mark as Uncomplete';
+      statusRow.appendChild(uncompleteBtn);
+
+      parent.appendChild(statusRow);
+      if (rating !== null) ratingSection.style.display = 'none';
+    } else {
+      if (completeBtn) completeBtn.style.display = 'inline-block';
+      ratingSection.style.display = 'none';
+      ratingSection.querySelector('.rating-input').value = '';
+      ratingSection.querySelector('.submit-rating-btn').disabled = false;
+    }
+
+    if (rating !== null) {
+      ratingSection.querySelector('.rating-input').value = rating;
+      ratingSection.querySelector('.submit-rating-btn').disabled = true;
+    }
+  }
     
     // Initialize Bootstrap tabs if needed
     if (window.bootstrap) {
@@ -539,7 +779,14 @@ async function renderSubmissions(courseId, contentArea) {
 
     // Fetch assessments to get their titles
     const assessmentsResponse = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
-    const assessments = await assessmentsResponse.json();
+    const assessmentsRaw = await assessmentsResponse.json();
+
+    // Normalize to flat array (works for both array and grouped object)
+    const assessments = assessmentsRaw && typeof assessmentsRaw === "object" && !Array.isArray(assessmentsRaw)
+      ? Object.values(assessmentsRaw).flat()
+      : Array.isArray(assessmentsRaw)
+        ? assessmentsRaw
+        : [];
 
     if (!submissions || submissions.length === 0) {
       submissionsContainer.innerHTML = '<div class="empty-message">You have no submissions for this course yet.</div>';
@@ -692,6 +939,8 @@ function renderResources(resources) {
       </div>
     `;
   }
+  console.log("Resource: ", resources);
+  
 
   // Group resources by folder
   const folders = {};
@@ -817,6 +1066,22 @@ function renderResources(resources) {
                         <a href="${resource.link}" target="_blank" style="color:#2563eb; font-weight:500;">🔗 Visit Link</a>
                       </div>
                     ` : ''}
+
+                    <div class="resource-completion" data-resource-id="${resource._id}">
+                      <button class="btn btn-sm btn-outline-success mark-complete-btn">Mark Complete</button>
+                      <div class="rating-section mt-2" style="display:none;">
+                        <label style="font-size:0.9rem;">Rate this resource:</label>
+                        <select class="form-select form-select-sm rating-input" style="width:auto; display:inline-block;">
+                          <option value="">--</option>
+                          <option value="1">1 - Poor</option>
+                          <option value="2">2</option>
+                          <option value="3">3 - Okay</option>
+                          <option value="4">4</option>
+                          <option value="5">5 - Excellent</option>
+                        </select>
+                        <button class="btn btn-sm btn-primary submit-rating-btn">Submit</button>
+                      </div>
+                    </div>
                   </div>
                 `;
               }).join('')}
@@ -828,6 +1093,7 @@ function renderResources(resources) {
 
  
   `;
+  
 }
 
 
@@ -1082,9 +1348,18 @@ async function renderQuizzes(courseId) {
               answers
             })
           });
+          
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Submission failed');
-          form.querySelector('.quiz-submit-message').innerHTML = '<span style="color:green;">Quiz submitted!</span>';
+          
+          // Show grade and milestone message if applicable
+          let message = `<span style="color:green;">Quiz submitted! Grade: ${data.grade}% (${data.correctCount}/${data.totalQuestions})</span>`;
+          
+          if (data.grade >= 80) {
+            message += `<br><span style="color:gold; font-weight:bold;">🎉 Achievement unlocked! This score has been added to your milestones.</span>`;
+          }
+          
+          form.querySelector('.quiz-submit-message').innerHTML = message;
           form.querySelectorAll('button[type="submit"]').forEach(btn => btn.disabled = true);
 
           // Auto-marking logic

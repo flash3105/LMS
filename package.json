@@ -4,5 +4,8 @@
     "@fullcalendar/daygrid": "^6.1.17",
     "@google-cloud/storage": "^7.17.0",
     "live-server": "^1.2.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }

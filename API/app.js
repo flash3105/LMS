@@ -20,6 +20,18 @@ connectDB();
 app.use(express.json());
 
 
+app.use(express.static('public'));
+
+app.use((req, res, next) => {
+  console.log(req.method, req.originalUrl);
+  next();
+});
+
+// Serve uploaded files statically
+
+app.use('/certificates', express.static(path.join(__dirname, 'certificates')));
+
+
 
 
 
@@ -44,8 +56,8 @@ app.use('/api/Profile', require('./routes/Profile'));
 app.use('/api', require('./routes/User'));
 app.use('/api', require('./routes/Statistics'));
 app.use('/api/messages', require('./routes/Message'));
-
-
+app.use("/api/submissions", require("./routes/quizSubmissions"));
+app.get('/api/quizzes/test', (req, res) => res.send('QuizSubmit route works'));
 
 
 const PORT = process.env.PORT || 5000;

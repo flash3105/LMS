@@ -43,7 +43,7 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         // Navigate based on user role
         //change it back to /Dashboard/InternDashboard
         // change it back to /Dashboard/AdminDashboard/Admindashboard.html
-        if (data.user.role === 'Student') {
+        if (data.user.role === 'Student' || data.user.role === 'Intern') {
           setTimeout(() => {
             window.location.href = 'Dashboard/InternDashboard.html'; 
           }, 1000);
