@@ -19,7 +19,7 @@ export async function renderCourseDetails(contentArea, course) {
 
 
 
-  const response = await fetch(` API_BASE_URL/mycourses/${user.email}`);
+  const response = await fetch(`${API_BASE_URL}/mycourses/${user.email}`);
     if (!response.ok) {
       throw new Error("Failed to fetch enrolled courses");
     }
