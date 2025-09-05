@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const path = require('path'); // Added for serving HTML files
 const Profile = require('../models/Profile');
+const Institution = require('../models/Institution');
 
 
 // Email transporter 
@@ -20,9 +21,14 @@ const transporter = nodemailer.createTransport({
 
 // Register
 router.post('/register', async (req, res) => {
-  const { email, password, role, name, surname, level } = req.body;
-
-  console.log('Received registration request:', req.body); // Log only
+  console.log('Full request body:', req.body);
+  
+  const { email, password, role, name, surname, level, institution } = req.body;
+  
+  if (!institution) {
+    console.error('Missing institution field');
+    return res.status(400).json({ error: 'Institution is required' });
+  }
 
   try {
     let user = await User.findOne({ email });
@@ -30,7 +36,7 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    user = new User({ email, password: hashedPassword, role, name, surname, level });
+    user = new User({ email, password: hashedPassword, role, name, surname, level, institution });
     await user.save();
 
     res.json({ message: 'User registered successfully', token: 'mock-token' }); 
@@ -38,6 +44,16 @@ router.post('/register', async (req, res) => {
     console.error('Server error:', err);
     res.status(500).send('Server error');
   }
+});
+
+router.get('/institutions', async (req, res) => {
+    try {
+        const institutions = await Institution.find({}, '_id institutionName');
+        res.json(institutions);
+    } catch (err) {
+        console.error('Error fetching institutions:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 // Login

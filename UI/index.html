@@ -170,11 +170,18 @@
                 <input type="password" id="regPassword" name="password" placeholder="Value" required>
             </div>
             <div class="form-group">
+                <label for="regInstitution">Institution</label>
+                <select id="regInstitution" required>
+                <option value="">Select Institution</option>
+                
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="regRole">Role</label>
                 <select id="regRole" name="role" required>
                     <option value="" disabled selected>Select Role</option>
                     <option value="Student">Student</option>
-                    <option value="Admin">Admin</option>
+                    <!-- <option value="Admin">Admin</option> -->
                     <option value="Instructor">Instructor</option>
                 </select>
             </div>
@@ -208,6 +215,8 @@
     function showRegister() {
         document.getElementById('registerOverlay').style.display = 'flex';
         document.getElementById('mainLoginBtn').style.display = 'none';
+        // Load institutions when the register form is shown
+        loadInstitutions();
     }
 
     function hideRegister() {
@@ -215,11 +224,32 @@
         document.getElementById('mainLoginBtn').style.display = 'inline-block';
     }
 
+    // Function to load institutions from the API
+    async function loadInstitutions() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/institutions`);
+            const institutions = await res.json();
+            
+            const institutionSelect = document.querySelector('#regInstitution');
+            institutionSelect.innerHTML = '<option value="">Select Institution</option>';
+            
+            institutions.forEach(inst => {
+                const option = document.createElement('option');
+                option.value = inst._id;
+                option.textContent = inst.institutionName;
+                institutionSelect.appendChild(option);
+            });
+        } catch (err) {
+            console.error('Failed to load institutions:', err);
+        }
+}
+
+document.addEventListener('DOMContentLoaded', loadInstitutions);
 
 </script>
 <script>
-  //window.API_BASE_URL = 'http://localhost:5000/api';
-  window.API_BASE_URL = "https://lms-cav9.onrender.com/api";
+  window.API_BASE_URL = 'http://localhost:5000/api';
+  //window.API_BASE_URL = "https://lms-cav9.onrender.com/api";
   //window.API_BASE_URL = 'http://localhost:5000/api';
 </script>
 <script src="Login/Login.js"></script>

@@ -47,7 +47,7 @@ document.querySelector('form').addEventListener('submit', async (e) => {
           setTimeout(() => {
             window.location.href = 'Dashboard/InternDashboard.html'; 
           }, 1000);
-        } else if (data.user.role === 'Admin') {
+        } else if (data.user.role === 'Admin' || data.user.role === 'Instructor') {
           setTimeout(() => {
             window.location.href = 'Dashboard/AdminDashboard/Admindashboard.html';
           }, 1000);
