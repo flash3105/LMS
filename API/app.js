@@ -9,7 +9,8 @@ app.use(cors({
     origin: [
         'http://127.0.0.1:8080',
         'http://localhost:8080',
-        'https://lms-p1dw.onrender.com'
+        'https://lms-p1dw.onrender.com',
+        'https://lms-staging-l68d.onrender.com'
     ],
     credentials: true,
 }));
