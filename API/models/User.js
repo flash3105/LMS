@@ -35,6 +35,11 @@ const UserSchema = new mongoose.Schema({
   resetPasswordExpires: {
     type: Date,
     select: false 
+  },
+  institution: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Institution',
+    required: true,
   }
 }, { timestamps: true }); // timestamps for better tracking
 

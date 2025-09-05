@@ -8,6 +8,7 @@ async function handleRegister(e) {
     const surname = document.querySelector('#regSurname').value;
     const email = document.querySelector('#regEmail').value;
     const password = document.querySelector('#regPassword').value;
+    const institution = document.querySelector('#regInstitution').value;
     const role = document.querySelector('#regRole').value;
     const level = document.querySelector('#regLevel').value;
 
@@ -17,7 +18,7 @@ async function handleRegister(e) {
         const res = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, surname, email, password, role, level }),
+            body: JSON.stringify({ name, surname, email, password, institution, role, level }),
         });
 
         const data = await res.json();

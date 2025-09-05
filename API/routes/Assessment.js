@@ -141,6 +141,17 @@ router.get('/courses/:courseId/assessments', async (req, res) => {
   }
 });
 
+//Get total number of assessments
+router.get('/assessments/count', async (req, res) => {
+  try {
+    const totalAssessments = await Assessment.countDocuments();
+    res.status(200).json({ totalAssessments });    
+  } catch (error) {
+    console.error('Error counting assessments', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+})
+
 // Download a single assessment (redirect to signed URL)
 router.get('/assessments/:assessmentId/download', async (req, res) => {
   try {

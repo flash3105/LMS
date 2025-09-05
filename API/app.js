@@ -58,6 +58,7 @@ app.use('/api', require('./routes/Statistics'));
 app.use('/api/messages', require('./routes/Message'));
 app.use("/api/submissions", require("./routes/quizSubmissions"));
 app.get('/api/quizzes/test', (req, res) => res.send('QuizSubmit route works'));
+app.use('/api/institutions', require('./routes/Institution'));
 
 
 const PORT = process.env.PORT || 5000;
