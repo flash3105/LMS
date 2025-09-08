@@ -14,7 +14,7 @@ const Institution = require('../models/Institution');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'thenetworkco3@gmail.com',
+    user: process.env.EMAIL_USER || 'oarabilemokone23@gmail.com',
     pass: process.env.EMAIL_PASS || 'dwre geil kvhr pzki'
   }
 });
@@ -49,10 +49,10 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    user = new User({ email, password: hashedPassword, role, name, surname, grade, institution });
+    user = new User({ email, password: hashedPassword, role, name, surname, grade, institution, status: 'pending' });
     await user.save();
 
-    res.json({ message: 'User registered successfully', token: 'mock-token' }); 
+    res.json({ message: 'User registered successfully. Please wait for approval.', token: 'mock-token' }); 
   } catch (err) {
     console.error('Server error:', err);
     res.status(500).send('Server error');
@@ -78,6 +78,10 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.status !== 'approved') {
+      return res.status(401).json({ error: 'Your account is pending approval. Please wait for administrator approval.' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
@@ -109,7 +113,195 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Get all pending users
+router.get('/pending-users', async (req, res) => {
+  try {
+    const pendingUsers = await User.find({ status: 'pending' }).populate('institution');
+    res.json(pendingUsers);
+  } catch (err) {
+    console.error('Error fetching pending users:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
+// Approve user
+router.put('/approve-user/:id', async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { status: 'approved' },
+      { new: true }
+    ).populate('institution');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Send approval email to the user
+    try {
+      const mailOptions = {
+        to: user.email,
+        from: process.env.EMAIL_USER || 'thenetworkco3@gmail.com',
+        subject: 'Your Account Has Been Approved!',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+              .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }
+              .button { display: inline-block; padding: 12px 24px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+              .footer { margin-top: 20px; padding: 20px; background: #eee; border-radius: 5px; text-align: center; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Account Approved!</h1>
+              </div>
+              <div class="content">
+                <p>Dear ${user.name} ${user.surname},</p>
+                <p>We are pleased to inform you that your account has been approved by ${user.institution?.institutionName || 'your institution'}.</p>
+                <p>You can now login to the iNurture LMS platform and start your learning journey!</p>
+                
+                <div style="text-align: center;">
+                  <a href="${req.headers.origin}" class="button">Login to iNurture</a>
+                </div>
+                
+                <p><strong>Login Details:</strong></p>
+                <ul>
+                  <li><strong>Email:</strong> ${user.email}</li>
+                  <li><strong>Role:</strong> ${user.role}</li>
+                  <li><strong>Institution:</strong> ${user.institution?.institutionName || 'N/A'}</li>
+                </ul>
+                
+                <p>If you have any questions or need assistance, please contact your institution's administrator.</p>
+                
+                <p>Happy learning!<br>The iNurture Team</p>
+              </div>
+              <div class="footer">
+                <p>This is an automated message. Please do not reply to this email.</p>
+                <p>&copy; ${new Date().getFullYear()} iNurture LMS. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+        text: `Dear ${user.name} ${user.surname},
+
+We are pleased to inform you that your account has been approved by ${user.institution?.institutionName || 'your institution'}.
+
+You can now login to the iNurture LMS platform and start your learning journey!
+
+Login Details:
+- Email: ${user.email}
+- Role: ${user.role}
+- Institution: ${user.institution?.institutionName || 'N/A'}
+
+Login URL: ${req.headers.origin}
+
+If you have any questions or need assistance, please contact your institution's administrator.
+
+Happy learning!
+The iNurture Team`
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log(`Approval email sent to ${user.email}`);
+      
+    } catch (emailError) {
+      console.error('Error sending approval email:', emailError);
+      // Don't fail the request if email fails, just log the error
+    }
+    
+    res.json({ message: 'User approved successfully', user });
+  } catch (err) {
+    console.error('Error approving user:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Reject user
+router.put('/reject-user/:id', async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { status: 'rejected' },
+      { new: true }
+    ).populate('institution');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Send rejection email to the user
+    try {
+      const mailOptions = {
+        to: user.email,
+        from: process.env.EMAIL_USER || 'thenetworkco3@gmail.com',
+        subject: 'Account Registration Update',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: #f44336; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+              .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }
+              .footer { margin-top: 20px; padding: 20px; background: #eee; border-radius: 5px; text-align: center; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Account Registration Update</h1>
+              </div>
+              <div class="content">
+                <p>Dear ${user.name} ${user.surname},</p>
+                <p>We regret to inform you that your account registration has been rejected by ${user.institution?.institutionName || 'your institution'}.</p>
+                <p>If you believe this is an error, please contact your institution's administrator for more information.</p>
+                
+                <p>Thank you for your interest in iNurture LMS.</p>
+                
+                <p>Sincerely,<br>The iNurture Team</p>
+              </div>
+              <div class="footer">
+                <p>This is an automated message. Please do not reply to this email.</p>
+                <p>&copy; ${new Date().getFullYear()} iNurture LMS. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+        text: `Dear ${user.name} ${user.surname},
+
+We regret to inform you that your account registration has been rejected by ${user.institution?.institutionName || 'your institution'}.
+
+If you believe this is an error, please contact your institution's administrator for more information.
+
+Thank you for your interest in iNurture LMS.
+
+Sincerely,
+The iNurture Team`
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log(`Rejection email sent to ${user.email}`);
+      
+    } catch (emailError) {
+      console.error('Error sending rejection email:', emailError);
+      // Don't fail the request if email fails, just log the error
+    }
+    
+    res.json({ message: 'User rejected successfully', user });
+  } catch (err) {
+    console.error('Error rejecting user:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 // Route: Get total registered users and their emails
 router.get('/registered-users', async (req, res) => {

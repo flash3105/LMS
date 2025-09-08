@@ -152,6 +152,9 @@
     <div class="login-container">
         <button class="close-btn" onclick="hideRegister()">×</button>
         <h2>Register</h2>
+        <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+            After registration, your account will be pending approval. You'll be able to login once approved by an administrator.
+        </p>
         <form id="registerForm" onsubmit="handleRegister(event)">
             <div class="form-group">
                 <label for="regName">Name</label>
@@ -181,7 +184,6 @@
                 <select id="regRole" name="role" required>
                     <option value="" disabled selected>Select Role</option>
                     <option value="Student">Student</option>
-                    <!-- <option value="Admin">Admin</option> -->
                     <option value="Instructor">Instructor</option>
                 </select>
             </div>
@@ -208,7 +210,7 @@
            
             <button type="submit" class="login-btn">Register</button>
         </form>
-        <p id="registerFeedback" style="color: green; display: none;">Successfully registered!</p>
+        <p id="registerFeedback" style="color: green; display: none; margin-top: 15px; padding: 10px; background: #f0f8f0; border-radius: 4px;"></p>
     </div>
 </div>
 

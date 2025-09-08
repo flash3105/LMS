@@ -33,6 +33,11 @@ const UserSchema = new mongoose.Schema({
       return this.role === 'Student';
     }
   },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
   resetPasswordToken: {
     type: String,
     select: false // Hide from queries by default
