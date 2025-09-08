@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Institution = require('../models/Institution');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // Create a new institution
 router.post('/', async (req, res) => {
