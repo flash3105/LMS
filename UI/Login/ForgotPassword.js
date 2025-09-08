@@ -1,6 +1,6 @@
 // This file handles the Forgot Password functionality, including token validation and password reset.
 
-const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = 'https://lms-cav9.onrender.com/api';
 
 document.addEventListener('DOMContentLoaded', function() {
     const forgotContainer = document.getElementById('forgotContainer');
@@ -158,7 +158,7 @@ async function handleResetPassword(e) {
         }
 
         alert('Password has been reset successfully. You can now login with your new password.');
-        window.location.href = '/UI';
+        window.location.href = '/';
     } catch (error) {
         console.error('Error:', error);
         if (resetError) {

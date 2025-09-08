@@ -34,6 +34,7 @@ function renderQuickLinks(currentUser) {
 // Render system statistics card
 
 
+
 // Render Home Tab
 export async function renderHomeTab(container, currentUser) {
   container.innerHTML = `
@@ -276,7 +277,7 @@ async function renderReportsPage(container, pageSize = 20) {
     //Fetch each user's courses (in parallel) and update KPI incrementally
     await Promise.all(studentUsers.map(async u => {
       try {
-        const res = await fetch(`http://localhost:5000/api/mycourses/${encodeURIComponent(u.email)}`);
+        const res = await fetch(`${API_BASE_URL}/mycourses/${encodeURIComponent(u.email)}`);
         const data = res.ok ? await res.json() : { enrolledCourses: [] };
         u.courseCount = data.enrolledCourses.length;
         u.completedCount = data.enrolledCourses.filter(c => c.status === 'completed').length;
@@ -737,10 +738,10 @@ async function renderUserAnalytics(container, email) {
   }
 
   try {
-    const res = await fetch(`http://localhost:5000/api/email/${encodeURIComponent(email)}`);
+    const res = await fetch(`${API_BASE_URL}/email/${encodeURIComponent(email)}`);
     if (res.ok) {
       user = await res.json();
-      const compRes = await fetch(`http://localhost:5000/api/resources/completions/${user._id}`);
+      const compRes = await fetch(`${API_BASE_URL}/resources/completions/${user._id}`);
       if (compRes.ok) allCompletions = await compRes.json();
     }
   } catch (err) {
@@ -782,10 +783,10 @@ async function renderUserAnalytics(container, email) {
         const [quizzesRes, assRes, quizSubsRes, assSubsRes, resourceRes, courseRes] = await Promise.all([
           fetch(`${API_BASE_URL}/courses/${course._id}/quizzes`),
           fetch(`${API_BASE_URL}/courses/${course._id}/assessments`),
-          fetch(`http://localhost:5000/api/submissions/${course._id}/${encodeURIComponent(email)}`),
+          fetch(`${API_BASE_URL}/submissions/${course._id}/${encodeURIComponent(email)}`),
           fetch(`${API_BASE_URL}/course/${course._id}/${encodeURIComponent(email)}`),
           fetch(`${API_BASE_URL}/courses/${course._id}/resources`),
-          fetch(`http://localhost:5000/api/mycourses/${encodeURIComponent(email)}/course/${course._id}`)
+          fetch(`${API_BASE_URL}/mycourses/${encodeURIComponent(email)}/course/${course._id}`)
         ]);
 
         const [quizzes, assessments, quizSubs, assignmentSubs, resources, enrolledCourse] = await Promise.all([
