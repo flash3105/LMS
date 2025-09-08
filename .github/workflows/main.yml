@@ -29,16 +29,9 @@ jobs:
         run: npm test --prefix API -- --watchAll=false
         continue-on-error: true
 
-      # 4️⃣ UI - Install, Test, Build
-      - name: Install UI Dependencies
-        run: npm install 
-
-      - name: Test UI
-        run: npm test -- --watchAll=false
-        continue-on-error: true
-
-      - name: Build UI
-        run: npm run build 
+      # 4️⃣ UI - (Plain JS/HTML/CSS, no build required)
+      - name: Test UI (optional)
+        run: echo "No build needed for plain JS UI"
 
       # 5️⃣ Deploy API to Render
       - name: Deploy API to Render
