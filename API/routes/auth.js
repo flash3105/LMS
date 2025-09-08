@@ -14,16 +14,29 @@ const Institution = require('../models/Institution');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'oarabilemokone23@gmail.com',
+    user: process.env.EMAIL_USER || 'thenetworkco3@gmail.com',
     pass: process.env.EMAIL_PASS || 'dwre geil kvhr pzki'
   }
 });
+
+const authMiddleware = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+
+  try {
+    const decoded = jwt.verify(token, 'mysecretkey'); // same key used in login
+    req.user = decoded; // attach payload (id, role) to request
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
 
 // Register
 router.post('/register', async (req, res) => {
   console.log('Full request body:', req.body);
   
-  const { email, password, role, name, surname, level, institution } = req.body;
+  const { email, password, role, name, surname, grade, institution } = req.body;
   
   if (!institution) {
     console.error('Missing institution field');
@@ -36,7 +49,7 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    user = new User({ email, password: hashedPassword, role, name, surname, level, institution });
+    user = new User({ email, password: hashedPassword, role, name, surname, grade, institution });
     await user.save();
 
     res.json({ message: 'User registered successfully', token: 'mock-token' }); 
@@ -60,6 +73,9 @@ router.get('/institutions', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
+    let email = req.body.email;
+    email = email.toLowerCase().trim();
+
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -82,7 +98,8 @@ router.post('/login', async (req, res) => {
         name: user.name,
         surname: user.surname,
         role: user.role,
-        level: user.level,
+        institution: user.institution,
+        grade: user.grade,
         bio: profile.bio,
       },
     });
@@ -221,5 +238,28 @@ router.post('/reset-password/:token', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password'); // exclude password
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const profile = await Profile.findOne({ email: user.email });
+
+    res.json({
+      email: user.email,
+      name: user.name,
+      surname: user.surname,
+      role: user.role,
+      institution: user.institution,
+      grade: user.grade,
+      bio: profile ? profile.bio : '',
+    });
+  } catch (err) {
+    console.error('Error fetching user info:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 module.exports = router;

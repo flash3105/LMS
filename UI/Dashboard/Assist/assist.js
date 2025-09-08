@@ -9,30 +9,30 @@ export function renderAssistTab(contentArea) {
       background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
       min-height: 100vh;
     }
-.profile-container {
-        padding: 2rem;
-        max-width: 1200px;
-        margin: 0 auto;
-       background: linear-gradient(135deg,rgb(125, 152, 173) 0%, #3182ce 100%);
-      }
-      
-      .welcome {
-        margin-bottom: 2.5rem;
-        text-align: center;
-      }
-      
-      .welcome h2 {
-        color:rgb(26, 115, 150);
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-        font-weight: 700;
-      }
-      
-      .welcome p {
-        color:rgb(39, 106, 177);
-        font-size: 1.1rem;
-      }
+    .profile-container {
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: linear-gradient(135deg,rgb(125, 152, 173) 0%, #3182ce 100%);
+    }
     
+    .welcome {
+      margin-bottom: 2.5rem;
+      text-align: center;
+    }
+    
+    .welcome h2 {
+      color:rgb(26, 115, 150);
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    
+    .welcome p {
+      color:rgb(39, 106, 177);
+      font-size: 1.1rem;
+    }
+  
     .assist-section, .faq-section {
       background: white;
       border-radius: 12px;
@@ -90,12 +90,41 @@ export function renderAssistTab(contentArea) {
       border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 0.2s ease;
+      transition: all 0.2s ease;
     }
     
-    .submit-btn:hover {
+    .submit-btn:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .submit-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    
+    .form-status {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-weight: 600;
+      display: none;
+    }
+    
+    .form-status.success {
+      display: block;
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .form-status.error {
+      display: block;
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
     }
     
     .faq-list {
@@ -195,7 +224,7 @@ export function renderAssistTab(contentArea) {
       
       <div class="assist-section">
         <div class="section-title">Submit a Support Request</div>
-        <form class="support-form" onsubmit="submitAssistRequest(event)">
+        <form class="support-form" id="assistForm">
           <div class="form-group">
             <label for="assistSubject" class="form-label">Subject</label>
             <input type="text" class="form-control" id="assistSubject" placeholder="Enter subject" required>
@@ -205,6 +234,7 @@ export function renderAssistTab(contentArea) {
             <textarea class="form-control" id="assistMessage" rows="4" placeholder="Describe your issue in detail..." required></textarea>
           </div>
           <button type="submit" class="submit-btn">Submit Request</button>
+          <div id="formStatus" class="form-status"></div>
         </form>
       </div>
       
@@ -212,54 +242,42 @@ export function renderAssistTab(contentArea) {
         <div class="section-title">Frequently Asked Questions</div>
         <div class="faq-list">
           <div class="faq-card">
-            <button class="faq-question" onclick="toggleFAQ(this)">
-              How do I reset my password?
-            </button>
+            <button class="faq-question">How do I reset my password?</button>
             <div class="faq-answer">
               <p>Go to your profile settings and click "Reset Password". Follow the instructions sent to your email. If you don't receive the email within 5 minutes, check your spam folder.</p>
             </div>
           </div>
           
           <div class="faq-card">
-            <button class="faq-question" onclick="toggleFAQ(this)">
-              How do I contact my instructor?
-            </button>
+            <button class="faq-question">How do I contact my instructor?</button>
             <div class="faq-answer">
               <p>Use the Messages tab to send a direct message to your instructor. They typically respond within 24-48 hours during weekdays.</p>
             </div>
           </div>
           
           <div class="faq-card">
-            <button class="faq-question" onclick="toggleFAQ(this)">
-              Where can I find my grades?
-            </button>
+            <button class="faq-question">Where can I find my grades?</button>
             <div class="faq-answer">
               <p>Navigate to the Grades tab in your dashboard to view all your course grades. You can also see detailed feedback from instructors on your assignments.</p>
             </div>
           </div>
           
           <div class="faq-card">
-            <button class="faq-question" onclick="toggleFAQ(this)">
-              How do I submit an assignment?
-            </button>
+            <button class="faq-question">How do I submit an assignment?</button>
             <div class="faq-answer">
               <p>Go to the relevant course, find the assignment under Resources or Assessments, and use the upload option provided. Make sure to submit before the due date to avoid penalties.</p>
             </div>
           </div>
           
           <div class="faq-card">
-            <button class="faq-question" onclick="toggleFAQ(this)">
-              What are the system requirements?
-            </button>
+            <button class="faq-question">What are the system requirements?</button>
             <div class="faq-answer">
               <p>The platform works best on modern browsers like Chrome, Firefox, Safari, or Edge. Ensure you have JavaScript enabled and a stable internet connection for the best experience.</p>
             </div>
           </div>
           
           <div class="faq-card">
-            <button class="faq-question" onclick="toggleFAQ(this)">
-              How do I enroll in a course?
-            </button>
+            <button class="faq-question">How do I enroll in a course?</button>
             <div class="faq-answer">
               <p>Navigate to the Courses tab, browse available courses, and click the "Enroll" button on any course you're interested in. Some courses may require instructor approval.</p>
             </div>
@@ -268,6 +286,18 @@ export function renderAssistTab(contentArea) {
       </div>
     </div>
   `;
+
+  // Add event listeners after the HTML is rendered
+  const assistForm = document.getElementById('assistForm');
+  assistForm.addEventListener('submit', submitAssistRequest);
+  
+  // Add FAQ toggle functionality
+  const faqQuestions = document.querySelectorAll('.faq-question');
+  faqQuestions.forEach(question => {
+    question.addEventListener('click', function() {
+      toggleFAQ(this);
+    });
+  });
 
   // Add the toggle function to the global scope
   window.toggleFAQ = function(button) {
@@ -290,15 +320,121 @@ export function renderAssistTab(contentArea) {
 }
 
 // Submit assist request
-function submitAssistRequest(event) {
+async function submitAssistRequest(event) {
   event.preventDefault();
-  const subject = document.getElementById('assistSubject').value;
-  const message = document.getElementById('assistMessage').value;
   
-  // Simulate submission
-  alert(`Support request submitted successfully!\n\nSubject: ${subject}\n\nWe'll get back to you within 24 hours.`);
-  
-  // Clear form
-  document.getElementById('assistSubject').value = '';
-  document.getElementById('assistMessage').value = '';
+
+  // 1. Get form elements
+  const form = event.target;
+  const submitButton = form.querySelector('.submit-btn');
+  const statusEl = document.getElementById('formStatus');
+
+  // 2. Setup loading state - PREVENTS MULTIPLE SUBMISSIONS
+  const originalText = submitButton.textContent;
+  submitButton.textContent = 'Submitting...';
+  submitButton.disabled = true;
+  statusEl.style.display = 'none'; // Hide previous status messages
+
+  // 3. Get form data
+  const subject = document.getElementById('assistSubject').value.trim();
+  const message = document.getElementById('assistMessage').value.trim();
+  const token = localStorage.getItem("token"); // assuming JWT is stored here
+
+  if (!subject || !message) {
+    statusEl.textContent = "Please fill in both subject and message.";
+    statusEl.className = 'form-status error';
+    statusEl.style.display = 'block';
+    submitButton.textContent = originalText;
+    submitButton.disabled = false;
+    return;
+  }
+
+  if (!token) {
+    statusEl.textContent = "You are not logged in. Redirecting to login page...";
+    statusEl.className = 'form-status error';
+    statusEl.style.display = 'block';
+    submitButton.textContent = originalText;
+    submitButton.disabled = false;
+
+    // Redirect after short delay
+    setTimeout(() => {
+      window.location.href = '/'; // adjust path to your login page
+    }, 1500);
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/assist`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ subject, message })
+    });
+
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      
+      let userMessage;
+      switch (response.status) {
+        case 400:
+          userMessage = errorData.error || "Please fill in all required fields.";
+          break;
+        case 401:
+          userMessage = "Session expired. Redirecting to login...";
+          statusEl.textContent = userMessage;
+          statusEl.className = 'form-status error';
+          statusEl.style.display = 'block';
+          
+          // Redirect after short delay
+          setTimeout(() => {
+            window.location.href = '/'; 
+          }, 1500);
+          return;
+        case 403:
+          userMessage = "You do not have permission to submit this request.";
+          break;
+        case 500:
+          userMessage = "Server error occurred. Please try again later.";
+          break;
+        default:
+          userMessage = errorData.error || `Unexpected error: ${response.status}`;
+      }
+
+      if (response.status !== 401) throw new Error(userMessage);
+    }
+
+    const result = await response.json();
+
+    // 4. Show SUCCESS feedback in the UI
+    statusEl.textContent = "Request submitted! We'll get back to you within 24 hours.";
+    statusEl.className = 'form-status success';
+    statusEl.style.display = 'block';
+
+    // 5. Clear the form
+    form.reset();
+
+    // 6. Refresh user's requests list (if function exists)
+    if (typeof fetchUserRequests === 'function') {
+      fetchUserRequests();
+    }
+
+  } catch (error) {
+    console.error("Error submitting request:", error);
+
+    // 7. Show ERROR feedback in the UI (non-401 errors)
+    statusEl.textContent = `Failed to submit request. ${error.message}`;
+    statusEl.className = 'form-status error';
+    statusEl.style.display = 'block';
+
+  } finally {
+    // 8. Restore button state
+    submitButton.textContent = originalText;
+    submitButton.disabled = false;
+  }
 }
+
+// Make the function globally available
+window.submitAssistRequest = submitAssistRequest;

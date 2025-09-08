@@ -7,17 +7,27 @@ export let messages = [];
 const API_BASE_URL = window.API_BASE_URL ;
 
 // Fetch courses from the database
-export async function fetchCourses() {
+export async function fetchCourses(grade = null, institution = null) {
   try {
-    const response = await fetch(`${API_BASE_URL}/courses/all`);
+    let url = `${API_BASE_URL}/courses/all`;
+
+    // If grade is provided, switch to filter endpoint
+    if (grade) {
+      url = `${API_BASE_URL}/courses/filter?grade=${encodeURIComponent(grade)}`;
+      if (institution) {
+        url += `&institution=${encodeURIComponent(institution)}`;
+      }
+    }
+
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch courses');
     }
+
     courses = await response.json();
 
-    // Optionally, store courses in localStorage for offline access
+    // Store in localStorage for offline access
     localStorage.setItem('courses', JSON.stringify(courses));
- 
   } catch (error) {
     console.error('Error fetching courses:', error);
 
@@ -25,34 +35,44 @@ export async function fetchCourses() {
     const storedCourses = localStorage.getItem('courses');
     if (storedCourses) {
       courses = JSON.parse(storedCourses);
-   
     }
   }
 }
 
+
 // Fetch user data from the database
-export async function fetchUserData(userId) {
+export async function fetchUserData() {
   try {
-    const response = await fetch(`${API_BASE_URL}/user/${userId}`);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`, // pass token here
+      },
+    });
+
     if (!response.ok) {
       throw new Error('Failed to fetch user data');
     }
-    userData = await response.json();
 
-    // Optionally, store user data in localStorage for offline access
+    const userData = await response.json();
+
+    // Store in localStorage for offline access
     localStorage.setItem('userData', JSON.stringify(userData));
-    
+
+    return userData;
   } catch (error) {
     console.error('Error fetching user data:', error);
 
     // Fallback to localStorage if API fails
     const storedUserData = localStorage.getItem('userData');
     if (storedUserData) {
-      userData = JSON.parse(storedUserData);
-    
+      return JSON.parse(storedUserData);
     }
+    return null;
   }
 }
+
 
 // Fetch messages from the database
 export async function fetchMessages(userId) {

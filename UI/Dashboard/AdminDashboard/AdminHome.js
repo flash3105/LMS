@@ -1,8 +1,10 @@
-
+import { fetchUserData } from "../Data/data.js";
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 // Render Quick Links based on user role
+
 function renderQuickLinks(currentUser) {
+  fetchUserData();
   const links = [
     { id: 'viewReportsLink', text: 'View Reports', icon: 'chart-bar', role: 'user' },
     { id: 'institutions-link', text: 'Institutions', icon: 'university', role: 'Admin'}  
@@ -30,69 +32,7 @@ function renderQuickLinks(currentUser) {
 }
 
 // Render system statistics card
-async function renderStatistics() {
-  try {
-    const [assessmentsRes, usersRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/assessments/count`),
-      fetch(`${API_BASE_URL}/auth/registered-users`)
-    ]);
-  
-    if (!assessmentsRes.ok || !usersRes.ok) throw new Error('Failed to fetch data');
 
-    const assessments = await assessmentsRes.json();
-    const users = await usersRes.json();
-
-    
-  
-
-    return `
-      <div class="statistics card">
-        <h2 class="card-header"><i class="fas fa-chart-pie"></i> System Statistics</h2>
-        <div class="card-body">
-          <div class="stats-grid">
-            <div class="stat-card bg-warning">
-              <i class="fas fa-tasks"></i>
-              <div>
-                <h3>Total Assessments</h3>
-                <p>${assessments.totalAssessments || 0}</p>
-              </div>
-            </div>
-            <div class="stat-card bg-primary">
-              <i class="fas fa-users"></i>
-              <div>
-                <h3>Total Registered Users</h3>
-                <p>${users.totalUsers || 0}</p>
-                <button class="btn btn-sm btn-outline-secondary view-users-btn">
-                  <i class="fas fa-eye"></i> View Users
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="users-section" style="display: none;">
-            <h3>Registered Users</h3>
-            <table class="table table-striped">
-              <thead><tr><th>#</th><th>Email</th><th>Name</th><th>Role</th></tr></thead>
-              <tbody>
-                ${users.users.map((u, i) => `
-                  <tr><td>${i + 1}</td><td>${u.email}</td><td>${u.name}</td><td>${u.role}</td></tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-          <p class="text-muted update-time">
-            Last updated: ${new Date().toLocaleTimeString()}
-            <button class="btn btn-sm btn-outline-secondary refresh-stats">
-              <i class="fas fa-sync-alt"></i> Refresh
-            </button>
-          </p>
-        </div>
-      </div>
-    `;
-  } catch (err) {
-    console.error('Statistics load error:', err);
-    return `<div class="statistics card"><div class="alert alert-danger">Failed to load statistics: ${err.message}</div></div>`;
-  }
-}
 
 // Render Home Tab
 export async function renderHomeTab(container, currentUser) {
@@ -106,9 +46,9 @@ export async function renderHomeTab(container, currentUser) {
   `;
 
   try {
-    const [quickLinks, statistics] = await Promise.all([
+    const [quickLinks] = await Promise.all([
       renderQuickLinks(currentUser),
-      renderStatistics()
+    
     ]);
 
     container.innerHTML = `
@@ -120,7 +60,7 @@ export async function renderHomeTab(container, currentUser) {
           })}</p>
         </div>
         <div class="dashboard-grid">
-          <div class="grid-col-1">${quickLinks}${statistics}</div>
+          <div class="grid-col-1">${quickLinks}</div>
           <div class="grid-col-2"><!-- Announcements and Activity can be added here --></div>
         </div>
       </div>

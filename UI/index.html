@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NETWORKCO LMS</title> 
+    <title>iNurture</title> 
     <link rel="stylesheet" href="index.css">
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-...your_integrity_hash..." crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -29,7 +29,7 @@
   </div>
 
   <div class="text-content">
-    <h1>Welcome to the NETWORKCO LMS</h1>
+    <h1>Welcome to iNurture</h1>
     <p>Broaden your reach by broadening your knowledge</p>
     <button id="mainLoginBtn" class="login-btn-main" onclick="showLogin()">LOGIN ➔</button>
 
@@ -185,15 +185,27 @@
                     <option value="Instructor">Instructor</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="regLevel">Level</label>
-                <select id="regLevel" name="level" required>
-                    <option value="" disabled selected>Select Level</option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Expert">Expert</option>
-                </select>
+            <div class="form-group" id="gradeGroup" style="display:none;">
+              <label for="regGrade">Grade</label>
+              <select id="regGrade" name="grade">
+                <option value="" disabled selected>Select Grade</option>
+                <!-- Grades 1 to 12 -->
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+              </select>
             </div>
+
+           
             <button type="submit" class="login-btn">Register</button>
         </form>
         <p id="registerFeedback" style="color: green; display: none;">Successfully registered!</p>

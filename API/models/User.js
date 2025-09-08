@@ -5,6 +5,8 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
+    trim: true,
   },
   password: {
     type: String,
@@ -23,10 +25,13 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  level: {
-    type: String,
-    enum: ['Beginner', 'Intermediate', 'Expert'],
-    required: true,
+  grade: {
+    type: Number,   
+    min: 1,         
+    max: 12,        
+    required: function() {
+      return this.role === 'Student';
+    }
   },
   resetPasswordToken: {
     type: String,
