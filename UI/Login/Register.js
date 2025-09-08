@@ -33,16 +33,20 @@ async function handleRegister(e) {
     const data = await res.json();
     console.log(data);
 
-    if (data.token) {
-      localStorage.setItem('token', data.token);
-
-      feedbackElement.textContent = 'Successfully registered!';
+    if (res.ok) {
+      // Update success message to reflect pending approval
+      feedbackElement.textContent = data.message || 'Registration successful! Your account is pending approval. You will be able to login once approved by an administrator.';
       feedbackElement.style.color = 'green';
       feedbackElement.style.display = 'block';
 
+      // Clear the form
+      document.querySelector('#registerForm').reset();
+      gradeGroup.style.display = 'none';
+
+      // Redirect after a delay
       setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
+        hideRegister(); // Close the registration popup
+      }, 3000);
     } else {
       feedbackElement.textContent = data.error || 'Registration failed!';
       feedbackElement.style.color = 'red';
