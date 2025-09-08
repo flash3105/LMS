@@ -186,7 +186,11 @@ export async function renderLearningTab(contentArea) {
   `;
 
   try {
-    await fetchCourses();
+
+    let currentUser = JSON.parse(localStorage.getItem("userData")) ;
+    console.log("Current User:", currentUser);
+    console.log("User Info:", currentUser.grade, currentUser.institution);
+    await fetchCourses(currentUser.grade, currentUser.institution); // Pass grade and institution
    
     renderCourses(courses, "availableCoursesContainer");
     await fetchEnrolledCourses();
@@ -226,16 +230,19 @@ function renderCourses(courseList, containerId) {
         ${course.courseCode ? `<p><strong>Code:</strong> ${course.courseCode}</p>` : ''}
         <div class="course-actions">
           ${!isEnrolled ? `<button class="enroll-btn" data-course-id="${course._id}">Enroll</button>` : ''}
-          <button class="view-btn" data-course-id="${course._id}">View Details</button>
+          ${isEnrolled ? `<button class="view-btn" data-course-id="${course._id}">View Details</button>` : ''}
         </div>
       </div>
     `;
 
-    // Add click handler for the view details button
-    card.querySelector('.view-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      renderCourseDetails(document.getElementById("contentArea"), course);
-    });
+    // Add event listener for view button if it exists
+    const viewBtn = card.querySelector('.view-btn');
+    if (viewBtn) {
+      viewBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        renderCourseDetails(document.getElementById("contentArea"), course);
+      });
+    }
 
     container.appendChild(card);
   });
@@ -246,6 +253,7 @@ function renderCourses(courseList, containerId) {
     button.addEventListener('click', handleEnrollClick);
   });
 }
+
 
 async function fetchEnrolledCourses() {
   const currentUser = userData.currentUser || {};

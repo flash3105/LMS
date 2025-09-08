@@ -5,9 +5,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const userId = user.email;
 
   await fetchCourses(); // Wait for courses to load
-  await fetchUserData(userId); // Wait for user data to load
+  //await fetchUserData(); // Wait for user data to load
   await fetchMessages(userId);
-
+  console.log("User Data:", fetchUserData());
   // Now render, when data is ready
   renderHomeTab(document.getElementById('contentArea'), user);
 });

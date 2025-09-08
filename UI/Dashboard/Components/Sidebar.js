@@ -10,15 +10,24 @@ function signOut() {
 
 export function renderSidebar() {
   return `
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <a class="navbar-brand" href="#">
-          <span style="display: flex; align-items: center;">
-            <i class="fas fa-graduation-cap" style="font-size: 2rem; color: #1e88e5; margin-right: 0.5rem;"></i>
-            <span style="font-size: 1.5rem; font-weight: bold; letter-spacing: 2px; color: white;">THUTO</span>
-          </span>
-        </a>
-      </div>
+  <div class="sidebar" 
+     style="width:260px; height:100vh;
+            color:white; display:flex; flex-direction:column; box-shadow:4px 0 12px rgba(0,0,0,0.2);background-color:#2c3e50 ;
+            position:fixed; top:0; left:0; transition:all 0.3s ease;">
+
+  <div class="sidebar-header" 
+       style="padding:1.5rem; border-bottom:1px solid rgba(255,255,255,0.2);">
+    <a class="navbar-brand" href="#" style="text-decoration:none;">
+      <span style="display:flex; align-items:center; gap:0.8rem;">
+        <img src="../images/logoN.jpg" 
+             alt="logo" 
+             style="width:45px; height:45px; border-radius:50%; object-fit:cover;
+                    box-shadow:0px 2px 6px rgba(0,0,0,0.4);">
+        <span style="font-size:1.6rem; font-weight:700; letter-spacing:1px; 
+                     color:#fff; text-transform:uppercase;">iNurture</span>
+      </span>
+    </a>
+  </div>
       <div class="sidebar-menu">
         <a href="#" id="homeLink" class="active">
           <i class="fas fa-home me-2"></i>Home

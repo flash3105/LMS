@@ -97,7 +97,9 @@ function setupSidebarNavigation() {
       try {
         localStorage.clear();
 
+
         window.location.href = "/";
+
 
       } catch (err) {
         console.error("Error signing out:", err);

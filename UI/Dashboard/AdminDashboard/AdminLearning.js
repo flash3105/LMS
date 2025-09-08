@@ -1,8 +1,10 @@
-import { fetchCourses } from '../Data/data.js';
+import { fetchCourses,userData } from '../Data/data.js';
 import { courses } from '../Data/data.js';
 import { renderResources } from './Resources.js';
 
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
+
+let currentUser = JSON.parse(localStorage.getItem("userData")) ;
 
 function loadCSS() {
   const link = document.createElement('link');
@@ -16,9 +18,10 @@ loadCSS();
 export async function renderadminLearning(container, query = '') {
   try {
 
-    
+      //console.log(currentUser.institution)
+        await fetchCourses();
     // Fetch courses from API (with localStorage fallback)
-    await fetchCourses();
+    //await fetchCourses();
 
     // Get courses from the global variable (populated by fetchCourses)
     const allCourses = courses || [];
@@ -53,6 +56,10 @@ export async function renderadminLearning(container, query = '') {
             <div class="form-group">
               <label for="authorEmail">Author Email*</label>
               <input type="email" id="authorEmail" placeholder="instructor@example.com" required />
+            </div>
+            <div class="form-group">
+              <label for="grade">Grade Level*</label>
+              <input type="number" id="grade" placeholder="1-12" min="1" max="12" required />
             </div>
             
             <div class="form-group">
@@ -125,8 +132,12 @@ export async function renderadminLearning(container, query = '') {
     });
 
     // Add event listener for the form submission
-    const form = container.querySelector('#courseForm');
-    form.addEventListener('submit', handleCourseSubmit);
+    // Add event listener for the form submission
+        const form = container.querySelector('#courseForm');
+        form.addEventListener('submit', handleCourseSubmit);
+
+     
+
 
     // Add event listener for clear search button if it exists
     const clearSearchBtn = container.querySelector('#clearSearch');
@@ -164,8 +175,13 @@ async function handleCourseSubmit(event) {
   const authorEmail = document.getElementById('authorEmail').value.trim();
   const courseDescription = document.getElementById('courseDescription').value.trim();
   const visibility = document.querySelector('input[name="visibility"]:checked').value;
+  const grade = document.getElementById('grade').value.trim();
 
-  console.log('Form values:', { courseName, courseCode, authorEmail, courseDescription, visibility });
+  // ✅ Correct way: fetch institution from localStorage
+  const currentUser = JSON.parse(localStorage.getItem('userData'));
+  const institution = currentUser?.institution || "General";
+
+  console.log('Form values:', { courseName, courseCode, authorEmail, courseDescription, visibility, grade, institution });
 
   if (courseName && courseCode && authorEmail && courseDescription) {
     try {
@@ -179,7 +195,9 @@ async function handleCourseSubmit(event) {
           courseCode,
           authorEmail,
           courseDescription,
-          visibility
+          visibility,
+          institution, // ✅ now dynamic, not always "General"
+          grade
         }),
       });
 
@@ -193,16 +211,9 @@ async function handleCourseSubmit(event) {
         throw new Error(data.message || 'Failed to add course');
       }
 
-      // Refresh the course list
+      // Refresh
       const container = document.getElementById('contentArea');
       await renderadminLearning(container);
-      
-      // Clear the form
-      document.getElementById('courseName').value = '';
-      document.getElementById('courseCode').value = '';
-      document.getElementById('authorEmail').value = '';
-      document.getElementById('courseDescription').value = '';
-      
       showToast('Course added successfully!');
     } catch (error) {
       console.error('Error adding course:', error);
@@ -212,6 +223,7 @@ async function handleCourseSubmit(event) {
     showToast('Please fill in all required fields', 'warning');
   }
 }
+
 
 async function handleEditCourse(event) {
   const courseId = event.target.dataset.id;

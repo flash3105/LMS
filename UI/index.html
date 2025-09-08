@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NETWORKCO LMS</title> 
+    <title>iNurture</title> 
     <link rel="stylesheet" href="index.css">
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-...your_integrity_hash..." crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -29,7 +29,7 @@
   </div>
 
   <div class="text-content">
-    <h1>Welcome to the NETWORKCO LMS</h1>
+    <h1>Welcome to iNurture</h1>
     <p>Broaden your reach by broadening your knowledge</p>
     <button id="mainLoginBtn" class="login-btn-main" onclick="showLogin()">LOGIN ➔</button>
 
@@ -170,23 +170,42 @@
                 <input type="password" id="regPassword" name="password" placeholder="Value" required>
             </div>
             <div class="form-group">
+                <label for="regInstitution">Institution</label>
+                <select id="regInstitution" required>
+                <option value="">Select Institution</option>
+                
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="regRole">Role</label>
                 <select id="regRole" name="role" required>
                     <option value="" disabled selected>Select Role</option>
                     <option value="Student">Student</option>
-                    <option value="Admin">Admin</option>
+                    <!-- <option value="Admin">Admin</option> -->
                     <option value="Instructor">Instructor</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="regLevel">Level</label>
-                <select id="regLevel" name="level" required>
-                    <option value="" disabled selected>Select Level</option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Expert">Expert</option>
-                </select>
+            <div class="form-group" id="gradeGroup" style="display:none;">
+              <label for="regGrade">Grade</label>
+              <select id="regGrade" name="grade">
+                <option value="" disabled selected>Select Grade</option>
+                <!-- Grades 1 to 12 -->
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+              </select>
             </div>
+
+           
             <button type="submit" class="login-btn">Register</button>
         </form>
         <p id="registerFeedback" style="color: green; display: none;">Successfully registered!</p>
@@ -208,6 +227,8 @@
     function showRegister() {
         document.getElementById('registerOverlay').style.display = 'flex';
         document.getElementById('mainLoginBtn').style.display = 'none';
+        // Load institutions when the register form is shown
+        loadInstitutions();
     }
 
     function hideRegister() {
@@ -215,6 +236,27 @@
         document.getElementById('mainLoginBtn').style.display = 'inline-block';
     }
 
+    // Function to load institutions from the API
+    async function loadInstitutions() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/institutions`);
+            const institutions = await res.json();
+            
+            const institutionSelect = document.querySelector('#regInstitution');
+            institutionSelect.innerHTML = '<option value="">Select Institution</option>';
+            
+            institutions.forEach(inst => {
+                const option = document.createElement('option');
+                option.value = inst._id;
+                option.textContent = inst.institutionName;
+                institutionSelect.appendChild(option);
+            });
+        } catch (err) {
+            console.error('Failed to load institutions:', err);
+        }
+}
+
+document.addEventListener('DOMContentLoaded', loadInstitutions);
 
 </script>
 <script>

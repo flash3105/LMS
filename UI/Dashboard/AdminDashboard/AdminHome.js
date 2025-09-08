@@ -1,10 +1,14 @@
-
+import { fetchUserData } from "../Data/data.js";
 const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 // Render Quick Links based on user role
+
 function renderQuickLinks(currentUser) {
+  fetchUserData();
   const links = [
-    { id: 'viewReportsLink', text: 'View Reports', icon: 'chart-bar', role: 'user' }
+    { id: 'viewReportsLink', text: 'View Reports', icon: 'chart-bar', role: 'user' },
+    { id: 'institutions-link', text: 'Institutions', icon: 'university', role: 'Admin'}  
+
   ];
 
   return `
@@ -13,7 +17,7 @@ function renderQuickLinks(currentUser) {
       <div class="card-body">
         <ul class="link-list">
           ${links
-            .filter(link => link.role === 'all' || (currentUser.role === 'admin' && link.role === 'admin') || (currentUser.role !== 'admin' && link.role === 'user'))
+            .filter(link => link.role === 'all' || (currentUser.role === 'Admin' && link.role === 'Admin') || (currentUser.role !== 'admin' && link.role === 'user'))
             .map(link => `
               <li>
                 <a href="#" id="${link.id}" class="link-item">
@@ -28,69 +32,8 @@ function renderQuickLinks(currentUser) {
 }
 
 // Render system statistics card
-async function renderStatistics() {
-  try {
-    const [assessmentsRes, usersRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/assessments/count`),
-      fetch(`${API_BASE_URL}/auth/registered-users`)
-    ]);
-  
-    if (!assessmentsRes.ok || !usersRes.ok) throw new Error('Failed to fetch data');
 
-    const assessments = await assessmentsRes.json();
-    const users = await usersRes.json();
 
-    
-  
-
-    return `
-      <div class="statistics card">
-        <h2 class="card-header"><i class="fas fa-chart-pie"></i> System Statistics</h2>
-        <div class="card-body">
-          <div class="stats-grid">
-            <div class="stat-card bg-warning">
-              <i class="fas fa-tasks"></i>
-              <div>
-                <h3>Total Assessments</h3>
-                <p>${assessments.totalAssessments || 0}</p>
-              </div>
-            </div>
-            <div class="stat-card bg-primary">
-              <i class="fas fa-users"></i>
-              <div>
-                <h3>Total Registered Users</h3>
-                <p>${users.totalUsers || 0}</p>
-                <button class="btn btn-sm btn-outline-secondary view-users-btn">
-                  <i class="fas fa-eye"></i> View Users
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="users-section" style="display: none;">
-            <h3>Registered Users</h3>
-            <table class="table table-striped">
-              <thead><tr><th>#</th><th>Email</th><th>Name</th><th>Role</th></tr></thead>
-              <tbody>
-                ${users.users.map((u, i) => `
-                  <tr><td>${i + 1}</td><td>${u.email}</td><td>${u.name}</td><td>${u.role}</td></tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-          <p class="text-muted update-time">
-            Last updated: ${new Date().toLocaleTimeString()}
-            <button class="btn btn-sm btn-outline-secondary refresh-stats">
-              <i class="fas fa-sync-alt"></i> Refresh
-            </button>
-          </p>
-        </div>
-      </div>
-    `;
-  } catch (err) {
-    console.error('Statistics load error:', err);
-    return `<div class="statistics card"><div class="alert alert-danger">Failed to load statistics: ${err.message}</div></div>`;
-  }
-}
 
 // Render Home Tab
 export async function renderHomeTab(container, currentUser) {
@@ -104,9 +47,9 @@ export async function renderHomeTab(container, currentUser) {
   `;
 
   try {
-    const [quickLinks, statistics] = await Promise.all([
+    const [quickLinks] = await Promise.all([
       renderQuickLinks(currentUser),
-      renderStatistics()
+    
     ]);
 
     container.innerHTML = `
@@ -118,7 +61,7 @@ export async function renderHomeTab(container, currentUser) {
           })}</p>
         </div>
         <div class="dashboard-grid">
-          <div class="grid-col-1">${quickLinks}${statistics}</div>
+          <div class="grid-col-1">${quickLinks}</div>
           <div class="grid-col-2"><!-- Announcements and Activity can be added here --></div>
         </div>
       </div>
@@ -145,6 +88,9 @@ function setupDashboardInteractions(currentUser) {
       switch (link.id) {
         case 'viewReportsLink':
           renderReportsPage(document.getElementById('contentArea'));
+          break;
+        case 'institutions-link':
+          renderInstitutionsPage(document.getElementById('contentArea'));
           break;
       }
     });
@@ -349,6 +295,432 @@ async function renderReportsPage(container, pageSize = 20) {
 
   document.getElementById("backButton")?.addEventListener("click", () => {
     renderHomeTab(container, { name: "User", role: "user" });
+  });
+}
+
+// renders institutions
+async function renderInstitutionsPage(container) {
+  container.innerHTML = `
+    <div class="institutions-page card">
+      <h2 class="card-header"><i class="fas fa-university"></i> Institutions Management</h2>
+      <div class="card-body">
+        <button id="backButton" class="btn btn-secondary mb-3">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+        <div class="d-flex justify-content-between mb-3">
+          <button id="addInstitutionBtn" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Institution
+          </button>
+          <div class="input-group" style="width: 300px;">
+            <input type="text" id="institutionSearch" class="form-control" placeholder="Search institutions...">
+            <button class="btn btn-outline-secondary" type="button">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </div>
+        <div id="institutionsContent">
+          <div class="text-center">
+            <i class="fas fa-spinner fa-spin"></i> Loading institutions...
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Back button
+  document.getElementById("backButton").addEventListener("click", () => {
+    renderHomeTab(container, { name: "Admin", role: "Admin" });
+  });
+
+  // Add institution button
+  document.getElementById("addInstitutionBtn").addEventListener("click", () => {
+    showAddInstitutionForm();
+  });
+
+  // Search functionality
+  document.getElementById("institutionSearch").addEventListener("input", (e) => {
+    filterInstitutions(e.target.value);
+  });
+
+  // Load institutions
+  await loadInstitutions();
+}
+
+// Function to load institutions
+async function loadInstitutions() {
+  try {
+    console.log('Loading institutions from:', `${API_BASE_URL}/institutions`);
+    
+    const response = await fetch(`${API_BASE_URL}/institutions`);
+    console.log('Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      throw new Error(`Failed to fetch institutions: ${response.status} ${errorText}`);
+    }
+    
+    const responseData = await response.json();
+    console.log('API Response:', responseData);
+    console.log('Type of response:', typeof responseData);
+    
+    // Check if response is an array
+    if (!Array.isArray(responseData)) {
+      console.error('Expected array but got:', responseData);
+      throw new Error('API did not return an array of institutions');
+    }
+    
+    const institutions = responseData;
+    console.log('Institutions loaded:', institutions);
+    renderInstitutionsTable(institutions);
+  } catch (err) {
+    console.error('Error loading institutions:', err);
+    document.getElementById("institutionsContent").innerHTML = `
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i> Failed to load institutions: ${err.message}
+      </div>
+    `;
+  }
+}
+
+// Function to render the institutions table
+function renderInstitutionsTable(institutions) {
+  // Ensure institutions is always an array
+  if (!Array.isArray(institutions)) {
+    console.error('renderInstitutionsTable expected array but got:', institutions);
+    institutions = [];
+  }
+
+  if (institutions.length === 0) {
+    document.getElementById("institutionsContent").innerHTML = `
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No institutions found. 
+        <a href="#" id="addFirstInstitution">Add the first institution</a>
+      </div>
+    `;
+    
+    document.getElementById("addFirstInstitution").addEventListener("click", (e) => {
+      e.preventDefault();
+      showAddInstitutionForm();
+    });
+    
+    return;
+  }
+
+  document.getElementById("institutionsContent").innerHTML = `
+    <div style="max-height: 500px; overflow-y: auto;">
+      <table class="table table-striped table-hover">
+        <thead class="sticky-top bg-light">
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Onboarding Grade</th>
+            <th>Province</th>
+            <th>Email</th>
+            <th>Contact</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${institutions.map(institution => `
+            <tr>
+              <td>${institution.institutionName || 'N/A'}</td>
+              <td>${institution.institutionType || 'N/A'}</td>
+              <td>${institution.onboardingGrade || 'N/A'}</td>
+              <td>${institution.province || 'N/A'}</td>
+              <td>${institution.email || 'N/A'}</td>
+              <td>${institution.contactNumber || 'N/A'}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${institution._id}">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${institution._id}">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // Add event listeners for edit and delete buttons
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const institutionId = e.currentTarget.dataset.id;
+      editInstitution(institutionId);
+    });
+  });
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const institutionId = e.currentTarget.dataset.id;
+      deleteInstitution(institutionId);
+    });
+  });
+}
+
+// Function to show the add institution form
+function showAddInstitutionForm() {
+  document.getElementById("institutionsContent").innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-plus"></i> Add New Institution</h5>
+      </div>
+      <div class="card-body">
+        <form id="addInstitutionForm">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="institutionName" class="form-label">Institution Name *</label>
+              <input type="text" class="form-control" id="institutionName" required>
+            </div>
+            <div class="col-md-6">
+              <label for="institutionType" class="form-label">Institution Type *</label>
+              <select class="form-select" id="institutionType" required>
+                <option value="">Select Type</option>
+                <option value="primary school">Primary School</option>
+                <option value="secondary school">Secondary School</option>
+                <option value="college">College</option>
+                <option value="university">University</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="onboardingGrade" class="form-label">Onboarding Grade</label>
+              <input type="text" class="form-control" id="onboardingGrade">
+            </div>
+            <div class="col-md-6">
+              <label for="province" class="form-label">Province *</label>
+              <select class="form-select" id="province" required>
+                <option value="">Select Province</option>
+                <option value="Eastern Cape">Eastern Cape</option>
+                <option value="Free State">Free State</option>
+                <option value="Gauteng">Gauteng</option>
+                <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                <option value="Limpopo">Limpopo</option>
+                <option value="Mpumalanga">Mpumalanga</option>
+                <option value="Northern Cape">Northern Cape</option>
+                <option value="North West">North West</option>
+                <option value="Western Cape">Western Cape</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="address" class="form-label">Address *</label>
+              <textarea class="form-control" id="address" rows="2" required></textarea>
+            </div>
+            <div class="col-md-6">
+              <label for="email" class="form-label">Email *</label>
+              <input type="email" class="form-control" id="email" required>
+              <label for="contactNumber" class="form-label mt-2">Contact Number</label>
+              <input type="tel" class="form-control" id="contactNumber">
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Save Institution
+            </button>
+            <button type="button" id="cancelAddBtn" class="btn btn-secondary">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  // Form submission
+  document.getElementById("addInstitutionForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await saveInstitution();
+  });
+
+  // Cancel button
+  document.getElementById("cancelAddBtn").addEventListener("click", () => {
+    loadInstitutions();
+  });
+}
+
+// Function to save a new institution
+async function saveInstitution() {
+  const formData = {
+    institutionName: document.getElementById("institutionName").value,
+    institutionType: document.getElementById("institutionType").value,
+    onboardingGrade: document.getElementById("onboardingGrade").value,
+    province: document.getElementById("province").value,
+    address: document.getElementById("address").value,
+    email: document.getElementById("email").value,
+    contactNumber: document.getElementById("contactNumber").value
+  };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/institutions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to save institution');
+    }
+
+    alert('Institution saved successfully!');
+    loadInstitutions();
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+// Function to edit an institution
+async function editInstitution(institutionId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/institutions/${institutionId}`);
+    if (!response.ok) throw new Error('Failed to fetch institution');
+    
+    const institution = await response.json();
+    
+    document.getElementById("institutionsContent").innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-edit"></i> Edit Institution</h5>
+        </div>
+        <div class="card-body">
+          <form id="editInstitutionForm">
+            <input type="hidden" id="editInstitutionId" value="${institution._id}">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editInstitutionName" class="form-label">Institution Name *</label>
+                <input type="text" class="form-control" id="editInstitutionName" value="${institution.institutionName}" required>
+              </div>
+              <div class="col-md-6">
+                <label for="editInstitutionType" class="form-label">Institution Type *</label>
+                <select class="form-select" id="editInstitutionType" required>
+                  <option value="primary school" ${institution.institutionType === 'primary school' ? 'selected' : ''}>Primary School</option>
+                  <option value="secondary school" ${institution.institutionType === 'secondary school' ? 'selected' : ''}>Secondary School</option>
+                  <option value="college" ${institution.institutionType === 'college' ? 'selected' : ''}>College</option>
+                  <option value="university" ${institution.institutionType === 'university' ? 'selected' : ''}>University</option>
+                </select>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editOnboardingGrade" class="form-label">Onboarding Grade</label>
+                <input type="text" class="form-control" id="editOnboardingGrade" value="${institution.onboardingGrade || ''}">
+              </div>
+              <div class="col-md-6">
+                <label for="editProvince" class="form-label">Province *</label>
+                <input type="text" class="form-control" id="editProvince" value="${institution.province}" required>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editAddress" class="form-label">Address *</label>
+                <textarea class="form-control" id="editAddress" rows="2" required>${institution.address}</textarea>
+              </div>
+              <div class="col-md-6">
+                <label for="editEmail" class="form-label">Email *</label>
+                <input type="email" class="form-control" id="editEmail" value="${institution.email}" required>
+                <label for="editContactNumber" class="form-label mt-2">Contact Number</label>
+                <input type="tel" class="form-control" id="editContactNumber" value="${institution.contactNumber || ''}">
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Update Institution
+              </button>
+              <button type="button" id="cancelEditBtn" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    // Form submission
+    document.getElementById("editInstitutionForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await updateInstitution(institutionId);
+    });
+
+    // Cancel button
+    document.getElementById("cancelEditBtn").addEventListener("click", () => {
+      loadInstitutions();
+    });
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+// Function to update an institution
+async function updateInstitution(institutionId) {
+  const formData = {
+    institutionName: document.getElementById("editInstitutionName").value,
+    institutionType: document.getElementById("editInstitutionType").value,
+    onboardingGrade: document.getElementById("editOnboardingGrade").value,
+    province: document.getElementById("editProvince").value,
+    address: document.getElementById("editAddress").value,
+    email: document.getElementById("editEmail").value,
+    contactNumber: document.getElementById("editContactNumber").value
+  };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/institutions/${institutionId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update institution');
+    }
+
+    alert('Institution updated successfully!');
+    loadInstitutions();
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+// Function to delete an institution
+async function deleteInstitution(institutionId) {
+  if (!confirm('Are you sure you want to delete this institution?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/institutions/${institutionId}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete institution');
+    }
+
+    alert('Institution deleted successfully!');
+    loadInstitutions();
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
+// Function to filter institutions
+function filterInstitutions(searchTerm) {
+  const rows = document.querySelectorAll('#institutionsContent tbody tr');
+  
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
   });
 }
 

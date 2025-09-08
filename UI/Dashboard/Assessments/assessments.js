@@ -218,7 +218,6 @@ export async function renderSetAssessment(container) {
                 <th>Due Date</th>
                 <th>Description</th>
                 <th>Document</th>
-
                 <th>Actions</th>
               </tr>
             </thead>
@@ -243,7 +242,6 @@ export async function renderSetAssessment(container) {
         </tr>
     `).join('')}
 </tbody>
-
           </table>
         </div>
       `;
@@ -260,7 +258,6 @@ export async function renderSetAssessment(container) {
       return;
     }
     await renderSubmissions(courseId);
-
     const tableDiv = container.querySelector('#currentAssessments');
      tableDiv.addEventListener('click', (e) => {
     if (e.target.closest('.btn-delete')) {
@@ -300,7 +297,6 @@ async function deleteAssessment(assessmentId) {
     showNotification('Error deleting assessment', 'error');
   }
 }
-
 
 
   async function renderSubmissions(courseId) {
@@ -355,7 +351,7 @@ async function deleteAssessment(assessmentId) {
                           <td>${sub.email}</td>
                           <td>${new Date(sub.submittedAt).toLocaleString()}</td>
                           <td>
-
+<<<<<<< HEAD
                             ${sub.filePath ? `
                               <a href="${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}" 
                                  download="${sub.email}_${item.title.replace(/[^a-z0-9]/gi, '_')}.${sub.filePath.split('.').pop()}" 
@@ -364,7 +360,14 @@ async function deleteAssessment(assessmentId) {
                               </a>
                             ` : 'No file'}
                           </td>
-
+=======
+                ${sub.downloadUrl ? `
+                    <a href="${sub.downloadUrl}" target="_blank" class="btn-view">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                ` : '—'}
+            </td>
+>>>>>>> personal/main
                           <td>
                             <input type="text" 
                                    class="grade-input" 

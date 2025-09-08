@@ -9,6 +9,7 @@ import{ renderCalendarTab } from './Calendar/calendar.js';
 import { renderAssessmentPage } from './AssessmentPage.js';
 import { renderAssistTab } from './Assist/assist.js';
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
+console.log("Current User:", currentUser);
 function getInitials(name) {
   if (!name) return "US";
   const names = name.split(" ");

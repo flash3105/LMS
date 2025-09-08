@@ -11,6 +11,8 @@ router.post(
     body('courseCode').notEmpty().trim().withMessage('Course Code is required'),
     body('authorEmail').isEmail().normalizeEmail().withMessage('Valid Author Email is required'),
     body('courseDescription').notEmpty().trim().withMessage('Course Description is required'),
+    body('grade').isInt({ min: 1, max: 12 }).withMessage('Grade must be an integer between 1 and 12'),
+    body('institution').optional().isString().withMessage('Institution must be a string'),
     body('visibility').isIn(['public', 'private']).withMessage('Visibility must be public or private'),
   ],
   async (req, res) => {
@@ -25,6 +27,8 @@ router.post(
         courseCode: req.body.courseCode, // Use correct field name
         authorEmail: req.body.authorEmail,
         courseDescription: req.body.courseDescription,
+        grade: req.body.grade,
+        institution: req.body.institution || "General",
         visibility: req.body.visibility,
         createdAt: new Date(),
       });
@@ -58,6 +62,49 @@ router.get('/all', async (req, res) => {
     });
   }
 });
+
+
+// Route to get courses by grade and optionally institution
+// Route to get courses by grade and optionally institution
+router.get('/filter', async (req, res) => {
+  try {
+    const { grade, institution } = req.query;
+
+    if (!grade) {
+      return res.status(400).json({ message: 'Grade is required' });
+    }
+
+    // Always filter by grade
+    const gradeFilter = { grade: parseInt(grade, 10) };
+
+    let courses;
+    if (institution) {
+      // Institution specified → include both institution + General
+      courses = await Course.find({
+        ...gradeFilter,
+        $or: [
+          { institution: institution },
+          { institution: "General" }
+        ]
+      });
+    } else {
+      // No institution → return only General
+      courses = await Course.find({
+        ...gradeFilter,
+        institution: "General"
+      });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error('Error filtering courses:', error);
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+});
+
 
 // Route to delete a course by ID
 router.delete('/:id', async (req, res) => {

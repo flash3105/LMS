@@ -6,6 +6,7 @@ const Assessment = require('../models/Assessment');
 const Quiz = require('../models/Quiz');
 const MyCourses = require('../models/MyCourses');
 const Enrollment = require('../models/Enrollment');
+//const gradient = require('pdfkit/js/gradient');
 
 // GET: Return user's enrolled courses
 router.get('/:userId/enrolled-courses', async (req, res) => {
@@ -58,21 +59,34 @@ router.get('/:userId/quizzes', async (req, res) => {
   }
 });
 
-// Route: Get total registered users and their emails
+// Route: Get registered users (with optional filters by grade/institution/role)
 router.get('/registered-users', async (req, res) => {
   try {
-    const users = await User.find({}, 'email'); // Fetch all users and only their email field
+    const { grade, institution, role } = req.query; // filters come from query params
+    const filter = {};
+
+    if (grade) filter.grade = grade;
+    if (institution) filter.institution = institution;
+    if (role) filter.role = role;
+
+    const users = await User.find(filter, 'email grade institution role');
     const totalUsers = users.length;
 
     res.status(200).json({
       totalUsers,
-      emails: users.map(user => user.email)
+      users: users.map(user => ({
+        email: user.email,
+        grade: user.grade,
+        institution: user.institution,
+        role: user.role
+      }))
     });
   } catch (error) {
     console.error('Error fetching registered users:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
 
 //Get user by email
 router.get('/email/:email', async (req, res) => {
@@ -123,7 +137,8 @@ router.get('/email/:email', async (req, res) => {
       surname: user.surname,
       email: user.email,
       role: user.role,
-      level: user.level,
+      institution: user.institution,
+      grade: user.grade,
       enrolledCourses: coursesWithEnrollment,
       createdAt: userCourses.createdAt,
     });

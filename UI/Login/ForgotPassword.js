@@ -158,7 +158,7 @@ async function handleResetPassword(e) {
         }
 
         alert('Password has been reset successfully. You can now login with your new password.');
-        window.location.href = '/UI';
+        window.location.href = '/';
     } catch (error) {
         console.error('Error:', error);
         if (resetError) {

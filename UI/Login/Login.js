@@ -4,7 +4,7 @@ document.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
   
     // Get form values
-    const email = document.querySelector('#username').value.trim();
+    const email = document.querySelector('#username').value.toLowerCase().trim();
     const password = document.querySelector('#password').value;
   
     // Basic validation
@@ -38,6 +38,7 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
+        console.log('user',localStorage.getItem('user'));
         
         // Add delay to see logs before redirect
         // Navigate based on user role
@@ -47,7 +48,7 @@ document.querySelector('form').addEventListener('submit', async (e) => {
           setTimeout(() => {
             window.location.href = 'Dashboard/InternDashboard.html'; 
           }, 1000);
-        } else if (data.user.role === 'Admin') {
+        } else if (data.user.role === 'Admin' || data.user.role === 'Instructor') {
           setTimeout(() => {
             window.location.href = 'Dashboard/AdminDashboard/Admindashboard.html';
           }, 1000);
