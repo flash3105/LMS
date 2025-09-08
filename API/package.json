@@ -18,8 +18,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "install-retry": "yarn install || yarn install || yarn install",
-    "postinstall": "npm rebuild bcrypt --build-from-source"
+    "install-retry": "yarn install || yarn install || yarn install"
+    
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
