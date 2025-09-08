@@ -7,7 +7,8 @@ function renderQuickLinks(currentUser) {
   fetchUserData();
   const links = [
     { id: 'viewReportsLink', text: 'View Reports', icon: 'chart-bar', role: 'user' },
-    { id: 'institutions-link', text: 'Institutions', icon: 'university', role: 'Admin'}  
+    { id: 'institutions-link', text: 'Institutions', icon: 'university', role: 'Admin'},  
+    { id: 'pendingApprovalsLink', text: 'Pending Approvals', icon: 'user-clock', role: 'Admin' }
 
   ];
 
@@ -80,6 +81,337 @@ export async function renderHomeTab(container, currentUser) {
   }
 }
 
+async function renderPendingApprovalsPage(container) {
+  container.innerHTML = `
+    <div class="pending-approvals-page card">
+      <h2 class="card-header"><i class="fas fa-user-clock"></i> Pending User Approvals</h2>
+      <div class="card-body">
+        <button id="backButton" class="btn btn-secondary mb-3">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+        <div class="d-flex justify-content-between mb-3">
+          <div class="input-group" style="width: 300px;">
+            <input type="text" id="pendingSearch" class="form-control" placeholder="Search pending users...">
+            <button class="btn btn-outline-secondary" type="button">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+          <button id="refreshPendingBtn" class="btn btn-outline-primary">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+        </div>
+        <div id="pendingApprovalsContent">
+          <div class="text-center">
+            <i class="fas fa-spinner fa-spin"></i> Loading pending approvals...
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Back button
+  document.getElementById("backButton").addEventListener("click", () => {
+    renderHomeTab(container, { name: "Admin", role: "Admin" });
+  });
+
+  // Refresh button
+  document.getElementById("refreshPendingBtn").addEventListener("click", () => {
+    loadPendingApprovals();
+  });
+
+  // Search functionality
+  document.getElementById("pendingSearch").addEventListener("input", (e) => {
+    filterPendingUsers(e.target.value);
+  });
+
+  // Load pending approvals
+  await loadPendingApprovals();
+}
+
+// Function to load pending approvals
+async function loadPendingApprovals() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/pending-users`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch pending users');
+    }
+    
+    const pendingUsers = await response.json();
+    renderPendingApprovalsTable(pendingUsers);
+  } catch (err) {
+    console.error('Error loading pending approvals:', err);
+    document.getElementById("pendingApprovalsContent").innerHTML = `
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i> Failed to load pending approvals: ${err.message}
+      </div>
+    `;
+  }
+}
+
+// Function to render the pending approvals table
+function renderPendingApprovalsTable(users) {
+  if (!Array.isArray(users) || users.length === 0) {
+    document.getElementById("pendingApprovalsContent").innerHTML = `
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No pending approvals found.
+      </div>
+    `;
+    return;
+  }
+
+  document.getElementById("pendingApprovalsContent").innerHTML = `
+    <div style="max-height: 500px; overflow-y: auto;">
+      <table class="table table-striped table-hover">
+        <thead class="sticky-top bg-light">
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Institution</th>
+            <th>Registration Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${users.map(user => `
+            <tr>
+              <td>${user.name} ${user.surname}</td>
+              <td>${user.email}</td>
+              <td>${user.role}</td>
+              <td>${user.institution?.institutionName || 'N/A'}</td>
+              <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+              <td>
+                <button class="btn btn-sm btn-success approve-btn" data-id="${user._id}">
+                  <i class="fas fa-check"></i> Approve
+                </button>
+                <button class="btn btn-sm btn-danger reject-btn" data-id="${user._id}">
+                  <i class="fas fa-times"></i> Reject
+                </button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // Add event listeners for approve and reject buttons
+  document.querySelectorAll('.approve-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const userId = e.currentTarget.dataset.id;
+      approveUser(userId);
+    });
+  });
+
+  document.querySelectorAll('.reject-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const userId = e.currentTarget.dataset.id;
+      rejectUser(userId);
+    });
+  });
+}
+
+// Function to approve a user
+// Function to approve a user with institution authentication
+async function approveUser(userId) {
+  // Create a modal for institution authentication
+  const modalHtml = `
+    <div class="modal fade" id="institutionAuthModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Institution Authentication Required</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>Please enter your institution credentials to approve this user:</p>
+            <div class="mb-3">
+              <label for="institutionEmail" class="form-label">Institution Email</label>
+              <input type="email" class="form-control" id="institutionEmail" required>
+            </div>
+            <div class="mb-3">
+              <label for="institutionPassword" class="form-label">Institution Password</label>
+              <input type="password" class="form-control" id="institutionPassword" required>
+            </div>
+            <div id="authError" class="alert alert-danger" style="display: none;"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" id="confirmApproveBtn" class="btn btn-primary">Confirm Approval</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add modal to the page if it doesn't exist
+  if (!document.getElementById('institutionAuthModal')) {
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  }
+
+  // Show the modal
+  const modal = new bootstrap.Modal(document.getElementById('institutionAuthModal'));
+  modal.show();
+
+  // Handle the confirm approval button
+  document.getElementById('confirmApproveBtn').onclick = async function() {
+    const email = document.getElementById('institutionEmail').value;
+    const password = document.getElementById('institutionPassword').value;
+    const errorDiv = document.getElementById('authError');
+
+    if (!email || !password) {
+      errorDiv.textContent = 'Please enter both email and password';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    try {
+      // Authenticate institution
+      const authResponse = await fetch(`${API_BASE_URL}/institutions/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!authResponse.ok) {
+        const errorData = await authResponse.json();
+        throw new Error(errorData.error || 'Authentication failed');
+      }
+
+      // If authentication successful, proceed with approval
+      const response = await fetch(`${API_BASE_URL}/auth/approve-user/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'approved' })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to approve user');
+      }
+
+      modal.hide();
+      alert('User approved successfully!');
+      loadPendingApprovals(); // Refresh the list
+
+    } catch (err) {
+      errorDiv.textContent = err.message;
+      errorDiv.style.display = 'block';
+    }
+  };
+
+  // Clear fields and errors when modal is shown
+  document.getElementById('institutionAuthModal').addEventListener('shown.bs.modal', () => {
+    document.getElementById('institutionEmail').value = '';
+    document.getElementById('institutionPassword').value = '';
+    document.getElementById('authError').style.display = 'none';
+  });
+}
+
+// Function to reject a user with institution authentication
+async function rejectUser(userId) {
+  // Create a modal for institution authentication
+  const modalHtml = `
+    <div class="modal fade" id="institutionRejectModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Institution Authentication Required</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>Please enter your institution credentials to reject this user:</p>
+            <div class="mb-3">
+              <label for="rejectInstitutionEmail" class="form-label">Institution Email</label>
+              <input type="email" class="form-control" id="rejectInstitutionEmail" required>
+            </div>
+            <div class="mb-3">
+              <label for="rejectInstitutionPassword" class="form-label">Institution Password</label>
+              <input type="password" class="form-control" id="rejectInstitutionPassword" required>
+            </div>
+            <div id="rejectAuthError" class="alert alert-danger" style="display: none;"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" id="confirmRejectBtn" class="btn btn-danger">Confirm Rejection</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add modal to the page if it doesn't exist
+  if (!document.getElementById('institutionRejectModal')) {
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  }
+
+  // Show the modal
+  const modal = new bootstrap.Modal(document.getElementById('institutionRejectModal'));
+  modal.show();
+
+  // Handle the confirm rejection button
+  document.getElementById('confirmRejectBtn').onclick = async function() {
+    const email = document.getElementById('rejectInstitutionEmail').value;
+    const password = document.getElementById('rejectInstitutionPassword').value;
+    const errorDiv = document.getElementById('rejectAuthError');
+
+    if (!email || !password) {
+      errorDiv.textContent = 'Please enter both email and password';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    try {
+      // Authenticate institution
+      const authResponse = await fetch(`${API_BASE_URL}/institutions/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!authResponse.ok) {
+        const errorData = await authResponse.json();
+        throw new Error(errorData.error || 'Authentication failed');
+      }
+
+      // If authentication successful, proceed with rejection
+      const response = await fetch(`${API_BASE_URL}/auth/reject-user/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'rejected' })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to reject user');
+      }
+
+      modal.hide();
+      alert('User rejected successfully!');
+      loadPendingApprovals(); // Refresh the list
+
+    } catch (err) {
+      errorDiv.textContent = err.message;
+      errorDiv.style.display = 'block';
+    }
+  };
+
+  // Clear fields and errors when modal is shown
+  document.getElementById('institutionRejectModal').addEventListener('shown.bs.modal', () => {
+    document.getElementById('rejectInstitutionEmail').value = '';
+    document.getElementById('rejectInstitutionPassword').value = '';
+    document.getElementById('rejectAuthError').style.display = 'none';
+  });
+}
+
 // Handle interactions on the dashboard
 function setupDashboardInteractions(currentUser) {
   document.querySelectorAll('.link-item').forEach(link => {
@@ -91,6 +423,9 @@ function setupDashboardInteractions(currentUser) {
           break;
         case 'institutions-link':
           renderInstitutionsPage(document.getElementById('contentArea'));
+          break;
+        case 'pendingApprovalsLink': 
+          renderPendingApprovalsPage(document.getElementById('contentArea'));
           break;
       }
     });
@@ -519,6 +854,16 @@ function showAddInstitutionForm() {
               <input type="tel" class="form-control" id="contactNumber">
             </div>
           </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="password" class="form-label">Password *</label>
+              <input type="password" class="form-control" id="password" required>
+            </div>
+            <div class="col-md-6">
+              <label for="confirmPassword" class="form-label">Confirm Password *</label>
+              <input type="password" class="form-control" id="confirmPassword" required>
+            </div>
+          </div>
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
               <i class="fas fa-save"></i> Save Institution
@@ -532,9 +877,23 @@ function showAddInstitutionForm() {
     </div>
   `;
 
-  // Form submission
+  // Form submission with password validation
   document.getElementById("addInstitutionForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+    
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters long!");
+      return;
+    }
+    
     await saveInstitution();
   });
 
@@ -546,6 +905,14 @@ function showAddInstitutionForm() {
 
 // Function to save a new institution
 async function saveInstitution() {
+  const password = document.getElementById("password").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  
+  if (password !== confirmPassword) {
+    alert("Passwords do not match!");
+    return;
+  }
+
   const formData = {
     institutionName: document.getElementById("institutionName").value,
     institutionType: document.getElementById("institutionType").value,
@@ -553,7 +920,8 @@ async function saveInstitution() {
     province: document.getElementById("province").value,
     address: document.getElementById("address").value,
     email: document.getElementById("email").value,
-    contactNumber: document.getElementById("contactNumber").value
+    contactNumber: document.getElementById("contactNumber").value,
+    password: password // Include password
   };
 
   try {
@@ -630,6 +998,16 @@ async function editInstitution(institutionId) {
                 <input type="tel" class="form-control" id="editContactNumber" value="${institution.contactNumber || ''}">
               </div>
             </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editPassword" class="form-label">New Password (leave blank to keep current)</label>
+                <input type="password" class="form-control" id="editPassword">
+              </div>
+              <div class="col-md-6">
+                <label for="editConfirmPassword" class="form-label">Confirm New Password</label>
+                <input type="password" class="form-control" id="editConfirmPassword">
+              </div>
+            </div>
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save"></i> Update Institution
@@ -643,9 +1021,23 @@ async function editInstitution(institutionId) {
       </div>
     `;
 
-    // Form submission
+    // Form submission with password validation
     document.getElementById("editInstitutionForm").addEventListener("submit", async (e) => {
       e.preventDefault();
+      
+      const password = document.getElementById("editPassword").value;
+      const confirmPassword = document.getElementById("editConfirmPassword").value;
+      
+      if (password && password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+      
+      if (password && password.length < 6) {
+        alert("Password must be at least 6 characters long!");
+        return;
+      }
+      
       await updateInstitution(institutionId);
     });
 
@@ -660,6 +1052,8 @@ async function editInstitution(institutionId) {
 
 // Function to update an institution
 async function updateInstitution(institutionId) {
+  const password = document.getElementById("editPassword").value;
+  
   const formData = {
     institutionName: document.getElementById("editInstitutionName").value,
     institutionType: document.getElementById("editInstitutionType").value,
@@ -669,6 +1063,11 @@ async function updateInstitution(institutionId) {
     email: document.getElementById("editEmail").value,
     contactNumber: document.getElementById("editContactNumber").value
   };
+
+  // Only include password if provided
+  if (password) {
+    formData.password = password;
+  }
 
   try {
     const response = await fetch(`${API_BASE_URL}/institutions/${institutionId}`, {
@@ -775,6 +1174,8 @@ async function renderUserAnalytics(container, email) {
 
 
   document.getElementById("backToReports").addEventListener("click", () => renderReportsPage(container));
+
+
 
   //Fetch per-course details in parallel (6 requests per course) ---
   const coursesWithQuizzes = await Promise.all(

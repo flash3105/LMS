@@ -1,4 +1,4 @@
-const API_BASE_URL = window.API_BASE_URL ;
+const API_BASE_URL = window.API_BASE_URL;
 
 document.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -41,9 +41,6 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         console.log('user',localStorage.getItem('user'));
         
         // Add delay to see logs before redirect
-        // Navigate based on user role
-        //change it back to /Dashboard/InternDashboard
-        // change it back to /Dashboard/AdminDashboard/Admindashboard.html
         if (data.user.role === 'Student' || data.user.role === 'Intern') {
           setTimeout(() => {
             window.location.href = 'Dashboard/InternDashboard.html'; 
@@ -57,7 +54,12 @@ document.querySelector('form').addEventListener('submit', async (e) => {
         }
       } else {
         console.error('Login error:', data.error);
-        alert(data.error || 'Login failed. Please try again.');
+        // Check if this is a pending approval error
+        if (data.error && data.error.includes('pending approval')) {
+          alert('Your account is pending approval. Please wait for administrator approval before logging in.');
+        } else {
+          alert(data.error || 'Login failed. Please try again.');
+        }
       }
     } catch (err) {
       console.error('Network error:', err);
