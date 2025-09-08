@@ -1,0 +1,52 @@
+name: LMS CI/CD
+
+on:
+  push:
+    branches:
+      - Staging            # Auto deploy Staging
+  workflow_dispatch:       # Manual deploy for any branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # 3️⃣ API - Install & Test
+      - name: Install API Dependencies
+        run: npm install --prefix API
+
+      - name: Test API
+        run: npm test --prefix API -- --watchAll=false
+        continue-on-error: true
+
+      # 4️⃣ UI - (Plain JS/HTML/CSS, no build required)
+      - name: Test UI (optional)
+        run: echo "No build needed for plain JS UI"
+
+      # 5️⃣ Deploy API to Render
+      - name: Deploy API to Render
+        if: github.ref == 'refs/heads/Staging' || github.event_name == 'workflow_dispatch'
+        env:
+          RENDER_DEPLOY_HOOK_API: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+        run: |
+          echo "Triggering API deploy via Render Deploy Hook..."
+          curl -X POST "$RENDER_DEPLOY_HOOK_API"
+
+      # 6️⃣ Deploy UI to Render
+      - name: Deploy UI to Render
+        if: github.ref == 'refs/heads/Staging' || github.event_name == 'workflow_dispatch'
+        env:
+          RENDER_DEPLOY_HOOK_UI: ${{ secrets.RENDER_DEPLOY_HOOK_UI }}
+        run: |
+          echo "Triggering UI deploy via Render Deploy Hook..."
+          curl -X POST "$RENDER_DEPLOY_HOOK_UI"
