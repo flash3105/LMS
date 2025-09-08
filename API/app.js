@@ -11,6 +11,8 @@ app.use(cors({
         'http://localhost:8080',
         'https://lms-p1dw.onrender.com',
         'https://lms-staging-l68d.onrender.com'
+        'https://inurture.co.za'
+
     ],
     credentials: true,
 }));
