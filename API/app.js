@@ -10,7 +10,7 @@ app.use(cors({
         'http://127.0.0.1:8080',
         'http://localhost:8080',
         'https://lms-p1dw.onrender.com',
-        'https://lms-staging-l68d.onrender.com'
+        'https://lms-staging-l68d.onrender.com',
         'https://inurture.co.za'
 
     ],
