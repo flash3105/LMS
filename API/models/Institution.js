@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt'); 
 
 const InstitutionSchema = new mongoose.Schema({
     institutionName: { type: String, required: true },
@@ -11,6 +12,7 @@ const InstitutionSchema = new mongoose.Schema({
     address: { type: String, required: true },
     email: { type: String, required: true },
     contactNumber: { type: String},
-})
+    password: { type: String, required: true } 
+});
 
 module.exports = mongoose.model('Institution', InstitutionSchema);
