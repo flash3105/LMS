@@ -31,14 +31,14 @@ jobs:
 
       # 4️⃣ UI - Install, Test, Build
       - name: Install UI Dependencies
-        run: npm install --prefix UI
+        run: npm install 
 
       - name: Test UI
-        run: npm test --prefix UI -- --watchAll=false
+        run: npm test -- --watchAll=false
         continue-on-error: true
 
       - name: Build UI
-        run: npm run build --prefix UI
+        run: npm run build 
 
       # 5️⃣ Deploy API to Render
       - name: Deploy API to Render
