@@ -6,7 +6,7 @@ const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 export async function renderLearningTab(contentArea) {
   contentArea.innerHTML = `
-    <style>
+     <style>
       .learning-container {
         padding: 2rem;
         max-width: 1200px;
@@ -158,15 +158,34 @@ export async function renderLearningTab(contentArea) {
         grid-column: 1 / -1;
       }
       
-      @media (max-width: 768px) {
-        .card-container {
-          grid-template-columns: 1fr;
-        }
-        
-        .course-actions {
-          flex-direction: column;
-        }
-      }
+     @media (max-width: 768px) {
+  .card-container {
+    grid-template-columns: 1fr;
+  }
+
+  .course-actions {
+    flex-direction: column;
+  }
+
+  .course-actions button {
+    width: 100%;
+  }
+
+  .course-card h5 {
+    font-size: 1.2rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .course-card-content {
+    padding: 1rem;
+  }
+
+  .course-description:after {
+    width: 50%;
+  }
+}
     </style>
     
     <div class="learning-container">
