@@ -149,11 +149,16 @@ function setupResponsiveFeatures() {
   
   // Toggle sidebar on hamburger menu click
   if (toggleSidebar) {
-    toggleSidebar.addEventListener('click', function(e) {
+  // For desktop & mobile
+  ["click", "touchstart"].forEach(evt => {
+    toggleSidebar.addEventListener(evt, function(e) {
+      e.preventDefault();
       e.stopPropagation();
       toggleSidebarFunc();
     });
-  }
+  });
+}
+
   
   // Close sidebar when clicking on overlay
   overlay.addEventListener('click', function() {
