@@ -8,13 +8,16 @@ import { renderMessagesTab } from './Messages/messages.js';
 import{ renderCalendarTab } from './Calendar/calendar.js';
 import { renderAssessmentPage } from './AssessmentPage.js';
 import { renderAssistTab } from './Assist/assist.js';
+
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
-console.log("Current User:", currentUser);
+//console.log("Current User:", currentUser);
+
 function getInitials(name) {
   if (!name) return "US";
   const names = name.split(" ");
   return (names[0][0] + (names[1] ? names[1][0] : "")).toUpperCase();
 }
+
 let currentTab = "home";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -29,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderContent("home");
   setupSidebarNavigation();
+  setupResponsiveFeatures(); // Added responsive functionality
 
   const searchInput = document.getElementById("searchInput");
   if (searchInput) searchInput.addEventListener("keyup", searchGlobal);
@@ -63,6 +67,11 @@ function renderContent(tab) {
       break;
     default:
       console.error(`Unknown tab: ${tab}`);
+  }
+  
+  // Close sidebar on mobile after navigation
+  if (window.innerWidth <= 768) {
+    closeSidebar();
   }
 }
 
@@ -112,4 +121,62 @@ function searchGlobal() {
   } else {
     alert(`Searching for: ${query}`);
   }
+}
+
+// Responsive sidebar functionality
+function setupResponsiveFeatures() {
+  const toggleSidebar = document.getElementById('toggleSidebar');
+  const sidebar = document.querySelector('.sidebar');
+  
+  // Create overlay for mobile
+  const overlay = document.createElement('div');
+  overlay.className = 'sidebar-overlay';
+  document.body.appendChild(overlay);
+  
+  // Function to toggle sidebar
+  function toggleSidebarFunc() {
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
+    document.body.classList.toggle('sidebar-open');
+  }
+  
+  // Function to close sidebar
+  function closeSidebar() {
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.classList.remove('sidebar-open');
+  }
+  
+  // Toggle sidebar on hamburger menu click
+  if (toggleSidebar) {
+    toggleSidebar.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleSidebarFunc();
+    });
+  }
+  
+  // Close sidebar when clicking on overlay
+  overlay.addEventListener('click', function() {
+    closeSidebar();
+  });
+  
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', function(e) {
+    if (window.innerWidth <= 768 && 
+        sidebar.classList.contains('active') && 
+        !sidebar.contains(e.target) && 
+        e.target !== toggleSidebar) {
+      closeSidebar();
+    }
+  });
+  
+  // Handle window resize
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 768) {
+      closeSidebar();
+    }
+  });
+  
+  // Expose closeSidebar function for use in renderContent
+  window.closeSidebar = closeSidebar;
 }
