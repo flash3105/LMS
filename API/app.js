@@ -43,7 +43,7 @@ app.get('/', (req, res) => {
 });
 
 
-//app.use("/api/assist", require("./routes/assist"));
+app.use("/api/assist", require("./routes/assist"));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/courses', require('./routes/courses'));
 app.use('/api/mycourses', require('./routes/MyCourses'));
