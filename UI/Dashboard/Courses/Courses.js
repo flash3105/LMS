@@ -85,7 +85,7 @@ export async function renderCourseDetails(contentArea, course) {
     // Render the course details page with tabs for resources, assessments, and submissions
     contentArea.innerHTML = `
 
-           <style>
+        <style>
         .course-details-container {
           padding: 2rem;
           max-width: 1200px;
@@ -353,7 +353,22 @@ export async function renderCourseDetails(contentArea, course) {
           padding: 2rem;
           color: #718096;
         }
-        
+      .youtube-container {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      height: 0;
+      overflow: hidden;
+    }
+    .youtube-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+}
+
       @media (max-width: 768px) {
   .course-details-container {
     padding: 0.2rem;
@@ -389,7 +404,6 @@ export async function renderCourseDetails(contentArea, course) {
 }
 
 </style>
-
 
     
 
@@ -1018,17 +1032,20 @@ function renderResources(resources) {
                   const match = url.match(
                     /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_\-]{11})/
                   );
-                  if (match && match[1]) {
-                    youTubeEmbed = `<iframe 
-                      width="100%" 
-                      height="200" 
-                      src="https://www.youtube.com/embed/${match[1]}" 
-                      frameborder="0" 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                      allowfullscreen 
-                      style="border-radius:8px;">
-                    </iframe>`;
-                  }
+                          if (match && match[1]) {
+                                youTubeEmbed = `
+                                  <div class="youtube-container">
+                                    <iframe 
+                                      src="https://www.youtube.com/embed/${match[1]}" 
+                                      frameborder="0" 
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                      allowfullscreen
+                                      style="border-radius:8px;">
+                                    </iframe>
+                                  </div>
+                                `;
+                       }
+
                 }
 
                 return `
@@ -1069,7 +1086,7 @@ function renderResources(resources) {
                       </div>` : ''}
 
                     ${isVideoFile ? `
-                      <video width="100%" height="200" controls style="margin-top:10px; border-radius:8px;">
+                      <video width="100%"  controls style="margin-top:10px; border-radius:8px;">
                         <source src="${fileUrl}" type="video/${ext}">
                         Your browser does not support the video tag.
                       </video>
