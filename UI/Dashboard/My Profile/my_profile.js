@@ -27,181 +27,169 @@ export async function renderProfileTab(contentArea, currentUser) {
     enrolledCourses: [],
     completedCourses: [],
   };
-// Certificates come from profile fetch earlier
-currentUser.certificates = certificates;
+  
+  // Certificates come from profile fetch earlier
+  currentUser.certificates = certificates;
 
-// Generate milestones list dynamically
-const milestones = currentUser.milestones && currentUser.milestones.length > 0 
-    ? currentUser.milestones.map(m => 
-        `<li class="milestone-item">
-          <i class="fas fa-check-circle"></i>
-          <div>
-            <strong>${m.title}</strong>
-            <div>${m.description}</div>
-            <small>${m.achievedOn ? new Date(m.achievedOn).toLocaleDateString() : ''}</small>
-          </div>
-        </li>`
-      ).join('')
-    : '<li class="milestone-item"><i class="fas fa-info-circle"></i><span>No milestones achieved yet</span></li>';
-
-  const achievements = ["The system will render your achievements when you achieve them"];
+  // Generate milestones list dynamically
+  const milestones = currentUser.milestones && currentUser.milestones.length > 0 
+      ? currentUser.milestones.map(m => 
+          `<li class="milestone-item">
+            <i class="fas fa-check-circle"></i>
+            <div>
+              <strong>${m.title}</strong>
+              <div>${m.description}</div>
+              <small>${m.achievedOn ? new Date(m.achievedOn).toLocaleDateString() : ''}</small>
+            </div>
+          </li>`
+        ).join('')
+      : '<li class="milestone-item"><i class="fas fa-info-circle"></i><span>No milestones achieved yet</span></li>';
 
   contentArea.innerHTML = `
 
   <style>
-      .profile-container {
-        padding: 2rem;
-        max-width: 1200px;
-        margin: 0 auto;
-       background: linear-gradient(135deg,rgb(125, 152, 173) 0%, #3182ce 100%);
-      }
-      
-      .welcome {
-        margin-bottom: 2.5rem;
-        text-align: center;
-      }
-      
-      .welcome h2 {
-        color:rgb(26, 115, 150);
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-        font-weight: 700;
-      }
-      
-      .welcome p {
-        color:rgb(39, 106, 177);
-        font-size: 1.1rem;
-      }
-      
-      .profile-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto;
-        gap: 1.5rem;
-        grid-template-areas:
-          "account milestones"
-          "achievements goals";
-      }
-
-      .profile-card:nth-child(1) { grid-area: account; }
-      .profile-card:nth-child(2) { grid-area: milestones; }
-      .profile-card:nth-child(3) { grid-area: achievements; }
-      .profile-card:nth-child(4) { grid-area: goals; }
-      
-      .profile-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        overflow: hidden;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-      
-      .profile-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-      }
-      
-      .card-header {
-        background: linear-gradient(135deg,rgb(125, 152, 173) 0%, #3182ce 100%);
-        color: white;
-        padding: 1.25rem 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      
-      .card-header h3 {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color:white;
-      }
-      
-      .edit-btn, .add-goal-btn {
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        padding: 0.4rem 0.8rem;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: background 0.2s;
-      }
-      
-      .edit-btn:hover, .add-goal-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
-      }
-      
-      .card-body {
-        padding: 1.5rem;
-      }
-      
-      .detail-item {
-        display: flex;
-        margin-bottom: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #edf2f7;
-      }
-      
-      .detail-item:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-      }
-      
-      .detail-label {
-        font-weight: 600;
-        color: #4a5568;
-        min-width: 100px;
-      }
-      
-      .detail-value {
-        color: #2d3748;
-        flex: 1;
-      }
-      
-      .bio .detail-value {
-        line-height: 1.6;
-      }
-      
-      .bio-input {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        min-height: 100px;
-        font-family: inherit;
-      }
-      
-      .milestones-list, .achievements-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-      
-      .milestone-item, .achievement-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #edf2f7;
-      }
-      
-      .milestone-item:last-child, .achievement-item:last-child {
-        border-bottom: none;
-      }
-      
-      .milestone-item {
+    /* Apply background to the entire content area */
+    #${contentArea.id} {
+      background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .profile-container {
+      padding: 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .welcome {
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    
+    .welcome h2 {
+      color: rgb(26, 115, 150);
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    
+    .welcome p {
+      color: rgb(39, 106, 177);
+      font-size: 1rem;
+    }
+    
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    .profile-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .profile-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+      background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .card-header h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .edit-btn, .add-goal-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.2s;
+    }
+    
+    .edit-btn:hover, .add-goal-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .card-body {
+      padding: 1rem;
+    }
+    
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #edf2f7;
+    }
+    
+    .detail-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    .detail-label {
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 0.25rem;
+    }
+    
+    .detail-value {
+      color: #2d3748;
+    }
+    
+    .bio .detail-value {
+      line-height: 1.6;
+    }
+    
+    .bio-input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      min-height: 100px;
+      font-family: inherit;
+    }
+    
+    .milestones-list, .achievements-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .milestone-item, .achievement-item {
       display: flex;
       align-items: flex-start;
       gap: 0.75rem;
       padding: 0.75rem 0;
       border-bottom: 1px solid #edf2f7;
     }
-
+    
+    .milestone-item:last-child, .achievement-item:last-child {
+      border-bottom: none;
+    }
+    
     .milestone-item > div {
       flex: 1;
     }
@@ -221,136 +209,184 @@ const milestones = currentUser.milestones && currentUser.milestones.length > 0
       color: #718096;
       font-size: 0.8rem;
     }
-      
-      .achievement-item i {
-        color: rgb(21, 81, 133);
-        font-size: 1.1rem;
-      }
-      
-      .goal-form {
-        padding: 1rem;
-        background: #f7fafc;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-      }
-      
-      .goal-input {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        margin-bottom: 0.75rem;
-        font-family: inherit;
-      }
-      
-      .submit-goal-btn {
-        background:rgb(54, 126, 186);
-        color: white;
-        border: none;
-        padding: 0.5rem 1.25rem;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 500;
-        transition: background 0.2s;
-      }
-      
-      .submit-goal-btn:hover {
-        background: #38a169;
-      }
-      
-      .goals-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-      }
-      
-      .goal-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem;
-        background: #f7fafc;
-        border-radius: 8px;
-        transition: all 0.2s;
-      }
-      
-      .goal-content {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        flex: 1;
-      }
-      
-      .goal-checkbox {
-        width: 1.1rem;
-        height: 1.1rem;
-        cursor: pointer;
-      }
-      
-      .goal-text {
-        color: #2d3748;
-      }
-      
-      .delete-goal {
-        background: none;
-        border: none;
-        color: #e53e3e;
-        cursor: pointer;
-        padding: 0.5rem;
-      }
-      
-      .loading-goals, .no-goals, .error-message {
-        text-align: center;
-        color: #718096;
-        padding: 1rem;
-      }
-      
-      @media (max-width: 768px) {
-        .profile-grid {
-          grid-template-columns: 1fr;
-        }
-        
-        .detail-item {
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-        
-        .detail-label {
-          min-width: auto;
-        }
-          
-      }
-      
+    
+    .achievement-item i {
+      color: rgb(21, 81, 133);
+      font-size: 1.1rem;
+    }
+    
+    .goal-form {
+      padding: 1rem;
+      background: #f7fafc;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    
+    .goal-input, .goal-desc-input, .goal-date-input, .goal-priority-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+      font-family: inherit;
+    }
+    
+    .goal-desc-input {
+      min-height: 80px;
+    }
+    
+    .submit-goal-btn {
+      background: rgb(54, 126, 186);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s;
+      width: 100%;
+    }
+    
+    .submit-goal-btn:hover {
+      background: #38a169;
+    }
+    
+    .goals-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .goal-item {
+      display: flex;
+      flex-direction: column;
+      padding: 0.75rem;
+      background: #f7fafc;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    
+    .goal-header-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    
+    .goal-title {
+      margin: 0;
+      font-size: 1rem;
+      color: #2d3748;
+    }
+    
+    .goal-priority {
+      font-size: 0.8rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background: #e2e8f0;
+    }
+    
+    .goal-priority.high {
+      background: #fed7d7;
+      color: #c53030;
+    }
+    
+    .goal-priority.medium {
+      background: #feebcb;
+      color: #b7791f;
+    }
+    
+    .goal-priority.low {
+      background: #c6f6d5;
+      color: #2f855a;
+    }
+    
+    .goal-description {
+      margin: 0 0 0.5rem 0;
+      color: #4a5568;
+    }
+    
+    .goal-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #718096;
+    }
+    
+    .goal-date {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .goal-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .delete-goal {
+      background: none;
+      border: none;
+      color: #e53e3e;
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+    
+    .loading-goals, .no-goals, .error-message {
+      text-align: center;
+      color: #718096;
+      padding: 1rem;
+    }
+    
     .certificates-list {
       display: flex;
       flex-direction: column;
       gap: 1rem;
     }
+    
     .certificate-item {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       padding: 1rem;
       background: #f8f9fa;
       border-radius: 8px;
       border-left: 4px solid #d4af37;
     }
+    
+    .certificate-item-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    
     .certificate-item i {
       font-size: 1.5rem;
       margin-right: 1rem;
       color: #d4af37;
     }
+    
     .certificate-info {
       flex: 1;
     }
+    
     .certificate-info h4 {
       margin: 0 0 0.25rem 0;
       color: #2d3748;
+      font-size: 1rem;
     }
+    
     .certificate-info p {
       margin: 0;
       color: #718096;
       font-size: 0.9rem;
     }
+    
+    .certificate-actions {
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+    
     .view-certificate-btn {
       background: #1a5276;
       color: white;
@@ -359,18 +395,77 @@ const milestones = currentUser.milestones && currentUser.milestones.length > 0
       border-radius: 4px;
       cursor: pointer;
       font-size: 0.9rem;
+      width: 100%;
     }
+    
     .view-certificate-btn:hover {
       background: #154360;
     }
+    
     .no-certificates {
       text-align: center;
       color: #718096;
       font-style: italic;
+      padding: 1rem;
     }
-      
-    </style>
     
+   @media (max-width: 768px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "account"
+      "milestones"
+      "achievements"
+      "goals";
+  }
+
+  .detail-item {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .detail-label {
+    min-width: auto;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .edit-btn, .add-goal-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .goal-form {
+    padding: 0.75rem;
+  }
+
+  .goal-input {
+    font-size: 0.95rem;
+  }
+
+  .submit-goal-btn {
+    width: 100%;
+    font-size: 0.95rem;
+    padding: 0.5rem;
+  }
+
+  .certificate-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .view-certificate-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+  </style>
+  
+  <div class="profile-container">
     <div class="welcome">
       <h2 class="fw-bold">My Profile</h2>
       <p class="text-muted">Manage your account and track your progress.</p>
@@ -381,7 +476,7 @@ const milestones = currentUser.milestones && currentUser.milestones.length > 0
       <div class="profile-card">
         <div class="card-header">
           <h3>Account Details</h3>
-          <button class="edit-btn"><i class="fas fa-plus"></i> Edit</button>
+          <button class="edit-btn"><i class="fas fa-edit"></i> Edit</button>
         </div>
         <div class="card-body">
           <div class="detail-item"><span class="detail-label">Name:</span><span class="detail-value">${currentUser.name}</span></div>
@@ -403,30 +498,34 @@ const milestones = currentUser.milestones && currentUser.milestones.length > 0
       </div>
 
       <!-- Card 3: Achievements & Certificates -->
-    <div class="profile-card">
-      <div class="card-header"><h3>Achievements & Certificates</h3></div>
-      <div class="card-body">
-        ${certificates.length > 0 ? `
-          <div class="certificates-list">
-            ${certificates.map(cert => `
-              <div class="certificate-item">
-                <i class="fas fa-certificate"></i>
-                <div class="certificate-info">
-                  <h4>${cert.courseName}</h4>
-                  <p>Completed on: ${new Date(cert.completionDate).toLocaleDateString()}</p>
-                  <p>Grade: ${cert.grade}</p>
+      <div class="profile-card">
+        <div class="card-header"><h3>Achievements & Certificates</h3></div>
+        <div class="card-body">
+          ${certificates.length > 0 ? `
+            <div class="certificates-list">
+              ${certificates.map(cert => `
+                <div class="certificate-item">
+                  <div class="certificate-item-header">
+                    <i class="fas fa-certificate"></i>
+                    <div class="certificate-info">
+                      <h4>${cert.courseName}</h4>
+                      <p>Completed on: ${new Date(cert.completionDate).toLocaleDateString()}</p>
+                      <p>Grade: ${cert.grade}</p>
+                    </div>
+                  </div>
+                  <div class="certificate-actions">
+                    <button class="view-certificate-btn" data-certificate-url="${cert.certificateUrl}">
+                      View Certificate
+                    </button>
+                  </div>
                 </div>
-                <button class="view-certificate-btn" data-certificate-url="${cert.certificateUrl}">
-                  View Certificate
-                </button>
-              </div>
-            `).join('')}
-          </div>
-        ` : `
-          <p class="no-certificates">No certificates yet. Complete a course to earn certificates!</p>
-        `}
+              `).join('')}
+            </div>
+          ` : `
+            <p class="no-certificates">No certificates yet. Complete a course to earn certificates!</p>
+          `}
+        </div>
       </div>
-    </div>
 
       <!-- Card 4: Goals -->
       <div class="profile-card">
@@ -434,7 +533,7 @@ const milestones = currentUser.milestones && currentUser.milestones.length > 0
           <h3>Goals</h3>
           <button class="add-goal-btn"><i class="fas fa-plus"></i> Add Goal</button>
         </div>
-       <div class="goal-form" style="display:none;">
+        <div class="goal-form" style="display:none;">
           <input type="text" class="goal-input" placeholder="Goal Title" />
           <textarea class="goal-desc-input" placeholder="Goal Description"></textarea>
           <input type="date" class="goal-date-input" placeholder="Target Date" 
@@ -451,15 +550,17 @@ const milestones = currentUser.milestones && currentUser.milestones.length > 0
         </div>
       </div>
     </div>
+  </div>
   `;
 
-   // Event listeners for certificate buttons
+  // Event listeners for certificate buttons
   contentArea.querySelectorAll('.view-certificate-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const certificateUrl = e.target.dataset.certificateUrl;
-     window.open(`http://localhost:5000${certificateUrl}`, '_blank');
+      window.open(`http://localhost:5000${certificateUrl}`, '_blank');
     });
   });
+  
   // Bio edit button
   const editBtn = contentArea.querySelector('.edit-btn');
   if (editBtn) {
