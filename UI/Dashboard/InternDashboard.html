@@ -20,20 +20,48 @@
   <div class="main">
     <!-- Top Navbar -->
     <div class="topbar">
-      <div class="d-flex align-items-center gap-3">
-        <i class="fas fa-bars fs-4 text-secondary hamburger-menu" id="toggleSidebar"></i>
-        <div class="search-bar d-flex align-items-center">
-          <input type="text" id="searchInput" class="form-control" placeholder="Search..."/>
-          <button class="btn btn-primary" onclick="window.searchGlobal()">
-            <i class="fas fa-search"></i>
-          </button>
-        </div>
-      </div>
-      <div class="d-flex align-items-center gap-3">
-        <span class="fw-semibold text-dark" id="userName"></span>
-         <div id="userInitials" class="initials-avatar"></div>
-      </div>
-    </div>
+  <div class="d-flex align-items-center gap-3">
+    <i class="fas fa-bars fs-4 text-secondary hamburger-menu" id="toggleSidebar"></i>
+    
+    <!-- Motivational Quote replaces search bar -->
+    <div id="quoteBox" class="fst-italic text-secondary fw-semibold"></div>
+  </div>
+
+  <div class="d-flex align-items-center gap-3">
+    <span class="fw-semibold text-dark" id="userName"></span>
+    <div id="userInitials" class="initials-avatar"></div>
+  </div>
+</div>
+
+<script>
+ const quotes = [
+    "Learning never exhausts the mind.",
+    "Consistency beats intensity.",
+    "Every day is a chance to grow.",
+    "Small steps lead to big results.",
+    "Discipline is the bridge between goals and accomplishment.",
+    "Knowledge is power — but applied knowledge is freedom.",
+    "Success is the sum of small efforts, repeated day in and day out.",
+    "Don't let what you cannot do interfere with what you can do.",
+    "A little progress each day adds up to big results.",
+    "Your future is created by what you do today, not tomorrow.",
+    "Dream big. Start small. Act now.",
+    "Education is the passport to the future.",
+    "Stay hungry, stay foolish.",
+    "The expert in anything was once a beginner.",
+    "Push yourself, because no one else is going to do it for you."
+  ];
+
+  function showRandomQuote() {
+    const randomIndex = Math.floor(Math.random() * quotes.length);
+    document.getElementById("quoteBox").textContent = quotes[randomIndex];
+  }
+
+  // Show a quote immediately, then refresh every 30s
+  showRandomQuote();
+  setInterval(showRandomQuote, 30000);
+</script>
+
 
     <!-- Dynamic Content Area -->
     <div class="content-area" id="contentArea">
