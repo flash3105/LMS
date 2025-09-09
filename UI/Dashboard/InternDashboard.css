@@ -1365,15 +1365,36 @@ body {
   z-index: 999;
 }
 
+.hamburger-menu {
+  cursor: pointer;
+  z-index: 1001; /* Higher than overlay */
+  position: relative;
+}
+
+/* Mobile behavior */
 @media (max-width: 768px) {
   .sidebar-overlay.active {
     display: block;
   }
-}
 
-/* Animation for sidebar */
-.sidebar {
-  transition: transform 0.3s ease-in-out;
+  /* Sidebar starts hidden off-screen */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 260px;
+    background-color: #fff;
+    transform: translateX(-100%);
+    z-index: 1000; /* Below hamburger, above overlay */
+    transition: transform 0.3s ease-in-out;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+  }
+
+  /* When active, slide it in */
+  .sidebar.active {
+    transform: translateX(0);
+  }
 }
 
 /* Prevent body scrolling when sidebar is open on mobile */
