@@ -10,7 +10,7 @@ import { renderAssessmentPage } from './AssessmentPage.js';
 import { renderAssistTab } from './Assist/assist.js';
 
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
-//console.log("Current User:", currentUser);
+console.log("Current User:", currentUser);
 
 function getInitials(name) {
   if (!name) return "US";
@@ -122,66 +122,74 @@ function searchGlobal() {
     alert(`Searching for: ${query}`);
   }
 }
-
 // Responsive sidebar functionality
 function setupResponsiveFeatures() {
   const toggleSidebar = document.getElementById('toggleSidebar');
   const sidebar = document.querySelector('.sidebar');
-  
+
   // Create overlay for mobile
   const overlay = document.createElement('div');
   overlay.className = 'sidebar-overlay';
   document.body.appendChild(overlay);
-  
+
   // Function to toggle sidebar
   function toggleSidebarFunc() {
+
     sidebar.classList.toggle('active');
     overlay.classList.toggle('active');
     document.body.classList.toggle('sidebar-open');
+    
   }
-  
+
   // Function to close sidebar
   function closeSidebar() {
+    
     sidebar.classList.remove('active');
     overlay.classList.remove('active');
     document.body.classList.remove('sidebar-open');
   }
-  
-  // Toggle sidebar on hamburger menu click
-  if (toggleSidebar) {
-  // For desktop & mobile
-  ["click", "touchstart"].forEach(evt => {
-    toggleSidebar.addEventListener(evt, function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleSidebarFunc();
-    });
-  });
-}
 
-  
+  // Toggle sidebar on hamburger menu click or touch
+  if (toggleSidebar) {
+    ["click", "touchstart"].forEach(evt => {
+      toggleSidebar.addEventListener(evt, function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        toggleSidebarFunc();
+      });
+    });
+  }
+
   // Close sidebar when clicking on overlay
   overlay.addEventListener('click', function() {
+ 
     closeSidebar();
   });
-  
+
   // Close sidebar when clicking outside on mobile
   document.addEventListener('click', function(e) {
-    if (window.innerWidth <= 768 && 
-        sidebar.classList.contains('active') && 
-        !sidebar.contains(e.target) && 
+    if (window.innerWidth <= 768 &&
+        sidebar.classList.contains('active') &&
+        !sidebar.contains(e.target) &&
         e.target !== toggleSidebar) {
+      
       closeSidebar();
     }
   });
-  
+
   // Handle window resize
   window.addEventListener('resize', function() {
     if (window.innerWidth > 768) {
       closeSidebar();
     }
   });
-  
+
   // Expose closeSidebar function for use in renderContent
   window.closeSidebar = closeSidebar;
 }
+
+// Make sure to run after DOM is loaded
+document.addEventListener("DOMContentLoaded", () => {
+  setupResponsiveFeatures();
+});
