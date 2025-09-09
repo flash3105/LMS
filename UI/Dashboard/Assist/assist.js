@@ -220,6 +220,7 @@ export function renderAssistTab(contentArea) {
       <div class="welcome">
         <h2>Need Help?</h2>
         <p>We're here to support your learning journey</p>
+          <p>Sumbit a request or email us at "thenetworkco3@gmail.com"</p>
       </div>
       
       <div class="assist-section">
