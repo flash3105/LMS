@@ -5,12 +5,12 @@ import { renderLearningTab } from './Learning/learning.js';
 import { renderCourseDetails } from './Courses/Courses.js';
 import { renderAssessmentsTab } from './Components/Assessment.js';
 import { renderMessagesTab } from './Messages/messages.js';
-import{ renderCalendarTab } from './Calendar/calendar.js';
+import { renderCalendarTab } from './Calendar/calendar.js';
 import { renderAssessmentPage } from './AssessmentPage.js';
 import { renderAssistTab } from './Assist/assist.js';
 
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
-console.log("Current User:", currentUser);
+let currentTab = "home";
 
 function getInitials(name) {
   if (!name) return "US";
@@ -18,26 +18,22 @@ function getInitials(name) {
   return (names[0][0] + (names[1] ? names[1][0] : "")).toUpperCase();
 }
 
-let currentTab = "home";
-
-document.addEventListener("DOMContentLoaded", () => {
+// -------------------- Render Sidebar --------------------
+function initializeSidebar() {
   const sidebarContainer = document.getElementById("sidebarContainer");
-  if (sidebarContainer) sidebarContainer.innerHTML = renderSidebar();
+  if (!sidebarContainer) return;
 
-  const userNameEl = document.getElementById("userName");
-  const initialsEl = document.getElementById("userInitials"); // Added this
-  
-  if (userNameEl) userNameEl.textContent = currentUser.name;
-  if (initialsEl) initialsEl.textContent = getInitials(currentUser.name); 
+  // Inject sidebar HTML
+  sidebarContainer.innerHTML = renderSidebar();
 
-  renderContent("home");
+  // Setup navigation (delegation)
   setupSidebarNavigation();
-  setupResponsiveFeatures(); // Added responsive functionality
 
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) searchInput.addEventListener("keyup", searchGlobal);
-});
+  // Setup responsive features (hamburger, overlay)
+  setupResponsiveFeatures();
+}
 
+// -------------------- Render Content --------------------
 function renderContent(tab) {
   currentTab = tab;
   const contentArea = document.getElementById("contentArea");
@@ -51,7 +47,7 @@ function renderContent(tab) {
       renderProfileTab(contentArea, currentUser);
       break;
     case "learning":
-      renderLearningTab(contentArea,currentUser);
+      renderLearningTab(contentArea, currentUser);
       break;
     case "assessments":
       renderAssessmentPage(contentArea);
@@ -68,112 +64,94 @@ function renderContent(tab) {
     default:
       console.error(`Unknown tab: ${tab}`);
   }
-  
+
   // Close sidebar on mobile after navigation
   if (window.innerWidth <= 768) {
     closeSidebar();
   }
 }
 
+// -------------------- Sidebar Navigation --------------------
 function setupSidebarNavigation() {
-  const links = document.querySelectorAll(".sidebar a");
-  if (!links) return;
+  const sidebar = document.querySelector(".sidebar");
+  if (!sidebar) return;
 
-  links.forEach(link => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
+  // Event delegation for all links
+  sidebar.addEventListener("click", function(e) {
+    const link = e.target.closest("a");
+    if (!link) return;
 
-      // Remove "active" class from all links
-      links.forEach(l => l.classList.remove("active"));
+    e.preventDefault();
 
-      // Add "active" class to the clicked link
-      link.classList.add("active");
+    // Remove active from all links
+    sidebar.querySelectorAll("a").forEach(l => l.classList.remove("active"));
+    // Add active to clicked link
+    link.classList.add("active");
 
-      // Extract the tab name from the link's id
-      const tab = link.getAttribute("id")?.replace("Link", "").toLowerCase();
-      if (tab) {
-        renderContent(tab); // Call renderContent with the correct tab
-      } else {
-        console.error("Invalid tab id:", link.getAttribute("id"));
-      }
-    });
+    // Extract tab from id
+    const tab = link.getAttribute("id")?.replace("Link", "").toLowerCase();
+    if (tab) {
+      renderContent(tab);
+    } else {
+      console.error("Invalid tab id:", link.getAttribute("id"));
+    }
   });
 
-  // Sign out functionality
+  // Sign out
   const signOut = document.getElementById("signOutLink");
   if (signOut) {
     signOut.addEventListener("click", () => {
-      try {
-        localStorage.clear();
-        window.location.href = "/";
-      } catch (err) {
-        console.error("Error signing out:", err);
-      }
+      localStorage.clear();
+      window.location.href = "/";
     });
   }
 }
 
-function searchGlobal() {
-  const query = document.getElementById("searchInput")?.value.toLowerCase();
-  if (!query) return;
-  if (currentTab === "learning") {
-    renderLearningTab(document.getElementById("contentArea"), query);
-  } else {
-    alert(`Searching for: ${query}`);
-  }
-}
-// Responsive sidebar functionality
+// -------------------- Responsive Sidebar --------------------
+let overlay;
 function setupResponsiveFeatures() {
   const toggleSidebar = document.getElementById('toggleSidebar');
   const sidebar = document.querySelector('.sidebar');
+  if (!sidebar || !toggleSidebar) return;
 
-  // Create overlay for mobile
-  const overlay = document.createElement('div');
+  // Create overlay if not exists
+  overlay = document.createElement('div');
   overlay.className = 'sidebar-overlay';
   document.body.appendChild(overlay);
 
-  // Function to toggle sidebar
   function toggleSidebarFunc() {
-
     sidebar.classList.toggle('active');
     overlay.classList.toggle('active');
     document.body.classList.toggle('sidebar-open');
-    
   }
 
-  // Function to close sidebar
   function closeSidebar() {
-    
     sidebar.classList.remove('active');
     overlay.classList.remove('active');
     document.body.classList.remove('sidebar-open');
   }
 
-  // Toggle sidebar on hamburger menu click or touch
-  if (toggleSidebar) {
-    ["click", "touchstart"].forEach(evt => {
-      toggleSidebar.addEventListener(evt, function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        toggleSidebarFunc();
-      });
-    });
-  }
+  // Expose globally
+  window.closeSidebar = closeSidebar;
 
-  // Close sidebar when clicking on overlay
-  overlay.addEventListener('click', function() {
- 
-    closeSidebar();
+  // Hamburger click/touch
+  ["click", "touchstart"].forEach(evt => {
+    toggleSidebar.addEventListener(evt, function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleSidebarFunc();
+    });
   });
 
-  // Close sidebar when clicking outside on mobile
+  // Overlay click closes sidebar
+  overlay.addEventListener('click', closeSidebar);
+
+  // Click outside closes sidebar on mobile
   document.addEventListener('click', function(e) {
     if (window.innerWidth <= 768 &&
         sidebar.classList.contains('active') &&
         !sidebar.contains(e.target) &&
         e.target !== toggleSidebar) {
-      
       closeSidebar();
     }
   });
@@ -184,12 +162,19 @@ function setupResponsiveFeatures() {
       closeSidebar();
     }
   });
-
-  // Expose closeSidebar function for use in renderContent
-  window.closeSidebar = closeSidebar;
 }
 
-// Make sure to run after DOM is loaded
+// -------------------- Initialize --------------------
 document.addEventListener("DOMContentLoaded", () => {
-  setupResponsiveFeatures();
+  // Set user info
+  const userNameEl = document.getElementById("userName");
+  const initialsEl = document.getElementById("userInitials");
+  if (userNameEl) userNameEl.textContent = currentUser.name;
+  if (initialsEl) initialsEl.textContent = getInitials(currentUser.name);
+
+  // Initialize sidebar + navigation
+  initializeSidebar();
+
+  // Load home tab initially
+  renderContent("home");
 });
