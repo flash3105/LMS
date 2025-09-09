@@ -834,3 +834,122 @@ body {
   align-items: center;
   z-index: 9999; 
 }
+
+/* Mobile View */
+@media (max-width: 768px) {
+
+  /* Header adjustments */
+  .header {
+    flex-direction: column;
+    padding: 10px 20px;
+  }
+
+  .logo {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-links button {
+    width: 100%;
+    font-size: 13px;
+    padding: 8px;
+  }
+
+  /* Main Content adjustments */
+  .main-content {
+    padding: 30px 10px;
+    height: auto;
+  }
+
+  .main-content h1 {
+    font-size: 32px;
+  }
+
+  .main-content p {
+    font-size: 16px;
+  }
+
+  .login-btn-main {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  /* Reviews Section */
+  .reviews {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .review-card {
+    width: 90%;
+  }
+
+  /* Hero Section */
+  .hero {
+    padding: 60px 20px;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  /* Course Cards */
+  .course-card {
+    flex-direction: column;
+    max-width: 100%;
+  }
+
+  .course-card img {
+    width: 100%;
+    height: 200px;
+  }
+
+  .course-info {
+    padding: 15px;
+  }
+
+  /* How It Works Steps */
+  .how-it-works .steps {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  /* Feature Cards */
+  .features {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .feature-card {
+    width: 90%;
+  }
+
+  /* Slideshow text content */
+  .text-content {
+    padding: 30px 10px;
+  }
+
+  .text-content h1 {
+    font-size: 28px;
+  }
+
+  .text-content p {
+    font-size: 14px;
+  }
+}
+
