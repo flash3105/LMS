@@ -85,7 +85,7 @@ export async function renderCourseDetails(contentArea, course) {
     // Render the course details page with tabs for resources, assessments, and submissions
     contentArea.innerHTML = `
 
-        <style>
+           <style>
         .course-details-container {
           padding: 2rem;
           max-width: 1200px;
@@ -354,21 +354,41 @@ export async function renderCourseDetails(contentArea, course) {
           color: #718096;
         }
         
-        @media (max-width: 768px) {
-          .course-details-container {
-            padding: 1rem;
-          }
-          
-          .resource-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .course-meta {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-        }
-      </style>
+      @media (max-width: 768px) {
+  .course-details-container {
+    padding: 0.2rem;
+  }
+
+  .course-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .nav-tabs {
+    overflow-x: auto;
+  }
+
+  .nav-link {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .resource-grid {
+    grid-template-columns: 1fr; /* fixed to single full-width column */
+  }
+
+  .folder-header {
+    font-size: 1.5rem; /* fixed typo */
+    padding: 0.6rem 1rem;
+  }
+
+  .assessment-item {
+    padding: 1rem;
+  }
+}
+
+</style>
 
 
     
