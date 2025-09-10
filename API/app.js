@@ -4,7 +4,7 @@ const path = require('path');
 const express = require('express');
 const connectDB = require('./config/db');
 const app = express();
-
+const aiRouter = require('./routes/ai');
 app.use(cors({
     origin: [
         'http://127.0.0.1:8080',
@@ -42,7 +42,7 @@ app.get('/', (req, res) => {
     res.json({ message: 'LMS API is running', time: new Date() });
 });
 
-
+app.use('/api/ai', aiRouter);
 app.use("/api/assist", require("./routes/assist"));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/courses', require('./routes/courses'));
