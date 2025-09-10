@@ -159,6 +159,71 @@ export function renderAssistTab(contentArea) {
       color: #666;
       font-style: italic;
     }
+     @media (max-width: 600px) {
+      .tutor-container {
+        padding: 0.5rem;
+        height: 100vh; /* full height on mobile */
+        border-radius: 0; /* remove rounded edges to fit screen */
+      }
+
+      .welcome h2 {
+        font-size: 1.4rem;
+      }
+
+      .welcome p {
+        font-size: 0.9rem;
+      }
+
+      .chat-section {
+        padding: 0.75rem;
+      }
+
+      .section-title {
+        font-size: 1rem;
+      }
+
+      .subject-selectors {
+        grid-template-columns: 1fr; /* stack dropdowns vertically */
+        gap: 0.5rem;
+        padding: 0.75rem;
+      }
+
+      .selector-group label {
+        font-size: 0.8rem;
+      }
+
+      .selector-group select {
+        font-size: 0.85rem;
+        padding: 0.4rem;
+      }
+
+      .chat-box {
+        font-size: 0.9rem;
+        padding: 0.4rem;
+      }
+
+      .message {
+        max-width: 90%; /* allow wider bubbles on small screens */
+        font-size: 0.9rem;
+        padding: 0.6rem 0.9rem;
+      }
+
+      .chat-form {
+        flex-direction: row;
+        gap: 0.4rem;
+      }
+
+      .form-control {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+      }
+
+      .submit-btn {
+        padding: 0 1rem;
+        font-size: 0.9rem;
+      }
+    }
+
   `;
   document.head.appendChild(style);
 
