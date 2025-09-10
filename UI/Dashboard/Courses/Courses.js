@@ -1027,26 +1027,40 @@ function renderResources(resources) {
                 let isYouTube = false;
                 let youTubeEmbed = '';
                 if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
-                  isYouTube = true;
-                  const url = resource.link;
-                  const match = url.match(
-                    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_\-]{11})/
-                  );
-                          if (match && match[1]) {
-                                youTubeEmbed = `
-                                  <div class="youtube-container">
-                                    <iframe 
-                                      src="https://www.youtube.com/embed/${match[1]}" 
-                                      frameborder="0" 
-                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                      allowfullscreen
-                                      style="border-radius:8px;">
-                                    </iframe>
-                                  </div>
-                                `;
-                       }
 
-                }
+  isYouTube = true;
+
+  const url = resource.link;
+
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+
+  if (match && match[1]) {
+
+    const videoId = match[1];
+
+    youTubeEmbed = `
+<div class="youtube-container" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; max-width:100%; border-radius:8px;">
+<iframe 
+
+          src="https://www.youtube.com/embed/${videoId}" 
+
+          frameborder="0" 
+
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+
+          allowfullscreen
+
+          style="position:absolute; top:0; left:0; width:100%; height:100%; border-radius:8px;">
+</iframe>
+</div>
+
+    `;
+
+  }
+
+}
+
+ 
 
                 return `
                   <div class="resource-card" style="
