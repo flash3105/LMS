@@ -1023,42 +1023,40 @@ function renderResources(resources) {
 
                 const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
 
-                // YouTube
-                let isYouTube = false;
-                let youTubeEmbed = '';
-                if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
+           let isYouTube = false;
+let youTubeEmbed = '';
 
+if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
   isYouTube = true;
 
-  const url = resource.link;
+  try {
+    const urlObj = new URL(resource.link);
+    const videoId = urlObj.searchParams.get("v") || resource.link.split("youtu.be/")[1]?.substring(0, 11);
+    const playlistId = urlObj.searchParams.get("list");
 
-  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (videoId) {
+      let embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      if (playlistId) {
+        embedUrl += `?list=${playlistId}`;
+      }
 
-  if (match && match[1]) {
-
-    const videoId = match[1];
-
-    youTubeEmbed = `
-<div class="youtube-container" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; max-width:100%; border-radius:8px;">
-<iframe 
-
-          src="https://www.youtube.com/embed/${videoId}" 
-
-          frameborder="0" 
-
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-
-          allowfullscreen
-
-          style="position:absolute; top:0; left:0; width:100%; height:100%; border-radius:8px;">
-</iframe>
-</div>
-
-    `;
-
+      youTubeEmbed = `
+        <div class="youtube-container" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; max-width:100%; border-radius:8px;">
+          <iframe
+            src="${embedUrl}"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            style="position:absolute; top:0; left:0; width:100%; height:100%; border-radius:8px;">
+          </iframe>
+        </div>
+      `;
+    }
+  } catch (e) {
+    console.error("Invalid YouTube URL:", resource.link);
   }
-
 }
+
 
  
 
