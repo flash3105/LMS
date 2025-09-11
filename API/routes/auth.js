@@ -36,7 +36,7 @@ const authMiddleware = (req, res, next) => {
 router.post('/register', async (req, res) => {
   console.log('Full request body:', req.body);
   
-  const { email, password, role, name, surname, grade, institution } = req.body;
+  const { email, password, role, name, surname, idNumber, grade, institution } = req.body;
   
   if (!institution) {
     console.error('Missing institution field');
@@ -44,12 +44,31 @@ router.post('/register', async (req, res) => {
   }
 
   try {
+    // Check if user already exists by email
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ error: 'User already exists' });
+    
+    // Check if ID number already exists
+    let idExists = await User.findOne({ idNumber });
+    if (idExists) return res.status(400).json({ error: 'ID number already registered' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    user = new User({ email, password: hashedPassword, role, name, surname, grade, institution, status: 'pending' });
+    console.log('Creating user with data:', { 
+      email, name, surname, idNumber, role, grade, institution 
+    });
+
+    user = new User({ 
+      email, 
+      password: hashedPassword, 
+      role, 
+      name, 
+      surname, 
+      idNumber, 
+      grade, 
+      institution, 
+      status: 'pending' 
+    });
     await user.save();
 
     res.json({ message: 'User registered successfully. Please wait for approval.', token: 'mock-token' }); 
@@ -101,6 +120,7 @@ router.post('/login', async (req, res) => {
         email: user.email,
         name: user.name,
         surname: user.surname,
+        idNumber: user.idNumber,
         role: user.role,
         institution: user.institution,
         grade: user.grade,
@@ -116,7 +136,9 @@ router.post('/login', async (req, res) => {
 // Get all pending users
 router.get('/pending-users', async (req, res) => {
   try {
-    const pendingUsers = await User.find({ status: 'pending' }).populate('institution');
+    const pendingUsers = await User.find({ status: 'pending' })
+      .populate('institution')
+    
     res.json(pendingUsers);
   } catch (err) {
     console.error('Error fetching pending users:', err);
@@ -442,6 +464,7 @@ router.get('/me', authMiddleware, async (req, res) => {
       email: user.email,
       name: user.name,
       surname: user.surname,
+      idNumber: user.idNumber,
       role: user.role,
       institution: user.institution,
       grade: user.grade,

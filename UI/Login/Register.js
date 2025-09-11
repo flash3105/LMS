@@ -15,11 +15,14 @@ async function handleRegister(e) {
 
   const name = document.querySelector('#regName').value;
   const surname = document.querySelector('#regSurname').value;
+  const idNumber = document.querySelector('#regIdNumber').value;
   const email = document.querySelector('#regEmail').value.toLowerCase().trim();
   const password = document.querySelector('#regPassword').value;
   const institution = document.querySelector('#regInstitution').value;
   const role = roleSelect.value;
   const grade = role === 'Student' ? document.querySelector('#regGrade').value : null;
+
+  console.log('Registration data:', { name, surname, idNumber, email, institution, role, grade }); 
 
   const feedbackElement = document.querySelector('#registerFeedback');
 
@@ -27,7 +30,7 @@ async function handleRegister(e) {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, surname, email, password, institution, role, grade }),
+      body: JSON.stringify({ name, surname, idNumber, email, password, institution, role, grade }),
     });
 
     const data = await res.json();
