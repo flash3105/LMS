@@ -1023,7 +1023,8 @@ function renderResources(resources) {
 
                 const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
 
-           let isYouTube = false;
+                const isAudioFile = resource.filePath && ['mp3', 'wav', 'ogg'].includes(ext);     
+                let isYouTube = false;
 let youTubeEmbed = '';
 
 if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
@@ -1035,27 +1036,36 @@ if (resource.link && (resource.link.includes('youtube.com') || resource.link.inc
     const playlistId = urlObj.searchParams.get("list");
 
     if (videoId) {
-      let embedUrl = `https://www.youtube.com/embed/${videoId}`;
-      if (playlistId) {
-        embedUrl += `?list=${playlistId}`;
-      }
+      // Only embed if screen is wide enough (e.g. >= 768px)
+      if (window.innerWidth >= 768) {
+        let embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        if (playlistId) {
+          embedUrl += `?list=${playlistId}`;
+        }
 
-      youTubeEmbed = `
-        <div class="youtube-container" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; max-width:100%; border-radius:8px;">
-          <iframe
-            src="${embedUrl}"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-            style="position:absolute; top:0; left:0; width:100%; height:100%; border-radius:8px;">
-          </iframe>
-        </div>
-      `;
+        youTubeEmbed = `
+          <div class="youtube-container" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; max-width:100%; border-radius:8px;">
+            <iframe
+              src="${embedUrl}"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+              style="position:absolute; top:0; left:0; width:100%; height:100%; border-radius:8px;">
+            </iframe>
+          </div>
+        `;
+      } else {
+        // On smaller screens, just show the link
+        youTubeEmbed = `
+          <a href="${resource.link}" target="_blank" style="color:#2563eb; font-weight:500;">📺 Watch on YouTube</a>
+        `;
+      }
     }
   } catch (e) {
     console.error("Invalid YouTube URL:", resource.link);
   }
 }
+
 
 
  
