@@ -371,7 +371,7 @@ export async function renderCourseDetails(contentArea, course) {
 
       @media (max-width: 768px) {
   .course-details-container {
-    padding: 0.2rem;
+    padding:0;
   }
 
   .course-meta {
