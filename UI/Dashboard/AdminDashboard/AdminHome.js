@@ -131,7 +131,7 @@ async function renderPendingApprovalsPage(container) {
 // Function to load pending approvals
 async function loadPendingApprovals() {
   try {
-    console.log('Fetching pending users from:', `${API_BASE_URL}/auth/pending-users`);
+    // 77
     
     // Add cache-busting to ensure fresh data
     const response = await fetch(`${API_BASE_URL}/auth/pending-users?t=${Date.now()}`, {
@@ -145,14 +145,7 @@ async function loadPendingApprovals() {
     }
     
     const pendingUsers = await response.json();
-    console.log('Raw API response:', pendingUsers);
-    
-    // Debug: Check the structure of the first user
-    if (pendingUsers.length > 0) {
-      console.log('First user object keys:', Object.keys(pendingUsers[0]));
-      console.log('First user complete data:', pendingUsers[0]);
-    }
-    
+
     renderPendingApprovalsTable(pendingUsers);
   } catch (err) {
     console.error('Error loading pending approvals:', err);
@@ -166,7 +159,7 @@ async function loadPendingApprovals() {
 
 // Function to render the pending approvals table
 function renderPendingApprovalsTable(users) {
-  console.log('Rendering table with users:', users);
+  //console.log('Rendering table with users:', users);
   
   if (!Array.isArray(users) || users.length === 0) {
     document.getElementById("pendingApprovalsContent").innerHTML = `
@@ -179,10 +172,10 @@ function renderPendingApprovalsTable(users) {
 
   // Check if idNumber exists in the data
   const usersWithId = users.filter(user => user.idNumber && user.idNumber !== 'N/A');
-  console.log(`Users with ID: ${usersWithId.length}/${users.length}`);
+  // console.log(`Users with ID: ${usersWithId.length}/${users.length}`);
   
   users.forEach((user, index) => {
-    console.log(`User ${index}: ${user.name} - ID Number:`, user.idNumber);
+    // console.log(`User ${index}: ${user.name} - ID Number:`, user.idNumber);
   });
 
   document.getElementById("pendingApprovalsContent").innerHTML = `
