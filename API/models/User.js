@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
   email: {
@@ -25,6 +25,11 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  idNumber: { 
+    type: String,
+    required: true,
+    unique: true,
+  },
   grade: {
     type: Number,   
     min: 1,         
@@ -40,7 +45,7 @@ const UserSchema = new mongoose.Schema({
   },
   resetPasswordToken: {
     type: String,
-    select: false // Hide from queries by default
+    select: false
   },
   resetPasswordExpires: {
     type: Date,
@@ -51,6 +56,6 @@ const UserSchema = new mongoose.Schema({
     ref: 'Institution',
     required: true,
   }
-}, { timestamps: true }); // timestamps for better tracking
+}, { timestamps: true });
 
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model('User', UserSchema);

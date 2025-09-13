@@ -131,12 +131,21 @@ async function renderPendingApprovalsPage(container) {
 // Function to load pending approvals
 async function loadPendingApprovals() {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/pending-users`);
+    // 77
+    
+    // Add cache-busting to ensure fresh data
+    const response = await fetch(`${API_BASE_URL}/auth/pending-users?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    });
+    
     if (!response.ok) {
       throw new Error('Failed to fetch pending users');
     }
     
     const pendingUsers = await response.json();
+
     renderPendingApprovalsTable(pendingUsers);
   } catch (err) {
     console.error('Error loading pending approvals:', err);
@@ -150,6 +159,8 @@ async function loadPendingApprovals() {
 
 // Function to render the pending approvals table
 function renderPendingApprovalsTable(users) {
+  //console.log('Rendering table with users:', users);
+  
   if (!Array.isArray(users) || users.length === 0) {
     document.getElementById("pendingApprovalsContent").innerHTML = `
       <div class="alert alert-info">
@@ -159,6 +170,14 @@ function renderPendingApprovalsTable(users) {
     return;
   }
 
+  // Check if idNumber exists in the data
+  const usersWithId = users.filter(user => user.idNumber && user.idNumber !== 'N/A');
+  // console.log(`Users with ID: ${usersWithId.length}/${users.length}`);
+  
+  users.forEach((user, index) => {
+    // console.log(`User ${index}: ${user.name} - ID Number:`, user.idNumber);
+  });
+
   document.getElementById("pendingApprovalsContent").innerHTML = `
     <div style="max-height: 500px; overflow-y: auto;">
       <table class="table table-striped table-hover">
@@ -166,6 +185,7 @@ function renderPendingApprovalsTable(users) {
           <tr>
             <th>Name</th>
             <th>Email</th>
+            <th>ID Number</th>
             <th>Role</th>
             <th>Institution</th>
             <th>Registration Date</th>
@@ -177,6 +197,7 @@ function renderPendingApprovalsTable(users) {
             <tr>
               <td>${user.name} ${user.surname}</td>
               <td>${user.email}</td>
+              <td>${user.idNumber || 'N/A'}</td>
               <td>${user.role}</td>
               <td>${user.institution?.institutionName || 'N/A'}</td>
               <td>${new Date(user.createdAt).toLocaleDateString()}</td>

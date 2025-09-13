@@ -1,4 +1,4 @@
-const API_BASE_URL = window.API_BASE_URL;
+const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 document.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();

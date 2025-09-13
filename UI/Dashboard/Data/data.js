@@ -4,7 +4,7 @@ export let userData = {};
 export let messages = [];
 
 // Base URL for the API (from environment variable or fallback)
-const API_BASE_URL = window.API_BASE_URL ;
+const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
 
 // Fetch courses from the database
 export async function fetchCourses(grade = null, institution = null) {
