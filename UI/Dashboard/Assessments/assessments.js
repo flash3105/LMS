@@ -351,23 +351,14 @@ async function deleteAssessment(assessmentId) {
                           <td>${sub.email}</td>
                           <td>${new Date(sub.submittedAt).toLocaleString()}</td>
                           <td>
-<<<<<<< HEAD
-                            ${sub.filePath ? `
-                              <a href="${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}" 
-                                 download="${sub.email}_${item.title.replace(/[^a-z0-9]/gi, '_')}.${sub.filePath.split('.').pop()}" 
-                                 class="download-link">
-                                Download
-                              </a>
-                            ` : 'No file'}
-                          </td>
-=======
+
                 ${sub.downloadUrl ? `
                     <a href="${sub.downloadUrl}" target="_blank" class="btn-view">
                         <i class="fas fa-download"></i> Download
                     </a>
                 ` : '—'}
             </td>
->>>>>>> personal/main
+
                           <td>
                             <input type="text" 
                                    class="grade-input" 
