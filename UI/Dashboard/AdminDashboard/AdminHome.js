@@ -8,7 +8,7 @@ function renderQuickLinks(currentUser) {
   const links = [
     { id: 'viewReportsLink', text: 'View Reports', icon: 'chart-bar', role: 'user' },
     { id: 'institutions-link', text: 'Institutions', icon: 'university', role: 'Admin'},  
-    { id: 'pendingApprovalsLink', text: 'Pending Approvals', icon: 'user-clock', role: 'Admin' }
+    { id: 'pendingApprovalsLink', text: 'Pending Approvals', icon: 'user-clock', role: 'user' }
 
   ];
 
@@ -111,7 +111,7 @@ async function renderPendingApprovalsPage(container) {
 
   // Back button
   document.getElementById("backButton").addEventListener("click", () => {
-    renderHomeTab(container, { name: "Admin", role: "Admin" });
+    renderHomeTab(container,{name:"User",role:"user"}); // Default to user role
   });
 
   // Refresh button
@@ -145,8 +145,9 @@ async function loadPendingApprovals() {
     }
     
     const pendingUsers = await response.json();
-
-    renderPendingApprovalsTable(pendingUsers);
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    
+    renderPendingApprovalsTable(pendingUsers,currentUser);
   } catch (err) {
     console.error('Error loading pending approvals:', err);
     document.getElementById("pendingApprovalsContent").innerHTML = `
@@ -158,78 +159,83 @@ async function loadPendingApprovals() {
 }
 
 // Function to render the pending approvals table
-function renderPendingApprovalsTable(users) {
-  //console.log('Rendering table with users:', users);
+function renderPendingApprovalsTable(users, currentUser) {
   
-  if (!Array.isArray(users) || users.length === 0) {
+
+  if (Array.isArray(users) && users.length > 0) {
+    const filteredUsers = users.filter(
+      user => user.institution?._id === currentUser.institution
+    );
+
+    if (filteredUsers.length === 0) {
+      document.getElementById("pendingApprovalsContent").innerHTML = `
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i> No pending approvals found for your institution.
+        </div>
+      `;
+      return;
+    }
+
+  
+    document.getElementById("pendingApprovalsContent").innerHTML = `
+      <div style="max-height: 500px; overflow-y: auto;">
+        <table class="table table-striped table-hover">
+          <thead class="sticky-top bg-light">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>ID Number</th>
+              <th>Role</th>
+              <th>Institution</th>
+              <th>Registration Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredUsers.map(user => `
+              <tr>
+                <td>${user.name} ${user.surname}</td>
+                <td>${user.email}</td>
+                <td>${user.idNumber || 'N/A'}</td>
+                <td>${user.role}</td>
+                <td>${user.institution?.institutionName || 'N/A'}</td>
+                <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+                <td>
+                  <button class="btn btn-sm btn-success approve-btn" data-id="${user._id}">
+                    <i class="fas fa-check"></i> Approve
+                  </button>
+                  <button class="btn btn-sm btn-danger reject-btn" data-id="${user._id}">
+                    <i class="fas fa-times"></i> Reject
+                  </button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Add event listeners for approve and reject buttons
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const userId = e.currentTarget.dataset.id;
+        approveUser(userId);
+      });
+    });
+
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const userId = e.currentTarget.dataset.id;
+        rejectUser(userId);
+      });
+    });
+  } else {
     document.getElementById("pendingApprovalsContent").innerHTML = `
       <div class="alert alert-info">
         <i class="fas fa-info-circle"></i> No pending approvals found.
       </div>
     `;
-    return;
   }
-
-  // Check if idNumber exists in the data
-  const usersWithId = users.filter(user => user.idNumber && user.idNumber !== 'N/A');
-  // console.log(`Users with ID: ${usersWithId.length}/${users.length}`);
-  
-  users.forEach((user, index) => {
-    // console.log(`User ${index}: ${user.name} - ID Number:`, user.idNumber);
-  });
-
-  document.getElementById("pendingApprovalsContent").innerHTML = `
-    <div style="max-height: 500px; overflow-y: auto;">
-      <table class="table table-striped table-hover">
-        <thead class="sticky-top bg-light">
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>ID Number</th>
-            <th>Role</th>
-            <th>Institution</th>
-            <th>Registration Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${users.map(user => `
-            <tr>
-              <td>${user.name} ${user.surname}</td>
-              <td>${user.email}</td>
-              <td>${user.idNumber || 'N/A'}</td>
-              <td>${user.role}</td>
-              <td>${user.institution?.institutionName || 'N/A'}</td>
-              <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-              <td>
-                <button class="btn btn-sm btn-success approve-btn" data-id="${user._id}">
-                  <i class="fas fa-check"></i> Approve
-                </button>
-                <button class="btn btn-sm btn-danger reject-btn" data-id="${user._id}">
-                  <i class="fas fa-times"></i> Reject
-                </button>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-
-  // Add event listeners for approve and reject buttons
-  document.querySelectorAll('.approve-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const userId = e.currentTarget.dataset.id;
-      approveUser(userId);
-    });
-  });
-
-  document.querySelectorAll('.reject-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const userId = e.currentTarget.dataset.id;
-      rejectUser(userId);
-    });
-  });
 }
 
 // Function to approve a user

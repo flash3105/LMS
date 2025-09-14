@@ -14,8 +14,8 @@ const Institution = require('../models/Institution');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'oarabilemokone23@gmail.com',
-    pass: process.env.EMAIL_PASS || 'dwre geil kvhr pzki'
+    user: process.env.EMAIL_USER ,
+    pass: process.env.EMAIL_PASS 
   }
 });
 
@@ -134,10 +134,12 @@ router.post('/login', async (req, res) => {
 });
 
 // Get all pending users
+// Get all pending users
 router.get('/pending-users', async (req, res) => {
   try {
     const pendingUsers = await User.find({ status: 'pending' })
-      .populate('institution')
+      .select('-password')            // 
+      .populate('institution');       // keep institution populated
     
     res.json(pendingUsers);
   } catch (err) {
@@ -145,6 +147,7 @@ router.get('/pending-users', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 // Approve user
 router.put('/approve-user/:id', async (req, res) => {

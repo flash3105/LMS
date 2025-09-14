@@ -9,6 +9,7 @@ import { renderCalendarTab } from '../Calendar/calendar.js';
 import { renderAssistTab } from '../Assist/assist.js';
 
 let currentUser = JSON.parse(localStorage.getItem("user")) || { name: "User", email: "user@example.com" };
+
 let currentTab = "home";
 
 document.addEventListener("DOMContentLoaded", () => {
