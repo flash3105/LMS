@@ -1317,6 +1317,7 @@ async function renderQuizzes(courseId) {
   try {
     const res = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
     const quizzes = await res.json();
+
     if (!Array.isArray(quizzes) || quizzes.length === 0) {
       quizzesContainer.innerHTML = '<div class="empty-message">No quizzes for this course.</div>';
       return;
@@ -1331,7 +1332,7 @@ async function renderQuizzes(courseId) {
             <form class="quiz-response-form" data-quiz-id="${quiz._id}">
               ${quiz.questions.map((q, qIdx) => `
                 <div class="mb-3">
-                  <strong>Q${qIdx + 1}: ${q.question}</strong>
+                  <strong>Q${qIdx + 1}: <span class="mathjax">${q.question}</span></strong>
                   <div>
                     ${q.options.map((opt, oIdx) => `
                       <div class="form-check">
@@ -1340,7 +1341,7 @@ async function renderQuizzes(courseId) {
                           id="quiz-${quiz._id}-q${qIdx}-opt${oIdx}" 
                           value="${String.fromCharCode(65 + oIdx)}" required>
                         <label class="form-check-label" for="quiz-${quiz._id}-q${qIdx}-opt${oIdx}">
-                          ${String.fromCharCode(65 + oIdx)}. ${opt}
+                          <span class="mathjax">${String.fromCharCode(65 + oIdx)}. ${opt}</span>
                         </label>
                       </div>
                     `).join('')}
@@ -1355,6 +1356,11 @@ async function renderQuizzes(courseId) {
         </div>
       </div>
     `).join('');
+
+    // --- Render LaTeX with MathJax ---
+    if (window.MathJax) {
+      MathJax.typesetPromise();
+    }
 
     // Start Quiz button logic
     quizzesContainer.querySelectorAll('.start-quiz-btn').forEach(btn => {

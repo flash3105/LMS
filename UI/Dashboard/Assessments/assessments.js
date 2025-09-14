@@ -434,50 +434,81 @@ async function deleteAssessment(assessmentId) {
   const quizQuestionsArea = container.querySelector('#quizQuestionsArea');
   let quizQuestions = [];
 
-  function renderQuizQuestions() {
-    quizQuestionsArea.innerHTML = quizQuestions.map((q, idx) => `
-      <div class="quiz-question-block" style="border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px;">
-        <label>Question ${idx + 1}</label>
-        <input type="text" class="quiz-question" data-idx="${idx}" value="${q.question || ''}" placeholder="Enter question" required style="width:100%;margin-bottom:6px;">
-        <div>
-          ${[0,1,2,3].map(optIdx => `
-            <input type="text" class="quiz-option" data-idx="${idx}" data-opt="${optIdx}" value="${q.options[optIdx] || ''}" placeholder="Option ${String.fromCharCode(65+optIdx)}" required style="width:48%;margin-bottom:4px;">
-          `).join('')}
-        </div>
-        <label>Correct Answer</label>
-        <select class="quiz-correct" data-idx="${idx}" required>
-          <option value="">Select</option>
-          ${['A','B','C','D'].map((l, i) => `<option value="${l}" ${q.correctAnswer === l ? 'selected' : ''}>${l}</option>`).join('')}
-        </select>
-        <button type="button" class="remove-quiz-question" data-idx="${idx}" style="margin-left:10px;color:#e53e3e;background:none;border:none;cursor:pointer;">Remove</button>
+function renderQuizQuestions() {
+  quizQuestionsArea.innerHTML = quizQuestions.map((q, idx) => `
+    <div class="quiz-question-block" style="border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px;">
+      
+      <label>Question ${idx + 1}</label>
+      <input type="text" 
+             class="quiz-question" 
+             data-idx="${idx}" 
+             value="${q.question || ''}" 
+             placeholder="Enter question (LaTeX allowed, e.g., $$x^2$$)" 
+             required 
+             style="width:100%; margin-bottom:6px;">
+
+      <div>
+        ${[0,1,2,3].map(optIdx => `
+          <input type="text" 
+                 class="quiz-option" 
+                 data-idx="${idx}" 
+                 data-opt="${optIdx}" 
+                 value="${q.options[optIdx] || ''}" 
+                 placeholder="Option ${String.fromCharCode(65+optIdx)} (LaTeX allowed)" 
+                 required 
+                 style="width:48%; margin-bottom:4px;">
+        `).join('')}
       </div>
-    `).join('');
+
+      <label>Correct Answer</label>
+      <select class="quiz-correct" data-idx="${idx}" required>
+        <option value="">Select</option>
+        ${['A','B','C','D'].map((l, i) => `<option value="${l}" ${q.correctAnswer === l ? 'selected' : ''}>${l}</option>`).join('')}
+      </select>
+
+      <button type="button" 
+              class="remove-quiz-question" 
+              data-idx="${idx}" 
+              style="margin-left:10px;color:#e53e3e;background:none;border:none;cursor:pointer;">
+        Remove
+      </button>
+    </div>
+  `).join('');
+
+  // Trigger MathJax to render LaTeX in the new inputs
+  if (window.MathJax) {
+    MathJax.typesetPromise();
   }
+}
 
-  container.querySelector('#addQuizQuestion').addEventListener('click', () => {
-    quizQuestions.push({ question: '', options: ['', '', '', ''], correctAnswer: '' });
-    renderQuizQuestions();
-  });
+// Add new question
+container.querySelector('#addQuizQuestion').addEventListener('click', () => {
+  quizQuestions.push({ question: '', options: ['', '', '', ''], correctAnswer: '' });
+  renderQuizQuestions();
+});
 
-  quizQuestionsArea.addEventListener('input', (e) => {
+// Update quizQuestions on input
+quizQuestionsArea.addEventListener('input', (e) => {
+  const idx = +e.target.getAttribute('data-idx');
+  if (e.target.classList.contains('quiz-question')) {
+    quizQuestions[idx].question = e.target.value;
+  } else if (e.target.classList.contains('quiz-option')) {
+    const opt = +e.target.getAttribute('data-opt');
+    quizQuestions[idx].options[opt] = e.target.value;
+  } else if (e.target.classList.contains('quiz-correct')) {
+    quizQuestions[idx].correctAnswer = e.target.value;
+  }
+});
+
+// Remove question
+quizQuestionsArea.addEventListener('click', (e) => {
+  if (e.target.classList.contains('remove-quiz-question')) {
     const idx = +e.target.getAttribute('data-idx');
-    if (e.target.classList.contains('quiz-question')) {
-      quizQuestions[idx].question = e.target.value;
-    } else if (e.target.classList.contains('quiz-option')) {
-      const opt = +e.target.getAttribute('data-opt');
-      quizQuestions[idx].options[opt] = e.target.value;
-    } else if (e.target.classList.contains('quiz-correct')) {
-      quizQuestions[idx].correctAnswer = e.target.value;
-    }
-  });
+    quizQuestions.splice(idx, 1);
+    renderQuizQuestions();
+  }
+});
 
-  quizQuestionsArea.addEventListener('click', (e) => {
-    if (e.target.classList.contains('remove-quiz-question')) {
-      const idx = +e.target.getAttribute('data-idx');
-      quizQuestions.splice(idx, 1);
-      renderQuizQuestions();
-    }
-  });
 
   // Quiz form submission
   const quizForm = container.querySelector('#setQuizForm');
@@ -522,94 +553,103 @@ async function deleteAssessment(assessmentId) {
   }
 
   // --- QUIZ TABLE ---
-  async function renderQuizzesTable(courseId) {
-    const tableDiv = container.querySelector('#currentQuizzes');
-    if (!courseId) {
-      tableDiv.innerHTML = '<div class="empty-message">Select a course to view quizzes</div>';
+async function renderQuizzesTable(courseId) {
+  const tableDiv = container.querySelector('#currentQuizzes');
+  if (!courseId) {
+    tableDiv.innerHTML = '<div class="empty-message">Select a course to view quizzes</div>';
+    return;
+  }
+  tableDiv.innerHTML = '<p>Loading quizzes...</p>';
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
+    const quizzes = await res.json();
+
+    if (!Array.isArray(quizzes) || quizzes.length === 0) {
+      tableDiv.innerHTML = '<div class="empty-message">No quizzes for this course.</div>';
       return;
     }
-    tableDiv.innerHTML = '<p>Loading quizzes...</p>';
-    try {
-      const res = await fetch(`${API_BASE_URL}/courses/${courseId}/quizzes`);
-      const quizzes = await res.json();
-      if (!Array.isArray(quizzes) || quizzes.length === 0) {
-        tableDiv.innerHTML = '<div class="empty-message">No quizzes for this course.</div>';
-        return;
-      }
-      tableDiv.innerHTML = `
-        <div class="table-responsive">
-          <table class="table table-striped">
-            <thead>
+
+    tableDiv.innerHTML = `
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Questions</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${quizzes.map((q, idx) => `
               <tr>
-                <th>Title</th>
-                <th>Questions</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <td>${q.title}</td>
+                <td>${q.questions.length}</td>
+                <td>${q.createdAt ? new Date(q.createdAt).toLocaleDateString() : ''}</td>
+                <td>
+                  <button type="button" class="view-quiz-questions-btn" data-idx="${idx}">View Questions</button>
+                  <button type="button" class="edit-quiz-btn" data-quiz-id="${q._id}" data-course-id="${courseId}" style="margin-left:5px;">Edit</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              ${quizzes.map((q, idx) => `
-                <tr>
-                  <td>${q.title}</td>
-                  <td>${q.questions.length}</td>
-                  <td>${q.createdAt ? new Date(q.createdAt).toLocaleDateString() : ''}</td>
-                  <td>
-                    <button type="button" class="view-quiz-questions-btn" data-idx="${idx}">View Questions</button>
-                    <button type="button" class="edit-quiz-btn" data-quiz-id="${q._id}" data-course-id="${courseId}" style="margin-left:5px;">Edit</button>
-                  </td>
-                </tr>
-                <tr class="quiz-questions-row" id="quiz-questions-row-${idx}" style="display:none;">
-                  <td colspan="4">
-                    <div>
-                      ${q.questions.map((ques, qIdx) => `
-                        <div style="margin-bottom:10px;">
-                          <strong>Q${qIdx + 1}:</strong> ${ques.question}<br>
-                          <ul style="margin:0 0 0 20px;padding:0;">
-                            ${ques.options.map((opt, oIdx) => `
-                              <li${ques.correctAnswer === String.fromCharCode(65 + oIdx) ? ' style="font-weight:bold;color:#3182ce;"' : ''}>
-                                ${String.fromCharCode(65 + oIdx)}. ${opt}
-                                ${ques.correctAnswer === String.fromCharCode(65 + oIdx) ? ' <span style="color:#38a169;">(Correct)</span>' : ''}
-                              </li>
-                            `).join('')}
-                          </ul>
-                        </div>
-                      `).join('')}
-                    </div>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
+              <tr class="quiz-questions-row" id="quiz-questions-row-${idx}" style="display:none;">
+                <td colspan="4">
+                  <div>
+                    ${q.questions.map((ques, qIdx) => `
+                      <div style="margin-bottom:10px;">
+                        <strong>Q${qIdx + 1}:</strong> 
+                        <span class="mathjax">${ques.question}</span><br>
+                        <ul style="margin:0 0 0 20px;padding:0;">
+                          ${ques.options.map((opt, oIdx) => `
+                            <li${ques.correctAnswer === String.fromCharCode(65 + oIdx) ? ' style="font-weight:bold;color:#3182ce;"' : ''}>
+                              <span class="mathjax">${String.fromCharCode(65 + oIdx)}. ${opt}</span>
+                              ${ques.correctAnswer === String.fromCharCode(65 + oIdx) ? ' <span style="color:#38a169;">(Correct)</span>' : ''}
+                            </li>
+                          `).join('')}
+                        </ul>
+                      </div>
+                    `).join('')}
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
 
-      // Add event listeners for "View Questions" buttons
-      tableDiv.querySelectorAll('.view-quiz-questions-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const idx = btn.getAttribute('data-idx');
-          const row = tableDiv.querySelector(`#quiz-questions-row-${idx}`);
-          if (row.style.display === 'none') {
-            row.style.display = '';
-            btn.textContent = 'Hide Questions';
-          } else {
-            row.style.display = 'none';
-            btn.textContent = 'View Questions';
-          }
-        });
-      });
+    // Trigger MathJax typeset after rendering
+    if (window.MathJax) MathJax.typesetPromise();
 
-      // Add event listeners for "Edit" buttons
-      tableDiv.querySelectorAll('.edit-quiz-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const quizId = btn.getAttribute('data-quiz-id');
-          const courseId = btn.getAttribute('data-course-id');
-          await openEditQuizModal(quizId, courseId);
-        });
+    // Event listeners for "View Questions" buttons
+    tableDiv.querySelectorAll('.view-quiz-questions-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = btn.getAttribute('data-idx');
+        const row = tableDiv.querySelector(`#quiz-questions-row-${idx}`);
+        if (row.style.display === 'none') {
+          row.style.display = '';
+          btn.textContent = 'Hide Questions';
+        } else {
+          row.style.display = 'none';
+          btn.textContent = 'View Questions';
+        }
       });
-    } catch (err) {
-      tableDiv.innerHTML = '<div class="error-message">Failed to load quizzes.</div>';
-    }
+    });
+
+    // Event listeners for "Edit" buttons
+    tableDiv.querySelectorAll('.edit-quiz-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const quizId = btn.getAttribute('data-quiz-id');
+        const courseId = btn.getAttribute('data-course-id');
+        await openEditQuizModal(quizId, courseId);
+      });
+    });
+
+  } catch (err) {
+    tableDiv.innerHTML = '<div class="error-message">Failed to load quizzes.</div>';
   }
+}
+
 
   // Edit Quiz Modal Functions
   let currentEditQuizId = null;

@@ -19,8 +19,8 @@ export function renderSidebar() {
        style="padding:1.5rem; border-bottom:1px solid rgba(255,255,255,0.2);">
     <a class="navbar-brand" href="#" style="text-decoration:none;">
       <span style="display:flex; align-items:center; gap:0.8rem;">
-        <img src="../images/logoN.jpg" 
-             alt="logo" 
+        <img src="./images/logoN.jpg" 
+             alt="/images/logoN.jpg" 
              style="width:45px; height:45px; border-radius:50%; object-fit:cover;
                     box-shadow:0px 2px 6px rgba(0,0,0,0.4);">
         <span style="font-size:1.6rem; font-weight:700; letter-spacing:1px; 

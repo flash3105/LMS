@@ -423,24 +423,7 @@ export function renderHomeTab(contentArea, currentUser) {
         </div>
       </div>
       
-      <div class="recent-messages">
-        <h2 class="section-title">Recent Messages</h2>
-        ${
-          recentMessages.length > 0
-            ? recentMessages
-                .map(
-                  message => `
-            <div class="message-preview">
-              <h5>${message.sender}: ${message.subject}</h5>
-              <p>${message.content}</p>
-              <small>${message.date}</small>
-            </div>
-          `
-                )
-                .join('')
-            : '<p>No recent messages.</p>'
-        }
-      </div>
+
     </div>
   `;
 

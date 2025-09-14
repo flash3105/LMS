@@ -1,3 +1,4 @@
+import { fetchAllAssessments } from '../Data/data.js';
 export async function renderCalendarTab(contentArea) {
   contentArea.innerHTML = `
     <style>

@@ -72,11 +72,11 @@ export async function renderadminLearning(container, query = '') {
               <div class="radio-group">
                 <label>
                   <input type="radio" name="visibility" value="public" checked />
-                  Public (Visible to all users)
+                  Public 
                 </label>
                 <label>
                   <input type="radio" name="visibility" value="private" />
-                  Private (Only visible to enrolled users)
+                  Private 
                 </label>
               </div>
             </div>

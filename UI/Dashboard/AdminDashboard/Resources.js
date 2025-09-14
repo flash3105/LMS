@@ -12,17 +12,220 @@ function getYouTubeId(link) {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
-function loadCSS() {
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = './Resources.css';
-  document.head.appendChild(link);
-}
 
-loadCSS();
+
 
 export function renderResources(container, course) {
   container.innerHTML = `
+  <style>
+    /* ---------- Resources Admin Styles ---------- */
+.resources-admin-container {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+/* Header */
+.resources-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.resources-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.back-button {
+  background: #1e88e5;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.back-button:hover {
+  background: #1565c0;
+}
+
+/* Tabs */
+.resources-tabs {
+  margin-bottom: 1rem;
+}
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 0.8rem;
+}
+.tab-button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.tab-button.active {
+  background: #1e88e5;
+  color: white;
+  border-color: #1e88e5;
+}
+
+/* Category filter */
+.resource-category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+.category-tab-button {
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+.category-tab-button.active {
+  background: #1e88e5;
+  color: white;
+  border-color: #1e88e5;
+}
+
+/* Resource list */
+.resources-list {
+  margin-bottom: 2rem;
+}
+.resource-item {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.resource-item h4 {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+.resource-meta {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+.resource-actions {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.resource-actions button,
+.resource-actions .primary-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.primary-button {
+  background: #1e88e5;
+  color: white;
+}
+.primary-button:hover {
+  background: #1565c0;
+}
+.edit-resource {
+  background: #ffb300;
+  color: white;
+}
+.delete-resource {
+  background: #e53935;
+  color: white;
+}
+
+/* Folder sections */
+.folder-section {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+.folder-content {
+  padding: 1rem;
+}
+
+/* Form */
+.add-resource {
+  background: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+}
+.add-resource h3 {
+  margin-bottom: 1rem;
+}
+.form-group {
+  margin-bottom: 1rem;
+}
+.form-group label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+  display: block;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.primary-button {
+  padding: 8px 16px;
+}
+.secondary-button {
+  padding: 8px 16px;
+  background: #9e9e9e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+/* ---------- Tablet Responsive ---------- */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .resources-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .resources-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .resource-item {
+    padding: 0.8rem;
+  }
+
+  .resource-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .add-resource {
+    padding: 1rem;
+  }
+}
+
+
+
+  </style>
+
     <div class="resources-admin-container">
       <div class="resources-header">
         <h2>Manage Content: ${course.courseName}</h2>
