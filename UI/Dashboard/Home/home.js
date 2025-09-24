@@ -1,5 +1,6 @@
 import { renderCourseDetails } from '../Courses/Courses.js';
 import { fetchCourses, fetchUserData, fetchMessages, courses, userData, messages } from '../Data/data.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
   const user = JSON.parse(localStorage.getItem('user'));
   const userId = user.email;
@@ -14,6 +15,284 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 let enrolledCoursesFromAPI = [];
 
+// Add this CSS to your existing styles in renderHomeTab function
+const mobileStyles = `
+/* Mobile-specific styles */
+.mobile-container {
+    display: none;
+   /* background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);*/
+    min-height: 100vh;
+}
+
+.mobile-header {
+    background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+    padding: 20px 16px;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.mobile-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.mobile-logo {
+    font-weight: bold;
+    font-size: 18px;
+    color: white;
+}
+
+.mobile-profile-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: white;
+}
+
+.mobile-welcome-text {
+    font-size: 20px;
+    font-weight: 300;
+    margin-bottom: 4px;
+    color: white;
+}
+
+.mobile-subtitle {
+    font-size: 14px;
+    opacity: 0.9;
+    color: white;
+}
+
+.mobile-content {
+    padding: 20px 16px;
+}
+
+.mobile-section {
+    margin-bottom: 24px;
+}
+
+.mobile-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.mobile-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);;
+}
+
+.mobile-add-btn {
+    background: rgb(54, 126, 186);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.mobile-todo-list {
+    background: white;
+    border-left: 4px solid rgb(54, 126, 186);
+    padding: 16px;
+}
+
+.mobile-todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.mobile-todo-item:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.mobile-todo-content {
+    flex: 1;
+}
+
+.mobile-todo-title {
+    font-size: 14px;
+    color: #2c3e50;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+
+.mobile-course-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    
+}
+
+.mobile-course-item {
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+  border-radius: 5px; 
+            /* rounded corners */
+
+             margin-bottom: 15px; 
+
+}
+
+.mobile-course-item:last-child {
+    border-bottom: none;
+}
+
+.mobile-course-header {
+    padding: 20px 16px 16px;
+    background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+    color: white;
+}
+
+.mobile-course-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.mobile-course-subtitle {
+    font-size: 12px;
+    opacity: 0.9;
+    line-height: 1.3;
+}
+
+.mobile-course-body {
+    padding: 16px;
+}
+
+@media (max-width: 768px) {
+  .mobile-course-subtitle {
+    display: none;
+  }
+}
+
+.mobile-course-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #666;
+}
+
+.mobile-progress-container {
+    margin-bottom: 16px;
+}
+
+.mobile-progress-text {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.mobile-progress-bar {
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.mobile-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, rgb(54, 126, 186) 0%, rgb(125, 152, 173) 100%);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.mobile-course-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.mobile-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    flex: 1;
+    cursor: pointer;
+}
+
+.mobile-btn-primary {
+    background: rgb(54, 126, 186);
+    color: white;
+}
+
+.mobile-btn-outline {
+    background: transparent;
+    color: rgb(54, 126, 186);
+    border: 1px solid rgb(54, 126, 186);
+}
+
+.mobile-stats-list {
+    display: flex;
+    flex-direction: column;
+    background: white;
+}
+
+.mobile-stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.mobile-stat-item:last-child {
+    border-bottom: none;
+}
+
+.mobile-stat-label {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.mobile-stat-number {
+    font-size: 18px;
+    font-weight: 700;
+    color: rgb(54, 126, 186);
+}
+
+/* Responsive breakpoints */
+@media (max-width: 768px) {
+    .home-container {
+        display: none;
+    }
+    
+    .mobile-container {
+        display: block;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-container {
+        display: none;
+    }
+}
+`;
+
+// Updated renderHomeTab function
 export function renderHomeTab(contentArea, currentUser) {
   // Safely access userProgress
   const userProgress = userData[currentUser.email] || {
@@ -30,9 +309,11 @@ export function renderHomeTab(contentArea, currentUser) {
   // Get recent messages
   const recentMessages = messages.slice(0, 2); // Show only the latest 2 messages
 
-  // Render the content
+  // Render both desktop and mobile content
   contentArea.innerHTML = `
     <style>
+      ${mobileStyles}
+      
       .home-container {
         padding: 2rem;
         max-width: 1200px;
@@ -147,7 +428,7 @@ export function renderHomeTab(contentArea, currentUser) {
         height: 1.5em;
         background: linear-gradient(to right, rgba(255, 255, 255, 0), white 50%);
       }
-      z
+      
       .progress-container {
         margin: 1rem 0;
       }
@@ -180,12 +461,12 @@ export function renderHomeTab(contentArea, currentUser) {
         margin-top: auto;
         padding-top: 1rem;
         border-top: 1px solid #edf2f7;
-        align-items: stretch; /* Ensure buttons stretch to same height */
+        align-items: stretch;
       }
       
       .continue-btn, .view-btn {
         flex: 1;
-        padding: 0.75rem 0.5rem; /* Increased vertical padding */
+        padding: 0.75rem 0.5rem;
         border-radius: 6px;
         font-weight: 500;
         cursor: pointer;
@@ -195,8 +476,8 @@ export function renderHomeTab(contentArea, currentUser) {
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 42px; /* Set a minimum height */
-        box-sizing: border-box; /* Include padding in height calculation */
+        min-height: 42px;
+        box-sizing: border-box;
         border: none;
       }
       
@@ -230,7 +511,6 @@ export function renderHomeTab(contentArea, currentUser) {
       
       .statistics {
         margin: 2rem 0;
-      
       }
       
       .stats-grid {
@@ -327,112 +607,180 @@ export function renderHomeTab(contentArea, currentUser) {
       }
     </style>
     
-    <div class="home-container">
-      <div class="welcome">
-        <h2>Hello ${currentUser.name}! Set your plan for the day.</h2>
-        <p>Track your learning, manage your tasks, and stay up to date.</p>
-      </div>
-      
-      <div class="todo-section">
-        <div class="todo-header">
-          <h3>Todo</h3>
-          <button class="add-task-btn">
-            <i class="fas fa-plus"></i> Add Task
-          </button>
+    <!-- Desktop View -->
+    <div class="desktop-container">
+      <div class="home-container">
+        <div class="welcome">
+          <h2>Hello ${currentUser.name}! Set your plan for the day.</h2>
+          <p>Track your learning, manage your tasks, and stay up to date.</p>
         </div>
         
-        <div class="todo-form" style="display:none;">
-          <input type="text" class="task-input" placeholder="Task name">
+        <div class="todo-section">
+          <div class="todo-header">
+            <h3>Todo</h3>
+            <button class="add-task-btn">
+              <i class="fas fa-plus"></i> Add Task
+            </button>
+          </div>
           
-          <div class="form-row">
-            <div class="form-group">
-              <label>Assignee</label>
-              <select class="assignee-select">
-                <option value="${currentUser.name}">Me (${currentUser.name})</option>
-                <option value="Team">Team</option>
-                <option value="Unassigned">Unassigned</option>
+          <div class="todo-form" style="display:none;">
+            <input type="text" class="task-input" placeholder="Task name">
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Assignee</label>
+                <select class="assignee-select">
+                  <option value="${currentUser.name}">Me (${currentUser.name})</option>
+                  <option value="Team">Team</option>
+                  <option value="Unassigned">Unassigned</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" class="due-date-input">
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Priority</label>
+                <select class="priority-select">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Status</label>
+                <select class="status-select">
+                  <option value="on-track">On track</option>
+                  <option value="at-risk">At risk</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="course-selection">
+              <label>Course</label>
+              <select class="course-select">
+                <option value="">None</option>
+                ${enrolledCoursesFromAPI.map(course => 
+                  `<option value="${course.title || course.courseName}">${course.title || course.courseName}</option>`
+                ).join('')}
               </select>
             </div>
             
-            <div class="form-group">
-              <label>Due Date</label>
-              <input type="date" class="due-date-input">
-            </div>
+            <button class="submit-task-btn">Set</button>
           </div>
           
-          <div class="form-row">
-            <div class="form-group">
-              <label>Priority</label>
-              <select class="priority-select">
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label>Status</label>
-              <select class="status-select">
-                <option value="on-track">On track</option>
-                <option value="at-risk">At risk</option>
-                <option value="done">Done</option>
-              </select>
-            </div>
+          <div class="task-list">
+            <!-- Tasks will appear here dynamically -->
           </div>
-          
-          <div class="course-selection">
-            <label>Course</label>
-            <select class="course-select">
-              <option value="">None</option>
-              ${enrolledCoursesFromAPI.map(course => 
-                `<option value="${course.title || course.courseName}">${course.title || course.courseName}</option>`
-              ).join('')}
-            </select>
-          </div>
-          
-          <button class="submit-task-btn">Set</button>
         </div>
         
-        <div class="task-list">
-          <!-- Tasks will appear here dynamically -->
-        </div>
-      </div>
-      
-      <div class="section-title">Enrolled Courses</div>
-      <div class="card-container" id="enrolledCoursesContainer"></div>
-      
-      <div class="statistics">
-        <h2 class="section-title" style= "color:white">Statistics</h2>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <h4>Courses Enrolled</h4>
-            <p id="coursesEnrolledStat"></p>
-          </div>
-          <div class="stat-card">
-            <h4>Courses Completed</h4>
-            <p>${userProgress.completedCourses.length}</p>
-          </div>
-          <div class="stat-card">
-            <h4>Assessments Due</h4>
-            <p>${
-              enrolledCourses.flatMap(course =>
+        <div class="section-title">Enrolled Courses</div>
+        <div class="card-container" id="enrolledCoursesContainer"></div>
+        
+        <div class="statistics">
+          <h2 class="section-title" style="color:white">Statistics</h2>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h4>Courses Enrolled</h4>
+              <p id="coursesEnrolledStat"></p>
+            </div>
+            <div class="stat-card">
+              <h4>Courses Completed</h4>
+              <p>${userProgress.completedCourses.length}</p>
+            </div>
+            <div class="stat-card">
+              <h4>Assessments Due</h4>
+              <p>${enrolledCourses.flatMap(course =>
                 course.assessments?.filter(a => a.status === 'Upcoming') || []
-              ).length
-            }</p>
+              ).length}</p>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+    
+    <!-- Mobile View -->
+    <div class="mobile-container">
+      <div class="mobile-header">
+        <div class="mobile-header-top">
+        <!--  <div class="mobile-logo">INURTURE</div>-->
+           <!--<div class="mobile-profile-icon">${currentUser.name.charAt(0).toUpperCase()}</div>-->
+        </div>
+         <!--<div class="mobile-welcome-text">Hello ${currentUser.name}!</div>-->
+        <div class="mobile-subtitle">Set your plan for the day.</div>
+      </div>
       
-
+      <div class="mobile-content">
+        <!-- Mobile Todo Section -->
+        <div class="mobile-section">
+<!-- Mobile Add Task Form (hidden initially) -->
+<div class="mobile-todo-form" style="display:none; padding:16px; background:white; border-radius:8px; margin-bottom:16px;">
+  <input type="text" class="mobile-task-input" placeholder="Task name" style="width:100%; margin-bottom:8px;">
+  <input type="date" class="mobile-due-date-input" style="width:100%; margin-bottom:8px;">
+  <select class="mobile-priority-select" style="width:100%; margin-bottom:8px;">
+    <option value="low">Low</option>
+    <option value="medium">Medium</option>
+    <option value="high">High</option>
+  </select>
+  <button class="mobile-submit-task-btn" style="width:100%; background:rgb(54,126,186); color:white; padding:8px; border:none; border-radius:6px;">Add</button>
+</div>
+          <div class="mobile-section-header">
+            <div class="mobile-section-title">Today</div>
+            <button class="mobile-add-btn">Add Task</button>
+          </div>
+          <div class="mobile-todo-list" id="mobileTodoList">
+            <!-- Mobile todos will be populated here -->
+          </div>
+        </div>
+        
+        <!-- Mobile Enrolled Courses -->
+        <div class="mobile-section">
+          <div class="mobile-section-header">
+            <div class="mobile-section-title">Enrolled Courses</div>
+          </div>
+          <div class="mobile-course-list" id="mobileCourseList">
+            <!-- Mobile courses will be populated here -->
+          </div>
+        </div>
+        
+        <!-- Mobile Statistics -->
+        <div class="mobile-section">
+          <div class="mobile-section-header">
+            <div class="mobile-section-title">Statistics</div>
+          </div>
+          <div class="mobile-stats-list" id="mobileStatsList">
+            <div class="mobile-stat-item">
+              <div class="mobile-stat-label">Courses Enrolled</div>
+              <div class="mobile-stat-number" id="mobileCoursesEnrolledStat">0</div>
+            </div>
+            <div class="mobile-stat-item">
+              <div class="mobile-stat-label">Courses Completed</div>
+              <div class="mobile-stat-number">${userProgress.completedCourses.length}</div>
+            </div>
+            <div class="mobile-stat-item">
+              <div class="mobile-stat-label">Assessments Due</div>
+              <div class="mobile-stat-number">${enrolledCourses.flatMap(course =>
+                course.assessments?.filter(a => a.status === 'Upcoming') || []
+              ).length}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
-  // Call fetchEnrolledCourses to populate the enrolled courses section
+  // Setup both desktop and mobile functionality
   fetchEnrolledCourses();
   setupTodoFunctionality();
-
-  // Call loadTodos to fetch and display todos from the API
+  setupMobileTodoFunctionality();
   loadTodos();
+  loadMobileTodos();
 }
 
 function setupTodoFunctionality() {
@@ -548,6 +896,65 @@ function setupTodoFunctionality() {
   });
 }
 
+// Add mobile todo functionality
+function setupMobileTodoFunctionality() {
+  const mobileAddBtn = document.querySelector('.mobile-add-btn');
+  const mobileForm = document.querySelector('.mobile-todo-form');
+  const mobileSubmitBtn = document.querySelector('.mobile-submit-task-btn');
+
+  if (mobileAddBtn && mobileForm && mobileSubmitBtn) {
+    mobileAddBtn.addEventListener('click', () => {
+      mobileForm.style.display = mobileForm.style.display === 'none' ? 'block' : 'none';
+    });
+
+    mobileSubmitBtn.addEventListener('click', async () => {
+      const taskInput = document.querySelector('.mobile-task-input');
+      const dueDate = document.querySelector('.mobile-due-date-input').value;
+      const priority = document.querySelector('.mobile-priority-select').value;
+
+      const user = JSON.parse(localStorage.getItem('user'));
+      const email = user.email;
+
+      if (taskInput.value.trim()) {
+        const todoData = {
+          task: taskInput.value.trim(),
+          assignee: user.name,
+          dueDate,
+          priority,
+          status: 'on-track',
+          course: '' // or allow course selection if you want
+        };
+
+        try {
+          await fetch(`${API_BASE_URL}/todos/${email}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(todoData)
+          });
+
+          // reload mobile todos
+          loadMobileTodos();
+          taskInput.value = '';
+          document.querySelector('.mobile-due-date-input').value = '';
+          mobileForm.style.display = 'none';
+        } catch (err) {
+          console.error('Failed to save mobile todo:', err);
+        }
+      }
+    });
+  }
+}
+
+
+// Mobile-specific functions
+function openMobileAddTaskModal() {
+  // You can reuse your existing modal or create a mobile-specific one
+  const existingModal = document.querySelector('.todo-form');
+  if (existingModal) {
+    existingModal.style.display = existingModal.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
 async function fetchEnrolledCourses() {
   const currentUser = userData.currentUser || {};
   const { email } = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : currentUser;
@@ -566,9 +973,11 @@ async function fetchEnrolledCourses() {
     const user = await response.json();
     console.log("Fetched user for enrolled courses:", user);
     localStorage.setItem('user', JSON.stringify(user));
+    
     if (user.enrolledCourses && user.enrolledCourses.length > 0) {
-      enrolledCoursesFromAPI = user.enrolledCourses; // <-- store globally
+      enrolledCoursesFromAPI = user.enrolledCourses;
       renderCourses(user.enrolledCourses, "enrolledCoursesContainer");
+      renderMobileCourses(user.enrolledCourses); // Add this line
     } else {
       enrolledCoursesFromAPI = [];
       renderEmptyState("enrolledCoursesContainer", "You have not enrolled in any courses.");
@@ -576,6 +985,7 @@ async function fetchEnrolledCourses() {
 
     // After rendering, update the stats
     updateEnrolledCoursesStat();
+    updateMobileEnrolledCoursesStat(); // Add this line
   } catch (error) {
     console.error("Error fetching enrolled courses:", error);
     renderEmptyState("enrolledCoursesContainer", "Failed to load enrolled courses.");
@@ -696,7 +1106,64 @@ function renderCourses(courseList, containerId) {
   }).catch(err => console.error("Failed to fetch user:", err));
 }
 
-  async function loadTodos() {
+// Render courses for mobile
+function renderMobileCourses(courseList) {
+  const mobileContainer = document.getElementById('mobileCourseList');
+  if (!mobileContainer) return;
+  
+  mobileContainer.innerHTML = "";
+  
+  const uniqueCoursesMap = new Map();
+  courseList.forEach(course => {
+    const key = course.title || course.courseName;
+    if (!uniqueCoursesMap.has(key)) uniqueCoursesMap.set(key, course);
+  });
+  const uniqueCourses = Array.from(uniqueCoursesMap.values());
+
+  uniqueCourses.forEach(course => {
+    const courseKey = course.title || course.courseName;
+    
+    const courseItem = document.createElement("div");
+    courseItem.className = "mobile-course-item";
+    courseItem.innerHTML = `
+      <div class="mobile-course-header">
+        <div class="mobile-course-title">${courseKey}</div>
+        <div class="mobile-course-subtitle">${course.description || course.courseDescription || 'No description available'}</div>
+      </div>
+      <div class="mobile-course-body">
+        <div class="mobile-course-meta">
+          <span>Course Code: ${course.courseCode || 'N/A'}</span>
+          <span>0 hrs spent</span>
+        </div>
+        <div class="mobile-progress-container">
+          <div class="mobile-progress-text">0% Complete</div>
+          <div class="mobile-progress-bar">
+            <div class="mobile-progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="mobile-course-actions">
+          <button class="mobile-btn mobile-btn-primary" data-course-key="${courseKey}">Continue</button>
+          <button class="mobile-btn mobile-btn-outline" data-course-id="${course._id}">View Details</button>
+        </div>
+      </div>
+    `;
+
+    mobileContainer.appendChild(courseItem);
+
+    // Add event listeners
+    courseItem.querySelector('.mobile-btn-outline').addEventListener('click', e => {
+      e.stopPropagation();
+      renderCourseDetails(document.getElementById("contentArea"), course);
+    });
+
+    courseItem.querySelector('.mobile-btn-primary').addEventListener('click', e => {
+      e.stopPropagation();
+      goToCourse(courseKey);
+    });
+  });
+}
+
+async function loadTodos() {
   const user = JSON.parse(localStorage.getItem('user'));
   const email = user.email;
   try {
@@ -775,6 +1242,69 @@ function renderCourses(courseList, containerId) {
     });
   } catch (err) {
     console.error('Failed to load todos:', err);
+  }
+}
+
+// Load todos for mobile view
+async function loadMobileTodos() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const email = user.email;
+  try {
+    const res = await fetch(`${API_BASE_URL}/todos/${email}`);
+    const todos = await res.json();
+    const mobileTodoList = document.getElementById('mobileTodoList');
+    
+    if (!mobileTodoList) return;
+    
+    mobileTodoList.innerHTML = '';
+    
+    todos.forEach(todo => {
+      if (todo.status === 'done') return; // Skip done todos
+
+      const todoItem = document.createElement('div');
+      todoItem.className = 'mobile-todo-item';
+
+      const formattedDate = todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : 'No due date';
+
+      todoItem.innerHTML = `
+        <input type="checkbox" class="mobile-todo-checkbox" ${todo.status === 'done' ? 'checked' : ''}>
+        <div class="mobile-todo-content">
+          <div class="mobile-todo-title">${todo.task}</div>
+          <div style="font-size: 11px; color: #666; margin-top: 2px;">
+            ${todo.assignee || ''} • ${formattedDate} • ${todo.priority} • ${todo.status}
+            ${todo.course ? ` • ${todo.course}` : ''}
+          </div>
+        </div>
+      `;
+
+      // Add delete and checkbox functionality (similar to desktop)
+      const checkbox = todoItem.querySelector('.mobile-todo-checkbox');
+      checkbox.addEventListener('change', async (e) => {
+        const newStatus = e.target.checked ? 'done' : 'on-track';
+        try {
+          await fetch(`${API_BASE_URL}/todos/${todo._id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+          if (newStatus === 'done') todoItem.remove();
+        } catch (err) {
+          console.error('Failed to update todo status:', err);
+        }
+      });
+
+      mobileTodoList.appendChild(todoItem);
+    });
+  } catch (err) {
+    console.error('Failed to load mobile todos:', err);
+  }
+}
+
+// Update mobile stats
+function updateMobileEnrolledCoursesStat() {
+  const mobileStatElement = document.getElementById('mobileCoursesEnrolledStat');
+  if (mobileStatElement) {
+    mobileStatElement.textContent = enrolledCoursesFromAPI.length;
   }
 }
 

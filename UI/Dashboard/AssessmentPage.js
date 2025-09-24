@@ -19,36 +19,220 @@ async function fetchAssessmentsGrades(email) {
 function loadAssessmentPageCSS() {
   const style = document.createElement('style');
   style.textContent = `
+    /* Mobile-First Styles - Hidden by default on desktop */
+    .mobile-assessment-container {
+      display: none;
+      min-height: 100vh;
+      background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+    }
+
+    .mobile-assessment-header {
+      background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+      padding: 20px 16px;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .mobile-assessment-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .mobile-assessment-subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .mobile-assessment-content {
+      padding: 16px;
+    }
+
+    .mobile-course-folder {
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .mobile-folder-header {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .mobile-folder-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .mobile-folder-icon {
+      color: #3182ce;
+    }
+
+    .mobile-folder-chevron {
+      transition: transform 0.3s ease;
+    }
+
+    .mobile-folder-content {
+      display: none;
+      padding: 0;
+    }
+
+    .mobile-assessment-item {
+      padding: 16px;
+      border-bottom: 1px solid #f8f9fa;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .mobile-assessment-item:last-child {
+      border-bottom: none;
+    }
+
+    .mobile-assessment-header-row {
+      display: flex;
+      justify-content: between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .mobile-assessment-type {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .mobile-assessment-type.assignment {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .mobile-assessment-type.quiz {
+      background: #e3f2fd;
+      color: #28a745;
+    }
+
+    .mobile-assessment-name {
+      font-weight: 600;
+      color: #2c3e50;
+      flex: 1;
+      font-size: 14px;
+    }
+
+    .mobile-assessment-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .mobile-detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .mobile-detail-label {
+      font-weight: 500;
+      color: #888;
+    }
+
+    .mobile-detail-value {
+      font-weight: 600;
+    }
+
+    .mobile-grade-value {
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .mobile-grade-a { color: #2e7d32; }
+    .mobile-grade-b { color: #689f38; }
+    .mobile-grade-c { color: #ef6c00; }
+    .mobile-grade-d { color: #d84315; }
+    .mobile-grade-f { color: #c62828; }
+
+    .mobile-past-due {
+      color: #c62828;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mobile-past-due-badge {
+      background: #c62828;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .mobile-empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+      background: white;
+      border-radius: 12px;
+    }
+
+    .mobile-error-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #c62828;
+      background: #ffebee;
+      border-radius: 12px;
+      border: 1px solid #ffcdd2;
+    }
+
+    /* Desktop Styles - Hidden by default on mobile */
     .assessment-container {
+      display: none;
       padding: 2rem;
       max-width: 1200px;
       margin: 0 auto;
       background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
     }
     
-      .profile-container {
-        padding: 2rem;
-        max-width: 1200px;
-        margin: 0 auto;
-       background: linear-gradient(135deg,rgb(125, 152, 173) 0%, #3182ce 100%);
-      }
-      
-      .welcome {
-        margin-bottom: 2.5rem;
-        text-align: center;
-      }
-      
-      .welcome h2 {
-        color:rgb(26, 115, 150);
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-        font-weight: 700;
-      }
-      
-      .welcome p {
-        color:rgb(39, 106, 177);
-        font-size: 1.1rem;
-      }
+    .profile-container {
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
+    }
+    
+    .welcome {
+      margin-bottom: 2.5rem;
+      text-align: center;
+    }
+    
+    .welcome h2 {
+      color: rgb(26, 115, 150);
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    
+    .welcome p {
+      color: rgb(39, 106, 177);
+      font-size: 1.1rem;
+    }
     
     .assessments-section {
       background: white;
@@ -59,7 +243,7 @@ function loadAssessmentPageCSS() {
     }
     
     .section-title {
-      color:rgb(53, 143, 172);
+      color: rgb(53, 143, 172);
       font-size: 1.5rem;
       margin: 0 0 1.5rem;
       padding-bottom: 0.75rem;
@@ -72,10 +256,10 @@ function loadAssessmentPageCSS() {
       font-size: 0.95rem;
     }
     
- .assessments-table thead {
-  background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%) !important;
-  color: white !important;
-}
+    .assessments-table thead {
+      background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%) !important;
+      color: white !important;
+    }
     
     .assessments-table th {
       padding: 1rem;
@@ -109,7 +293,7 @@ function loadAssessmentPageCSS() {
     
     .assessment-type.quiz {
       background-color: #e3f2fd;
-      color:rgb(28, 175, 205);
+      color: rgb(28, 175, 205);
     }
     
     .grade-cell {
@@ -117,7 +301,7 @@ function loadAssessmentPageCSS() {
       text-align: center;
     }
     
-     .grade-a { color: #2e7d32; }
+    .grade-a { color: #2e7d32; }
     .grade-b { color: #689f38; }
     .grade-c { color: #ef6c00; }
     .grade-d { color: #d84315; }
@@ -195,25 +379,80 @@ function loadAssessmentPageCSS() {
       margin-top: 1.5rem;
     }
     
+    /* Responsive Behavior - Show only one container based on screen size */
     @media (max-width: 768px) {
       .assessment-container {
-        padding: 1rem;
+        display: none !important;
       }
       
-      .assessments-table {
-        display: block;
-        overflow-x: auto;
+      .mobile-assessment-container {
+        display: block !important;
       }
+    }
+    
+    @media (min-width: 769px) {
+      .mobile-assessment-container {
+        display: none !important;
+      }
+      
+      .assessment-container {
+        display: block !important;
+      }
+    }
+
+    /* Loading Animation */
+    .mobile-loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      background: white;
+      border-radius: 12px;
+    }
+
+    .desktop-loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 60px;
+      background: white;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+
+    .mobile-loading-spinner, .desktop-loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3182ce;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .desktop-loading-spinner {
+      width: 40px;
+      height: 40px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   `;
   document.head.appendChild(style);
 }
 
-// Main function to render assessment page with course names
+// Function to detect mobile screen
+function isMobileScreen() {
+  return window.innerWidth <= 768;
+}
+
+// Main function to render assessment page
 export async function renderAssessmentPage(contentArea) {
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : (typeof currentUser !== 'undefined' ? currentUser : null);
   const userEmail = user && user.email ? user.email : null;
   const my_courses = user && user.enrolledCourses ? user.enrolledCourses : [];
+  
   if (!userEmail) {
     contentArea.innerHTML = `<div class="error-message">User not logged in.</div>`;
     return;
@@ -221,21 +460,45 @@ export async function renderAssessmentPage(contentArea) {
 
   loadAssessmentPageCSS();
 
-  contentArea.innerHTML = `
-    <div class="profile-container">
-      <div class="welcome">
-        <h2>My Assessments</h2>
-        <p>Track all your assignments and quizzes in one place</p>
-      </div>
-      
-      <div class="assessments-section">
-        <div class="section-title">All Assessments by Course</div>
-        <div id="assessmentsContainer">
-          <div class="empty-message">Loading assessments...</div>
+  // Render only the appropriate view based on screen size
+  if (isMobileScreen()) {
+    // Render mobile view only
+    contentArea.innerHTML = `
+      <div class="mobile-assessment-container">
+        <div class="mobile-assessment-header">
+          <div class="mobile-assessment-title">My Assessments</div>
+          <div class="mobile-assessment-subtitle">Track all your assignments and quizzes</div>
+        </div>
+        
+        <div class="mobile-assessment-content">
+          <div id="mobileAssessmentsContainer">
+            <div class="mobile-loading">
+              <div class="mobile-loading-spinner"></div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
+  } else {
+    // Render desktop view only
+    contentArea.innerHTML = `
+      <div class="profile-container">
+        <div class="welcome">
+          <h2>My Assessments</h2>
+          <p>Track all your assignments and quizzes in one place</p>
+        </div>
+        
+        <div class="assessments-section">
+          <div class="section-title">All Assessments by Course</div>
+          <div id="assessmentsContainer">
+            <div class="desktop-loading">
+              <div class="desktop-loading-spinner"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   try {
     // Get courses from global data or fetch if not available
@@ -254,9 +517,15 @@ export async function renderAssessmentPage(contentArea) {
     ).filter(id => id);
 
     if (courseIds.length === 0) {
-      document.getElementById('assessmentsContainer').innerHTML = `
-        <div class="empty-message">You are not enrolled in any courses.</div>
-      `;
+      if (isMobileScreen()) {
+        document.getElementById('mobileAssessmentsContainer').innerHTML = `
+          <div class="mobile-empty-state">You are not enrolled in any courses.</div>
+        `;
+      } else {
+        document.getElementById('assessmentsContainer').innerHTML = `
+          <div class="empty-message">You are not enrolled in any courses.</div>
+        `;
+      }
       return;
     }
 
@@ -304,43 +573,81 @@ export async function renderAssessmentPage(contentArea) {
       courseIds.includes(q.courseId?.toString())
     );
 
-    // Render assessments with course name instead of ID
-    const assessmentsHtml = renderAssessmentsByCourse(
-      courseIds, 
-      assessmentsByCourse, 
-      filteredQuizzes, 
-      grades, 
-      ASSgrades,
-      courseInfoMap
-    );
-    
-    document.getElementById('assessmentsContainer').innerHTML = assessmentsHtml;
+    // Render the appropriate view based on screen size
+    if (isMobileScreen()) {
+      // Render mobile assessments
+      const mobileAssessmentsHtml = renderMobileAssessmentsByCourse(
+        courseIds, 
+        assessmentsByCourse, 
+        filteredQuizzes, 
+        grades, 
+        ASSgrades,
+        courseInfoMap
+      );
+      
+      document.getElementById('mobileAssessmentsContainer').innerHTML = mobileAssessmentsHtml;
 
-    // Add folder toggle functionality
-    document.querySelectorAll('.folder-header').forEach(header => {
-      header.addEventListener('click', () => {
-        const content = header.nextElementSibling;
-        const icon = header.querySelector('.fas.fa-chevron-down');
+      // Add folder toggle functionality for mobile
+      document.querySelectorAll('.mobile-folder-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const content = header.nextElementSibling;
+          const chevron = header.querySelector('.mobile-folder-chevron');
 
-        if (content.style.display === 'none' || content.style.display === '') {
-          content.style.display = 'block';
-          icon.style.transform = 'rotate(0deg)';
-        } else {
-          content.style.display = 'none';
-          icon.style.transform = 'rotate(-90deg)';
-        }
+          if (content.style.display === 'none' || content.style.display === '') {
+            content.style.display = 'block';
+            chevron.style.transform = 'rotate(180deg)';
+          } else {
+            content.style.display = 'none';
+            chevron.style.transform = 'rotate(0deg)';
+          }
+        });
       });
-    });
+    } else {
+      // Render desktop assessments
+      const assessmentsHtml = renderAssessmentsByCourse(
+        courseIds, 
+        assessmentsByCourse, 
+        filteredQuizzes, 
+        grades, 
+        ASSgrades,
+        courseInfoMap
+      );
+      
+      document.getElementById('assessmentsContainer').innerHTML = assessmentsHtml;
+
+      // Add folder toggle functionality for desktop
+      document.querySelectorAll('.folder-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const content = header.nextElementSibling;
+          const icon = header.querySelector('.fas.fa-chevron-down');
+
+          if (content.style.display === 'none' || content.style.display === '') {
+            content.style.display = 'block';
+            icon.style.transform = 'rotate(0deg)';
+          } else {
+            content.style.display = 'none';
+            icon.style.transform = 'rotate(-90deg)';
+          }
+        });
+      });
+    }
 
   } catch (error) {
     console.error('Error loading assessments:', error);
-    document.getElementById('assessmentsContainer').innerHTML = `
-      <div class="error-message">Failed to load assessments. ${error.message}</div>
-    `;
+    
+    if (isMobileScreen()) {
+      document.getElementById('mobileAssessmentsContainer').innerHTML = `
+        <div class="mobile-error-state">Failed to load assessments. ${error.message}</div>
+      `;
+    } else {
+      document.getElementById('assessmentsContainer').innerHTML = `
+        <div class="error-message">Failed to load assessments. ${error.message}</div>
+      `;
+    }
   }
 }
 
-// Function to render assessments grouped by course
+// Function to render assessments grouped by course for desktop
 function renderAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grades, ASSgrades, courseInfoMap) {
   if (courseIds.length === 0) {
     return `<div class="empty-message">You are not enrolled in any courses.</div>`;
@@ -355,12 +662,8 @@ function renderAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grad
       return '';
     }
     
-    // Use course name instead of ID for folder display
     const courseName = courseInfo.name;
-    
-    // assessmentsByCourse is now an array, not an object with folders
     const courseAssessments = assessmentsByCourse[courseId] || [];
-
     const courseQuizzes = quizzes.filter(q => q.courseId?.toString() === courseId);
 
     // Process assessments with grades
@@ -421,6 +724,132 @@ function renderAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grad
   `;
 }
 
+// Function to render assessments for mobile view
+function renderMobileAssessmentsByCourse(courseIds, assessmentsByCourse, quizzes, grades, ASSgrades, courseInfoMap) {
+  if (courseIds.length === 0) {
+    return `<div class="mobile-empty-state">You are not enrolled in any courses.</div>`;
+  }
+
+  let hasAssessments = false;
+
+  const coursesHtml = courseIds.map(courseId => {
+    const courseInfo = courseInfoMap.get(courseId);
+    
+    if (!courseInfo) {
+      return '';
+    }
+    
+    const courseName = courseInfo.name;
+    const courseAssessments = assessmentsByCourse[courseId] || [];
+    const courseQuizzes = quizzes.filter(q => q.courseId?.toString() === courseId);
+
+    // Process assessments with grades
+    const assessmentsWithGrades = courseAssessments.map(a => {
+      const gradeObj = ASSgrades.find(g => (g.assessmentId === a._id || g.assessmentId === a.id));
+      return {
+        ...a,
+        grade: gradeObj ? gradeObj.grade : undefined,
+        feedback: gradeObj ? gradeObj.feedback : undefined,
+        type: 'Assignment'
+      };
+    });
+
+    // Process quizzes with grades
+    const quizzesWithGrades = courseQuizzes.map(q => {
+      const gradeObj = grades.find(g => g.type === 'quiz' && (g.refId === q._id || g.refId === q.id));
+      return {
+        ...q,
+        grade: gradeObj ? gradeObj.grade : undefined,
+        feedback: gradeObj ? gradeObj.feedback : undefined,
+        dueDate: q.dueDate,
+        title: q.title,
+        type: 'Quiz'
+      };
+    });
+
+    const allItems = [...assessmentsWithGrades, ...quizzesWithGrades].sort((a, b) => {
+      const aDate = a.dueDate ? new Date(a.dueDate) : new Date(0);
+      const bDate = b.dueDate ? new Date(b.dueDate) : new Date(0);
+      return aDate - bDate;
+    });
+
+    if (allItems.length > 0) {
+      hasAssessments = true;
+    }
+
+    return `
+      <div class="mobile-course-folder">
+        <div class="mobile-folder-header">
+          <div class="mobile-folder-title">
+            <i class="fas fa-folder mobile-folder-icon"></i>
+            <span>${courseName}</span>
+          </div>
+          <i class="fas fa-chevron-down mobile-folder-chevron"></i>
+        </div>
+        <div class="mobile-folder-content" style="display:none;">
+          ${allItems.length > 0 ? renderMobileAssessmentItems(allItems) : '<div class="mobile-empty-state" style="padding: 20px;">No assessments for this course</div>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (!hasAssessments) {
+    return `<div class="mobile-empty-state">No assessments or quizzes found in any of your courses.</div>`;
+  }
+
+  return coursesHtml;
+}
+
+// Function to render mobile assessment items
+function renderMobileAssessmentItems(items) {
+  if (!items || items.length === 0) {
+    return `<div class="mobile-empty-state" style="padding: 20px;">No assessments found</div>`;
+  }
+
+  return items.map(item => {
+    const isQuiz = item.type === 'Quiz';
+    const duePassed = item.dueDate && new Date(new Date(item.dueDate).setHours(0,0,0,0)) < new Date(new Date().setHours(0,0,0,0));
+    const noGrade = item.grade === undefined || item.grade === null || item.grade === '' || item.grade === 'N/A';
+    const gradeClass = item.grade >= 90 ? 'mobile-grade-a' : 
+                      item.grade >= 80 ? 'mobile-grade-b' : 
+                      item.grade >= 70 ? 'mobile-grade-c' : 
+                      item.grade >= 60 ? 'mobile-grade-d' : 'mobile-grade-f';
+    
+    const formattedDate = item.dueDate ? 
+      new Date(item.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 
+      'N/A';
+
+    return `
+      <div class="mobile-assessment-item">
+        <div class="mobile-assessment-header-row">
+          <span class="mobile-assessment-type ${item.type.toLowerCase()}">${item.type}</span>
+          <span class="mobile-assessment-name">${item.title || 'N/A'}</span>
+        </div>
+        <div class="mobile-assessment-details">
+          <div class="mobile-detail-item">
+            <span class="mobile-detail-label">Grade</span>
+            <span class="mobile-detail-value mobile-grade-value ${item.grade ? gradeClass : ''}">
+              ${item.grade || 'N/A'}
+            </span>
+          </div>
+          <div class="mobile-detail-item">
+            <span class="mobile-detail-label">Due Date</span>
+            <span class="mobile-detail-value ${duePassed ? 'mobile-past-due' : ''}">
+              ${formattedDate}
+              ${duePassed ? '<span class="mobile-past-due-badge">Past Due</span>' : ''}
+            </span>
+          </div>
+          <div class="mobile-detail-item" style="grid-column: 1 / -1;">
+            <span class="mobile-detail-label">Feedback</span>
+            <span class="mobile-detail-value">${item.feedback || '—'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Original desktop table rendering function
 function renderAssessmentsTable(items) {
   if (!items || items.length === 0) {
     return `<div class="empty-message">No assessments or quizzes found.</div>`;
@@ -463,3 +892,14 @@ function renderAssessmentsTable(items) {
     </table>
   `;
 }
+
+// Add resize listener to handle screen size changes
+window.addEventListener('resize', () => {
+  // Re-render the page when screen size changes significantly
+  if (window.assessmentRendered && Math.abs(window.lastScreenWidth - window.innerWidth) > 100) {
+    window.lastScreenWidth = window.innerWidth;
+    // You might want to add a debounce here to prevent excessive re-renders
+  }
+});
+
+window.lastScreenWidth = window.innerWidth;
