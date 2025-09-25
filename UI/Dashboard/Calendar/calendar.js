@@ -236,7 +236,7 @@ export async function renderCalendarTab(contentArea) {
     <div class="calendar-container">
       <div class="welcome">
         <h2>Learning Calendar</h2>
-        <p>Trackre your assessments, deadlines, and learning schedule</p>
+        <p>Track your assessments, deadlines, and learning schedule</p>
       </div>
       
       <div class="calendar-section">
