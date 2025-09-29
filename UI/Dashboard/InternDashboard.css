@@ -1225,6 +1225,29 @@ body {
   color: #374151;
 }
 
+/* Hide hamburger menu on desktop and when sidebar is visible */
+@media (min-width: 769px) {
+  #toggleSidebar {
+    display: none !important;
+  }
+  
+  .sidebar-overlay {
+    display: none !important;
+  }
+}
+
+/* Ensure sidebar is always visible on desktop */
+@media (min-width: 769px) {
+  .sidebar {
+    transform: translateX(0) !important;
+  }
+  
+  .main {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .profile-grid {

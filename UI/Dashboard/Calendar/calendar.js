@@ -254,9 +254,9 @@ export async function renderCalendarTab(contentArea) {
       height: 'auto',
       aspectRatio: 1.5,
       headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        // left: 'prev,next today',
+        // center: 'title',
+        // right: 'dayGridMonth,timeGridWeek,timeGridDay'
       },
       views: {
         dayGridMonth: {
@@ -298,13 +298,13 @@ export async function renderCalendarTab(contentArea) {
                 ${info.event.start.getDate()}
               </div>
               <div>
-                <div style="font-size: 0.9rem; color: #718096;">${eventDate}</div>
+                <div style="font-size: 0.9rem; color:rgb(115, 150, 113);">${eventDate}</div>
                 <h3 style="margin: 0.25rem 0; font-size: 1.25rem;">${info.event.title}</h3>
                 <div style="font-size: 0.9rem; color: #4299e1; font-weight: 500;">${eventTime}</div>
               </div>
             </div>
             <div style="
-              background: #f7fafc;
+              background:rgb(252, 247, 247);
               border-radius: 8px;
               padding: 1rem;
               margin-top: 1rem;

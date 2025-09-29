@@ -81,7 +81,7 @@ export async function renderProfileTab(contentArea, currentUser) {
     .profile-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 1.5rem;
+      gap: 1rem;
     }
     
     .profile-card {
@@ -93,10 +93,11 @@ export async function renderProfileTab(contentArea, currentUser) {
     }
     
     .profile-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
     }
-    
+
+    /* Mobile-First Collapsible Card Header */
     .card-header {
       background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
       color: white;
@@ -104,13 +105,55 @@ export async function renderProfileTab(contentArea, currentUser) {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .card-header-content {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    .card-icon {
+      font-size: 1.5rem;
+      opacity: 0.9;
+    }
+
+    .card-title-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
     }
     
     .card-header h3 {
       margin: 0;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: 600;
       color: white;
+    }
+
+    .card-subtitle {
+      font-size: 0.8rem;
+      opacity: 0.8;
+      margin-top: 0.1rem;
+    }
+
+    .card-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .toggle-icon {
+      transition: transform 0.3s ease;
+      font-size: 1rem;
+    }
+
+    .profile-card.expanded .toggle-icon {
+      transform: rotate(180deg);
     }
     
     .edit-btn, .add-goal-btn {
@@ -120,11 +163,12 @@ export async function renderProfileTab(contentArea, currentUser) {
       padding: 0.4rem 0.8rem;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
       transition: background 0.2s;
+      margin-left: 0.5rem;
     }
     
     .edit-btn:hover, .add-goal-btn:hover {
@@ -132,7 +176,35 @@ export async function renderProfileTab(contentArea, currentUser) {
     }
     
     .card-body {
+      padding: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+
+    .profile-card.expanded .card-body {
+      max-height: 1000px;
       padding: 1rem;
+    }
+
+    /* Always show goals form when visible */
+    .goal-form {
+      padding: 1rem;
+      background: #f7fafc;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+
+    .goal-form.show {
+      max-height: 500px;
+      padding: 1rem;
+    }
+
+    .goal-form.show ~ .card-body {
+      padding-top: 0;
     }
     
     .detail-item {
@@ -213,13 +285,6 @@ export async function renderProfileTab(contentArea, currentUser) {
     .achievement-item i {
       color: rgb(21, 81, 133);
       font-size: 1.1rem;
-    }
-    
-    .goal-form {
-      padding: 1rem;
-      background: #f7fafc;
-      border-radius: 8px;
-      margin-bottom: 1rem;
     }
     
     .goal-input, .goal-desc-input, .goal-date-input, .goal-priority-input {
@@ -408,61 +473,106 @@ export async function renderProfileTab(contentArea, currentUser) {
       font-style: italic;
       padding: 1rem;
     }
+
+    /* Desktop View */
+    @media (min-width: 769px) {
+      .profile-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+      }
+
+      .card-header {
+        cursor: default;
+      }
+
+      .card-toggle {
+        display: none;
+      }
+
+      .card-body {
+        max-height: none;
+        padding: 1rem;
+      }
+
+      .goal-form {
+        max-height: none;
+        padding: 1rem;
+      }
+
+      .profile-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+      }
+    }
     
-   @media (max-width: 768px) {
-  .profile-grid {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "account"
-      "milestones"
-      "achievements"
-      "goals";
-  }
+    /* Mobile Optimizations */
+    @media (max-width: 768px) {
+      .profile-container {
+        padding: 0.5rem;
+      }
 
-  .detail-item {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
+      .profile-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
 
-  .detail-label {
-    min-width: auto;
-  }
+      .welcome h2 {
+        font-size: 1.5rem;
+      }
 
-  .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
+      .welcome p {
+        font-size: 0.9rem;
+      }
 
-  .edit-btn, .add-goal-btn {
-    width: 100%;
-    justify-content: center;
-  }
+      .card-header {
+        padding: 0.75rem 1rem;
+      }
 
-  .goal-form {
-    padding: 0.75rem;
-  }
+      .card-icon {
+        font-size: 1.3rem;
+      }
 
-  .goal-input {
-    font-size: 0.95rem;
-  }
+      .card-header h3 {
+        font-size: 1rem;
+      }
 
-  .submit-goal-btn {
-    width: 100%;
-    font-size: 0.95rem;
-    padding: 0.5rem;
-  }
+      .card-subtitle {
+        font-size: 0.75rem;
+      }
 
-  .certificate-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+      .edit-btn, .add-goal-btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.8rem;
+      }
 
-  .view-certificate-btn {
-    width: 100%;
-    margin-top: 0.5rem;
-  }
-}
+      .detail-item {
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+      }
+
+      .goal-form.show {
+        padding: 0.75rem;
+      }
+
+      .goal-input, .goal-desc-input, .goal-date-input, .goal-priority-input {
+        padding: 0.6rem;
+        font-size: 0.95rem;
+      }
+
+      .submit-goal-btn {
+        padding: 0.6rem;
+        font-size: 0.95rem;
+      }
+
+      .certificate-item {
+        padding: 0.75rem;
+      }
+
+      .view-certificate-btn {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+      }
+    }
   </style>
   
   <div class="profile-container">
@@ -473,9 +583,19 @@ export async function renderProfileTab(contentArea, currentUser) {
 
     <div class="profile-grid">
       <!-- Card 1: Account Details -->
-      <div class="profile-card">
+      <div class="profile-card" data-card="profile">
         <div class="card-header">
-          <h3>Account Details</h3>
+          <div class="card-header-content">
+            <i class="fas fa-user-circle card-icon"></i>
+            <div class="card-title-section">
+              <h3>Profile</h3>
+              <div class="card-subtitle">${currentUser.name}</div>
+            </div>
+          </div>
+          <div class="card-toggle">
+            <span>View</span>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+          </div>
           <button class="edit-btn"><i class="fas fa-edit"></i> Edit</button>
         </div>
         <div class="card-body">
@@ -488,8 +608,20 @@ export async function renderProfileTab(contentArea, currentUser) {
       </div>
 
       <!-- Card 2: Milestones -->
-      <div class="profile-card">
-        <div class="card-header"><h3>Milestones</h3></div>
+      <div class="profile-card" data-card="milestones">
+        <div class="card-header">
+          <div class="card-header-content">
+            <i class="fas fa-trophy card-icon"></i>
+            <div class="card-title-section">
+              <h3>Milestones</h3>
+              <div class="card-subtitle">${currentUser.milestones?.length || 0} achievements</div>
+            </div>
+          </div>
+          <div class="card-toggle">
+            <span>View</span>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+          </div>
+        </div>
         <div class="card-body">
           <ul class="milestones-list">
             ${milestones}
@@ -498,8 +630,20 @@ export async function renderProfileTab(contentArea, currentUser) {
       </div>
 
       <!-- Card 3: Achievements & Certificates -->
-      <div class="profile-card">
-        <div class="card-header"><h3>Achievements & Certificates</h3></div>
+      <div class="profile-card" data-card="certificates">
+        <div class="card-header">
+          <div class="card-header-content">
+            <i class="fas fa-certificate card-icon"></i>
+            <div class="card-title-section">
+              <h3>Certificates</h3>
+              <div class="card-subtitle">${certificates.length} earned</div>
+            </div>
+          </div>
+          <div class="card-toggle">
+            <span>View</span>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+          </div>
+        </div>
         <div class="card-body">
           ${certificates.length > 0 ? `
             <div class="certificates-list">
@@ -528,12 +672,22 @@ export async function renderProfileTab(contentArea, currentUser) {
       </div>
 
       <!-- Card 4: Goals -->
-      <div class="profile-card">
+      <div class="profile-card expanded" data-card="goals">
         <div class="card-header">
-          <h3>Goals</h3>
-          <button class="add-goal-btn"><i class="fas fa-plus"></i> Add Goal</button>
+          <div class="card-header-content">
+            <i class="fas fa-bullseye card-icon"></i>
+            <div class="card-title-section">
+              <h3>Goals</h3>
+              <div class="card-subtitle">Personal targets</div>
+            </div>
+          </div>
+          <div class="card-toggle">
+            <span>Hide</span>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+          </div>
+          <button class="add-goal-btn"><i class="fas fa-plus"></i> Add</button>
         </div>
-        <div class="goal-form" style="display:none;">
+        <div class="goal-form">
           <input type="text" class="goal-input" placeholder="Goal Title" />
           <textarea class="goal-desc-input" placeholder="Goal Description"></textarea>
           <input type="date" class="goal-date-input" placeholder="Target Date" 
@@ -553,6 +707,9 @@ export async function renderProfileTab(contentArea, currentUser) {
   </div>
   `;
 
+  // Setup collapsible functionality for mobile
+  setupCollapsibleCards(contentArea);
+
   // Event listeners for certificate buttons
   contentArea.querySelectorAll('.view-certificate-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -571,6 +728,44 @@ export async function renderProfileTab(contentArea, currentUser) {
   setupGoalsFunctionality(currentUser, contentArea);
 }
 
+// Setup collapsible cards for mobile view
+function setupCollapsibleCards(contentArea) {
+  const isMobile = () => window.innerWidth <= 768;
+  
+  contentArea.querySelectorAll('.profile-card').forEach(card => {
+    const header = card.querySelector('.card-header');
+    const toggleSpan = card.querySelector('.card-toggle span');
+    
+    // Only make headers clickable on mobile
+    const handleHeaderClick = (e) => {
+      // Don't toggle if clicking on edit/add buttons
+      if (e.target.closest('.edit-btn, .add-goal-btn')) return;
+      
+      if (isMobile()) {
+        card.classList.toggle('expanded');
+        const isExpanded = card.classList.contains('expanded');
+        toggleSpan.textContent = isExpanded ? 'Hide' : 'View';
+      }
+    };
+    
+    header.addEventListener('click', handleHeaderClick);
+    
+    // Handle resize events
+    const handleResize = () => {
+      if (!isMobile()) {
+        card.classList.add('expanded');
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Initial state
+    if (!isMobile()) {
+      card.classList.add('expanded');
+    }
+  });
+}
+
 // Editable Bio
 async function startEditingProfile(contentArea, currentUser) {
   const bioEl = contentArea.querySelector('.detail-item.bio .detail-value');
@@ -583,7 +778,7 @@ async function startEditingProfile(contentArea, currentUser) {
   bioEl.appendChild(textarea);
 
   const editBtn = contentArea.querySelector('.edit-btn');
-  editBtn.textContent = 'Save';
+  editBtn.innerHTML = '<i class="fas fa-save"></i> Save';
   editBtn.onclick = async () => {
     const newBio = textarea.value.trim();
     try {
@@ -600,7 +795,7 @@ async function startEditingProfile(contentArea, currentUser) {
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
       bioEl.textContent = updatedProfile.bio || 'No bio available';
-      editBtn.textContent = 'Edit';
+      editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
       editBtn.onclick = () => startEditingProfile(contentArea, currentUser);
     } catch (err) {
       console.error(err);
@@ -621,8 +816,13 @@ function setupGoalsFunctionality(currentUser, contentArea) {
   dateInput.min = new Date().toISOString().split('T')[0];
 
   // Toggle form visibility
-  addGoalBtn.addEventListener("click", () => {
-    goalForm.style.display = goalForm.style.display === "none" ? "block" : "none";
+  addGoalBtn.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent card toggle
+    goalForm.classList.toggle("show");
+    const isShowing = goalForm.classList.contains("show");
+    addGoalBtn.innerHTML = isShowing 
+      ? '<i class="fas fa-times"></i> Cancel'
+      : '<i class="fas fa-plus"></i> Add';
   });
 
   // Submit goal
@@ -652,7 +852,8 @@ function setupGoalsFunctionality(currentUser, contentArea) {
         descInput.value = "";
         dateInput.value = "";
         priorityInput.value = "medium";
-        goalForm.style.display = "none";
+        goalForm.classList.remove("show");
+        addGoalBtn.innerHTML = '<i class="fas fa-plus"></i> Add';
 
       } catch (error) {
         console.error("Error saving goal:", error);

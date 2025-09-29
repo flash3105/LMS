@@ -114,52 +114,60 @@ function setupResponsiveFeatures() {
   const sidebar = document.querySelector('.sidebar');
   if (!sidebar || !toggleSidebar) return;
 
-  // Create overlay if not exists
-  overlay = document.createElement('div');
-  overlay.className = 'sidebar-overlay';
-  document.body.appendChild(overlay);
+  // Only create overlay and setup toggle for mobile
+  if (window.innerWidth <= 768) {
+    // Create overlay if not exists
+    overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
 
-  function toggleSidebarFunc() {
-    sidebar.classList.toggle('active');
-    overlay.classList.toggle('active');
-    document.body.classList.toggle('sidebar-open');
-  }
-
-  function closeSidebar() {
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
-    document.body.classList.remove('sidebar-open');
-  }
-
-  // Expose globally
-  window.closeSidebar = closeSidebar;
-
-  // Hamburger click/touch
-  ["click", "touchstart"].forEach(evt => {
-    toggleSidebar.addEventListener(evt, function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleSidebarFunc();
-    });
-  });
-
-  // Overlay click closes sidebar
-  overlay.addEventListener('click', closeSidebar);
-
-  // Click outside closes sidebar on mobile
-  document.addEventListener('click', function(e) {
-    if (window.innerWidth <= 768 &&
-        sidebar.classList.contains('active') &&
-        !sidebar.contains(e.target) &&
-        e.target !== toggleSidebar) {
-      closeSidebar();
+    function toggleSidebarFunc() {
+      sidebar.classList.toggle('active');
+      overlay.classList.toggle('active');
+      document.body.classList.toggle('sidebar-open');
     }
-  });
+
+    function closeSidebar() {
+      sidebar.classList.remove('active');
+      overlay.classList.remove('active');
+      document.body.classList.remove('sidebar-open');
+    }
+
+    // Expose globally
+    window.closeSidebar = closeSidebar;
+
+    // Hamburger click/touch
+    ["click", "touchstart"].forEach(evt => {
+      toggleSidebar.addEventListener(evt, function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSidebarFunc();
+      });
+    });
+
+    // Overlay click closes sidebar
+    overlay.addEventListener('click', closeSidebar);
+
+    // Click outside closes sidebar on mobile
+    document.addEventListener('click', function(e) {
+      if (window.innerWidth <= 768 &&
+          sidebar.classList.contains('active') &&
+          !sidebar.contains(e.target) &&
+          e.target !== toggleSidebar) {
+        closeSidebar();
+      }
+    });
+  }
 
   // Handle window resize
   window.addEventListener('resize', function() {
     if (window.innerWidth > 768) {
-      closeSidebar();
+      // Ensure sidebar is visible on desktop
+      sidebar.classList.remove('active');
+      if (overlay) {
+        overlay.classList.remove('active');
+      }
+      document.body.classList.remove('sidebar-open');
     }
   });
 }

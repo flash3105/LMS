@@ -15,10 +15,6 @@ export async function renderCourseDetails(contentArea, course) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const userId = user._id;
 
- 
-
-
-
   const response = await fetch(`${API_BASE_URL}/mycourses/${user.email}`);
     if (!response.ok) {
       throw new Error("Failed to fetch enrolled courses");
@@ -55,8 +51,6 @@ export async function renderCourseDetails(contentArea, course) {
   console.log('Completions JSON:', completions);
   console.log('Ratings JSON:', ratings);
 
-
-
   // Render resources
   resources.forEach(resource => {
     const completed = completions.some(c => c.resource === resource._id);
@@ -87,7 +81,7 @@ export async function renderCourseDetails(contentArea, course) {
 
         <style>
         .course-details-container {
-          padding: 2rem;
+          padding: 1rem;
           max-width: 1200px;
           margin: 0 auto;
           background: linear-gradient(135deg, rgb(125, 152, 173) 0%, #3182ce 100%);
@@ -97,35 +91,38 @@ export async function renderCourseDetails(contentArea, course) {
         .course-header {
           background: white;
           border-radius: 12px;
-          padding: 2rem;
-          margin-bottom: 2rem;
+          padding: 1.5rem;
+          margin-bottom: 1.5rem;
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
         
         .course-title {
           color: rgb(26, 115, 150);
-          font-size: 2rem;
-          margin-bottom: 1rem;
+          font-size: 1.5rem;
+          margin-bottom: 0.8rem;
           font-weight: 700;
+          line-height: 1.3;
         }
         
         .course-description {
           color: #4a5568;
-          font-size: 1.1rem;
-          line-height: 1.6;
-          margin-bottom: 1.5rem;
+          font-size: 1rem;
+          line-height: 1.5;
+          margin-bottom: 1.2rem;
         }
         
         .course-meta {
           display: flex;
-          gap: 1rem;
+          gap: 0.8rem;
           align-items: center;
+          flex-wrap: wrap;
         }
         
         .badge {
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
+          padding: 0.4rem 0.8rem;
+          border-radius: 16px;
           font-weight: 600;
+          font-size: 0.85rem;
         }
         
         .bg-primary {
@@ -135,20 +132,35 @@ export async function renderCourseDetails(contentArea, course) {
         
         .text-muted {
           color: #718096 !important;
+          font-size: 0.9rem;
         }
         
         .nav-tabs {
           border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-          margin-bottom: 2rem;
+          margin-bottom: 1.5rem;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        
+        .nav-tabs::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .nav-tabs .nav-item {
+          flex-shrink: 0;
         }
         
         .nav-link {
           color: white;
           font-weight: 500;
-          padding: 1rem 1.5rem;
+          padding: 0.8rem 1.2rem;
           border: none;
           background: transparent;
           position: relative;
+          white-space: nowrap;
+          font-size: 0.9rem;
         }
         
         .nav-link.active {
@@ -176,15 +188,15 @@ export async function renderCourseDetails(contentArea, course) {
         .tab-content {
           background: white;
           border-radius: 12px;
-          padding: 2rem;
+          padding: 1.5rem;
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
         
         .section-title {
           color: rgb(26, 115, 150);
-          font-size: 1.5rem;
-          margin-bottom: 1.5rem;
-          padding-bottom: 0.5rem;
+          font-size: 1.3rem;
+          margin-bottom: 1.2rem;
+          padding-bottom: 0.4rem;
           border-bottom: 2px solid #e2e8f0;
         }
         
@@ -192,23 +204,23 @@ export async function renderCourseDetails(contentArea, course) {
           background: #f8fafc;
           border: 1px solid #e2e8f0;
           border-radius: 12px;
-          padding: 2rem;
+          padding: 1.5rem;
           text-align: center;
           color: #64748b;
-          font-size: 1rem;
+          font-size: 0.95rem;
         }
         
         .resource-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-          gap: 24px;
+          grid-template-columns: 1fr;
+          gap: 1rem;
         }
         
         .resource-card {
           background: #fff;
-          border-radius: 14px;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-          padding: 1.5rem 1.2rem;
+          border-radius: 12px;
+          box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+          padding: 1.2rem;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -217,8 +229,31 @@ export async function renderCourseDetails(contentArea, course) {
         }
         
         .resource-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        }
+        
+        .resource-card h4 {
+          font-size: 1.1rem;
+          margin-bottom: 0.5rem;
+          color: #1e88e5;
+          font-weight: 600;
+          line-height: 1.3;
+        }
+        
+        .resource-meta {
+          font-size: 0.85rem;
+          color: #64748b;
+          margin-bottom: 0.7rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.3rem;
+        }
+        
+        .resource-meta span {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
         }
         
         .folder-header {
@@ -226,14 +261,19 @@ export async function renderCourseDetails(contentArea, course) {
           align-items: center;
           justify-content: space-between;
           cursor: pointer;
-          padding: 0.8rem 1.2rem;
+          padding: 0.8rem 1rem;
           background: linear-gradient(90deg, #1e88e5, #42a5f5);
-          border-radius: 10px;
+          border-radius: 8px;
           color: white;
           font-weight: 600;
-          font-size: 1.1rem;
+          font-size: 1rem;
           transition: all 0.3s ease;
           margin-bottom: 1rem;
+          touch-action: manipulation;
+        }
+        
+        .folder-header:active {
+          transform: scale(0.98);
         }
         
         .folder-content {
@@ -243,14 +283,31 @@ export async function renderCourseDetails(contentArea, course) {
         .assessment-item {
           background: white;
           border-radius: 12px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-          padding: 1.5rem;
-          margin-bottom: 1.5rem;
+          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+          padding: 1.2rem;
+          margin-bottom: 1.2rem;
           border: 1px solid #e2e8f0;
         }
         
+        .assessment-item .card-title {
+          font-size: 1.1rem;
+          font-weight: 600;
+          margin-bottom: 0.8rem;
+          line-height: 1.3;
+        }
+        
+        .assessment-meta {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+        }
+        
+        .assessment-meta small {
+          font-size: 0.85rem;
+        }
+        
         .btn {
-          padding: 0.5rem 1rem;
+          padding: 0.6rem 1rem;
           border-radius: 6px;
           font-weight: 500;
           cursor: pointer;
@@ -260,9 +317,15 @@ export async function renderCourseDetails(contentArea, course) {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          min-height: 42px;
+          min-height: 44px;
           box-sizing: border-box;
           border: none;
+          font-size: 0.9rem;
+          touch-action: manipulation;
+        }
+        
+        .btn:active {
+          transform: scale(0.95);
         }
         
         .btn-primary {
@@ -290,18 +353,25 @@ export async function renderCourseDetails(contentArea, course) {
         }
         
         .btn-sm {
-          padding: 0.4rem 0.8rem;
-          font-size: 0.9rem;
-          min-height: 36px;
+          padding: 0.5rem 0.8rem;
+          font-size: 0.85rem;
+          min-height: 40px;
         }
         
         .form-control {
-          padding: 0.5rem 0.75rem;
+          padding: 0.7rem;
           border: 1px solid #e2e8f0;
           border-radius: 6px;
           font-size: 1rem;
           width: 100%;
           box-sizing: border-box;
+          -webkit-appearance: none;
+        }
+        
+        .form-control:focus {
+          border-color: #3182ce;
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
         }
         
         .form-label {
@@ -309,6 +379,7 @@ export async function renderCourseDetails(contentArea, course) {
           margin-bottom: 0.5rem;
           font-weight: 500;
           color: #4a5568;
+          font-size: 0.9rem;
         }
         
         .mb-2 {
@@ -333,9 +404,10 @@ export async function renderCourseDetails(contentArea, course) {
         }
         
         .table th, .table td {
-          padding: 0.75rem;
+          padding: 0.6rem;
           border-bottom: 1px solid #e2e8f0;
           text-align: left;
+          font-size: 0.9rem;
         }
         
         .table th {
@@ -346,6 +418,7 @@ export async function renderCourseDetails(contentArea, course) {
         
         .table-responsive {
           overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
         }
         
         .loading-message {
@@ -353,59 +426,323 @@ export async function renderCourseDetails(contentArea, course) {
           padding: 2rem;
           color: #718096;
         }
-      .youtube-container {
-      position: relative;
-      width: 100%;
-      padding-bottom: 56.25%; /* 16:9 aspect ratio */
-      height: 0;
-      overflow: hidden;
-    }
-    .youtube-container iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-}
+        
+        .youtube-container {
+          position: relative;
+          width: 100%;
+          padding-bottom: 56.25%;
+          height: 0;
+          overflow: hidden;
+          border-radius: 8px;
+        }
+        
+        .youtube-container iframe {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border: 0;
+          border-radius: 8px;
+        }
+        
+        /* Resource actions responsive layout */
+        .resource-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-bottom: 0.8rem;
+        }
+        
+        .resource-actions .btn {
+          flex: 1;
+          min-width: 80px;
+        }
+        
+        /* Mobile-specific improvements */
+        @media (max-width: 768px) {
+          .course-details-container {
+            padding: 0.5rem;
+            min-height: calc(100vh - 1rem);
+          }
 
-      @media (max-width: 768px) {
-  .course-details-container {
-    padding:0;
-  }
+          .course-header {
+            padding: 1rem;
+            margin-bottom: 1rem;
+          }
+          
+          .course-title {
+            font-size: 1.3rem;
+          }
+          
+          .course-description {
+            font-size: 0.95rem;
+          }
 
-  .course-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
+          .course-meta {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+          }
 
-  .nav-tabs {
-    overflow-x: auto;
-  }
+          .nav-tabs {
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+          }
 
-  .nav-link {
-    padding: 0.75rem 1rem;
-    font-size: 0.9rem;
-  }
+          .nav-link {
+            padding: 0.7rem 1rem;
+            font-size: 0.85rem;
+          }
 
-  .resource-grid {
-    grid-template-columns: 1fr; /* fixed to single full-width column */
-  }
+          .tab-content {
+            padding: 1rem;
+          }
 
-  .folder-header {
-    font-size: 1.5rem; /* fixed typo */
-    padding: 0.6rem 1rem;
-  }
+          .resource-grid {
+            gap: 0.8rem;
+          }
 
-  .assessment-item {
-    padding: 1rem;
-  }
-}
+          .resource-card {
+            padding: 1rem;
+          }
 
-</style>
+          .folder-header {
+            font-size: 0.95rem;
+            padding: 0.7rem 0.8rem;
+          }
 
-    
+          .assessment-item {
+            padding: 1rem;
+          }
+          
+          .assessment-meta {
+            margin-top: 0.8rem;
+          }
+          
+          .assessment-actions {
+            margin-top: 1rem;
+          }
+          
+          .assessment-actions .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+          }
+          
+          /* Table mobile optimization */
+          .table-responsive {
+            font-size: 0.8rem;
+          }
+          
+          .table th, .table td {
+            padding: 0.4rem;
+            min-width: 80px;
+          }
+          
+          /* Form improvements for mobile */
+          .form-control {
+            font-size: 16px; /* Prevents zoom on iOS */
+            padding: 0.8rem;
+          }
+          
+          textarea.form-control {
+            min-height: 100px;
+          }
+          
+          /* Quiz form mobile optimization */
+          .quiz-block {
+            margin-bottom: 1rem;
+          }
+          
+          .quiz-response-form .form-check {
+            margin-bottom: 0.8rem;
+          }
+          
+          .quiz-response-form .form-check-label {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            padding-left: 0.3rem;
+          }
+          
+          /* Resource completion section */
+          .resource-completion {
+            margin-top: 1rem;
+          }
+          
+          .rating-section {
+            margin-top: 0.8rem;
+          }
+          
+          .rating-section select,
+          .rating-section button {
+            margin-bottom: 0.5rem;
+          }
+          
+          /* Status row mobile layout */
+          .status-row {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 0.5rem !important;
+          }
+          
+          .status-row span,
+          .status-row button {
+            width: 100%;
+          }
+          
+          /* Video and media responsive */
+          .youtube-container {
+            margin-top: 0.8rem;
+          }
+          
+          video {
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+          }
+          
+          /* PDF iframe mobile optimization */
+          iframe[src*=".pdf"] {
+            height: 250px !important;
+          }
+          
+          /* Submission form mobile */
+          .assessment-submit-area {
+            margin-top: 1rem;
+          }
+          
+          .assessment-submit-form .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+          }
+          
+          /* Toast container mobile positioning */
+          #toast-container {
+            top: 10px !important;
+            right: 10px !important;
+            left: 10px !important;
+            width: auto !important;
+          }
+        }
+
+        /* Small mobile devices */
+        @media (max-width: 480px) {
+          .course-details-container {
+            padding: 0.25rem;
+          }
+          
+          .course-header {
+            padding: 0.8rem;
+            border-radius: 8px;
+          }
+          
+          .course-title {
+            font-size: 1.2rem;
+          }
+          
+          .tab-content {
+            padding: 0.8rem;
+            border-radius: 8px;
+          }
+          
+          .resource-card,
+          .assessment-item {
+            padding: 0.8rem;
+            border-radius: 8px;
+          }
+          
+          .btn {
+            font-size: 0.85rem;
+            padding: 0.6rem 0.8rem;
+          }
+          
+          .btn-sm {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.6rem;
+          }
+          
+          .folder-header {
+            font-size: 0.9rem;
+            padding: 0.6rem;
+          }
+          
+          .table th, .table td {
+            padding: 0.3rem;
+            font-size: 0.75rem;
+          }
+        }
+
+        /* Landscape orientation improvements */
+        @media (max-width: 768px) and (orientation: landscape) {
+          .course-details-container {
+            padding: 0.5rem;
+          }
+          
+          .course-header {
+            padding: 1rem;
+          }
+          
+          .resource-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        /* High DPI displays */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+          .resource-card,
+          .assessment-item,
+          .course-header,
+          .tab-content {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          }
+        }
+
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+          * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+          .course-header,
+          .tab-content,
+          .resource-card,
+          .assessment-item {
+            background: #1a202c;
+            color: #e2e8f0;
+            border-color: #2d3748;
+          }
+          
+          .course-title {
+            color: #63b3ed;
+          }
+          
+          .text-muted {
+            color: #a0aec0 !important;
+          }
+          
+          .empty-message {
+            background: #2d3748;
+            color: #a0aec0;
+            border-color: #4a5568;
+          }
+          
+          .form-control {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-color: #4a5568;
+          }
+          
+          .table th {
+            background: #2d3748;
+            color: #e2e8f0;
+          }
+        }
+      </style>
 
       <div class="course-details-container">
         <!-- Course Header Section -->
@@ -443,7 +780,7 @@ export async function renderCourseDetails(contentArea, course) {
           <!-- Assessments Tab -->
           <div class="tab-pane fade" id="assessments" role="tabpanel">
             <div class="assessments-container" id="assessmentsContainer">
-              ${await renderAssessments(assessments || [], course._id)} <!-- Pass courseId to check submissions -->
+              ${await renderAssessments(assessments || [], course._id)}
             </div>
           </div>
           
@@ -551,7 +888,7 @@ export async function renderCourseDetails(contentArea, course) {
         body: JSON.stringify({
           userId: userFromEmail._id,
           rating: ratingInput,
-          feedback: '' // optional
+          feedback: ''
         })
       });
 
@@ -673,7 +1010,7 @@ export async function renderCourseDetails(contentArea, course) {
         const comment = form.querySelector('textarea').value;
         const assessmentItem = form.closest('.assessment-item');
         const assessmentId = assessmentItem.getAttribute('data-assessment-id');
-        const courseId = course._id; // Use the course ID from the parent function
+        const courseId = course._id;
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const email = user.email || 'Unknown'; 
         const username = user.name || 'Anonymous';
@@ -738,19 +1075,19 @@ export async function renderCourseDetails(contentArea, course) {
     });
 
     document.querySelectorAll('.folder-header').forEach(header => {
-  header.addEventListener('click', () => {
-    const content = header.nextElementSibling;
-    const icon = header.querySelector('.fas.fa-chevron-down');
+      header.addEventListener('click', () => {
+        const content = header.nextElementSibling;
+        const icon = header.querySelector('.fas.fa-chevron-down');
 
-    if (content.style.display === 'none' || content.style.display === '') {
-      content.style.display = 'block';
-      icon.style.transform = 'rotate(0deg)';
-    } else {
-      content.style.display = 'none';
-      icon.style.transform = 'rotate(-90deg)';
-    }
-  });
-});
+        if (content.style.display === 'none' || content.style.display === '') {
+          content.style.display = 'block';
+          icon.style.transform = 'rotate(0deg)';
+        } else {
+          content.style.display = 'none';
+          icon.style.transform = 'rotate(-90deg)';
+        }
+      });
+    });
 
     // Render quizzes after assessments
     await renderQuizzes(course._id);
@@ -767,7 +1104,6 @@ export async function renderCourseDetails(contentArea, course) {
 
           const resourceItem = btn.closest('.resource-item');
           const title = resourceItem ? resourceItem.querySelector('h4').textContent : '';
-          
         });
       });
     }, 0);
@@ -777,7 +1113,6 @@ export async function renderCourseDetails(contentArea, course) {
     window.addEventListener('beforeunload', () => {
       const endTime = new Date();
       const timeSpent = (endTime - startTime) / 1000;
-  
     });
 
   } catch (error) {
@@ -792,8 +1127,7 @@ export async function renderCourseDetails(contentArea, course) {
   }
 }
 
-
-//Renders the submissions tab content
+// Renders the submissions tab content
 async function renderSubmissions(courseId, contentArea) {
   const submissionsContainer = contentArea.querySelector('#submissionsContainer');
   submissionsContainer.innerHTML = '<p>Loading your submissions...</p>';
@@ -807,15 +1141,12 @@ async function renderSubmissions(courseId, contentArea) {
       return;
     }
 
-    // Fetch submissions for this course and user
     const response = await fetch(`${API_BASE_URL}/course/${courseId}/${email}`);
     const submissions = await response.json();
 
-    // Fetch assessments to get their titles
     const assessmentsResponse = await fetch(`${API_BASE_URL}/courses/${courseId}/assessments`);
     const assessmentsRaw = await assessmentsResponse.json();
 
-    // Normalize to flat array (works for both array and grouped object)
     const assessments = assessmentsRaw && typeof assessmentsRaw === "object" && !Array.isArray(assessmentsRaw)
       ? Object.values(assessmentsRaw).flat()
       : Array.isArray(assessmentsRaw)
@@ -827,60 +1158,198 @@ async function renderSubmissions(courseId, contentArea) {
       return;
     }
 
-    // Render submissions table with delete buttons
+    // Mobile-optimized submissions layout
     submissionsContainer.innerHTML = `
       <div class="submissions-list">
         <h3>Your Submissions</h3>
-        <div class="table-responsive">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>Assessment</th>
-                <th>Submitted At</th>
-                <th>File</th>
-                <th>Grade</th>
-                <th>Feedback</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${submissions.map(sub => {
-                const assessment = assessments.find(a => a._id === sub.assessmentId);
-                const assessmentTitle = assessment ? assessment.title : 'Unknown Assessment';
-                const fileUrl = sub.downloadUrl || 
-                  (sub.filePath ? `${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}` : null);
-                
-                return `
-                  <tr data-submission-id="${sub._id}">
-                    <td>${assessmentTitle}</td>
-                    <td>${new Date(sub.submittedAt).toLocaleString()}</td>
-                    <td>
-                      ${fileUrl ? 
-                        `<a href="${fileUrl}" download="${sub.originalFileName || 'submission'}" class="btn btn-sm btn-outline-primary">Download</a>` : 
-                        'No file'}
-                    </td>
-                    <td>${sub.grade || 'Not graded'}</td>
-                    <td>${sub.feedback || 'No feedback'}</td>
-                    <td>
-                      <span class="badge ${sub.grade ? 'bg-success' : 'bg-warning'}">
-                        ${sub.grade ? 'Graded' : 'Submitted'}
-                      </span>
-                    </td>
-                    <td>
-                      <button class="btn btn-sm btn-outline-danger delete-submission" 
-                              data-submission-id="${sub._id}"
-                              title="Delete submission">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
+        <div class="submissions-mobile-cards">
+          ${submissions.map(sub => {
+            const assessment = assessments.find(a => a._id === sub.assessmentId);
+            const assessmentTitle = assessment ? assessment.title : 'Unknown Assessment';
+            const fileUrl = sub.downloadUrl || 
+              (sub.filePath ? `${API_BASE_URL.replace('/api', '')}/${sub.filePath.replace(/\\/g, '/')}` : null);
+            
+            return `
+              <div class="submission-card" data-submission-id="${sub._id}">
+                <div class="submission-header">
+                  <h4>${assessmentTitle}</h4>
+                  <span class="badge ${sub.grade ? 'bg-success' : 'bg-warning'}">
+                    ${sub.grade ? 'Graded' : 'Submitted'}
+                  </span>
+                </div>
+                <div class="submission-details">
+                  <div class="detail-row">
+                    <span class="detail-label">Submitted:</span>
+                    <span class="detail-value">${new Date(sub.submittedAt).toLocaleString()}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">Grade:</span>
+                    <span class="detail-value">${sub.grade || 'Not graded'}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">Feedback:</span>
+                    <span class="detail-value">${sub.feedback || 'No feedback'}</span>
+                  </div>
+                </div>
+                <div class="submission-actions">
+                  ${fileUrl ? 
+                    `<a href="${fileUrl}" download="${sub.originalFileName || 'submission'}" class="btn btn-sm btn-outline-primary">Download File</a>` : 
+                    '<span class="no-file-text">No file</span>'}
+                  <button class="btn btn-sm btn-outline-danger delete-submission" 
+                          data-submission-id="${sub._id}"
+                          title="Delete submission">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
         </div>
       </div>
+      
+      <style>
+        .submissions-mobile-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+        
+        .submission-card {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+          padding: 1.2rem;
+          border: 1px solid #e2e8f0;
+        }
+        
+        .submission-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 1rem;
+          gap: 1rem;
+        }
+        
+        .submission-header h4 {
+          margin: 0;
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: #2d3748;
+          line-height: 1.3;
+          flex: 1;
+        }
+        
+        .submission-details {
+          margin-bottom: 1rem;
+        }
+        
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 0.5rem;
+          gap: 1rem;
+        }
+        
+        .detail-label {
+          font-weight: 600;
+          color: #4a5568;
+          font-size: 0.9rem;
+          min-width: 80px;
+          flex-shrink: 0;
+        }
+        
+        .detail-value {
+          color: #2d3748;
+          font-size: 0.9rem;
+          text-align: right;
+          flex: 1;
+          word-break: break-word;
+        }
+        
+        .submission-actions {
+          display: flex;
+          gap: 0.5rem;
+          justify-content: space-between;
+          flex-wrap: wrap;
+        }
+        
+        .submission-actions .btn {
+          flex: 1;
+          min-width: 100px;
+        }
+        
+        .no-file-text {
+          color: #a0aec0;
+          font-style: italic;
+          font-size: 0.9rem;
+          flex: 1;
+          display: flex;
+          align-items: center;
+        }
+        
+        @media (max-width: 480px) {
+          .submission-card {
+            padding: 1rem;
+          }
+          
+          .submission-header {
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+          
+          .submission-header h4 {
+            font-size: 1rem;
+          }
+          
+          .detail-row {
+            flex-direction: column;
+            gap: 0.2rem;
+          }
+          
+          .detail-label {
+            min-width: auto;
+          }
+          
+          .detail-value {
+            text-align: left;
+          }
+          
+          .submission-actions {
+            flex-direction: column;
+          }
+          
+          .submission-actions .btn {
+            width: 100%;
+            min-width: auto;
+          }
+        }
+        
+        /* Dark mode support for submissions */
+        @media (prefers-color-scheme: dark) {
+          .submission-card {
+            background: #1a202c;
+            color: #e2e8f0;
+            border-color: #2d3748;
+          }
+          
+          .submission-header h4 {
+            color: #e2e8f0;
+          }
+          
+          .detail-label {
+            color: #a0aec0;
+          }
+          
+          .detail-value {
+            color: #e2e8f0;
+          }
+          
+          .no-file-text {
+            color: #718096;
+          }
+        }
+      </style>
     `;
 
     // Add event listeners for delete buttons
@@ -888,7 +1357,7 @@ async function renderSubmissions(courseId, contentArea) {
       button.addEventListener('click', async (e) => {
         e.preventDefault();
         const submissionId = button.dataset.submissionId;
-        const row = button.closest('tr');
+        const card = button.closest('.submission-card');
         
         if (confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
           try {
@@ -897,11 +1366,10 @@ async function renderSubmissions(courseId, contentArea) {
             });
 
             if (response.ok) {
-              row.remove();
+              card.remove();
               showToast('Submission deleted successfully', 'success');
               
-              // If this was the last submission, show empty message
-              if (submissionsContainer.querySelectorAll('tbody tr').length === 0) {
+              if (submissionsContainer.querySelectorAll('.submission-card').length === 0) {
                 submissionsContainer.innerHTML = '<div class="empty-message">You have no submissions for this course yet.</div>';
               }
             } else {
@@ -938,7 +1406,6 @@ function showToast(message, type = 'success') {
   `;
   toastContainer.appendChild(toast);
   
-  // Auto-remove after 5 seconds
   setTimeout(() => {
     toast.remove();
   }, 5000);
@@ -955,28 +1422,16 @@ function createToastContainer() {
   return container;
 }
 
-//Renders course resources
-// Renders course resources with collapsible folders
-// Renders course resources with styled folders
+// Renders course resources with mobile-optimized folders
 function renderResources(resources) {
   if (!resources || resources.length === 0) {
     return `
-      <div class="empty-message" style="
-        background:#f8fafc;
-        border:1px solid #e2e8f0;
-        border-radius:12px;
-        padding:2rem;
-        text-align:center;
-        color:#64748b;
-        font-size:1rem;">
+      <div class="empty-message">
         <p>No resources available for this course yet.</p>
       </div>
     `;
   }
-  console.log("Resource: ", resources);
   
-
-  // Group resources by folder
   const folders = {};
   resources.forEach(res => {
     const folder = res.folder || "General";
@@ -985,130 +1440,80 @@ function renderResources(resources) {
   });
 
   return `
-    <div class="foldered-resources" style="margin-top: 1.5rem;">
+    <div class="foldered-resources">
       ${Object.keys(folders).map(folderName => `
-        <div class="folder-section" style="margin-bottom:2.5rem;">
-          <!-- Folder Header -->
-          <div class="folder-header" style="
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            cursor:pointer;
-            padding:0.8rem 1.2rem;
-            background:linear-gradient(90deg,#1e88e5,#42a5f5);
-            border-radius:10px;
-            color:white;
-            font-weight:600;
-            font-size:1.1rem;
-            transition:all 0.3s ease;">
-            <span><i class="fas fa-folder-open" style="margin-right:8px;"></i> ${folderName}</span>
+        <div class="folder-section">
+          <div class="folder-header">
+            <span><i class="fas fa-folder-open"></i> ${folderName}</span>
             <i class="fas fa-chevron-down"></i>
           </div>
 
-          <!-- Folder Content -->
-          <div class="folder-content" style="margin-top:1rem; display:none;">
-            <div class="resource-grid" style="
-              display:grid;
-              grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-              gap: 24px;">
+          <div class="folder-content">
+            <div class="resource-grid">
               ${folders[folderName].map(resource => {
                 const ext = resource.originalName ? resource.originalName.split('.').pop().toLowerCase() : '';
-
-               
-                const fileUrl = resource.type === 'link'
-                       ? resource.link
-                        : resource.downloadUrl || '#';
-
+                const fileUrl = resource.type === 'link' ? resource.link : resource.downloadUrl || '#';
                 const canView = fileUrl && ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
-
                 const isVideoFile = resource.filePath && ['mp4', 'webm', 'ogg'].includes(ext);
-
-                const isAudioFile = resource.filePath && ['mp3', 'wav', 'ogg'].includes(ext);     
+                
                 let isYouTube = false;
-let youTubeEmbed = '';
+                let youTubeEmbed = '';
 
-if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
-  isYouTube = true;
+                if (resource.link && (resource.link.includes('youtube.com') || resource.link.includes('youtu.be'))) {
+                  isYouTube = true;
 
-  try {
-    const urlObj = new URL(resource.link);
-    const videoId = urlObj.searchParams.get("v") || resource.link.split("youtu.be/")[1]?.substring(0, 11);
-    const playlistId = urlObj.searchParams.get("list");
+                  try {
+                    const urlObj = new URL(resource.link);
+                    const videoId = urlObj.searchParams.get("v") || resource.link.split("youtu.be/")[1]?.substring(0, 11);
+                    const playlistId = urlObj.searchParams.get("list");
 
-    if (videoId) {
-      // Only embed if screen is wide enough (e.g. >= 768px)
-      if (window.innerWidth >= 768) {
-        let embedUrl = `https://www.youtube.com/embed/${videoId}`;
-        if (playlistId) {
-          embedUrl += `?list=${playlistId}`;
-        }
+                    if (videoId) {
+                      let embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                      if (playlistId) {
+                        embedUrl += `?list=${playlistId}`;
+                      }
 
-        youTubeEmbed = `
-          <div class="youtube-container" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; max-width:100%; border-radius:8px;">
-            <iframe
-              src="${embedUrl}"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-              style="position:absolute; top:0; left:0; width:100%; height:100%; border-radius:8px;">
-            </iframe>
-          </div>
-        `;
-      } else {
-        // On smaller screens, just show the link
-        youTubeEmbed = `
-          <a href="${resource.link}" target="_blank" style="color:#2563eb; font-weight:500;">📺 Watch on YouTube</a>
-        `;
-      }
-    }
-  } catch (e) {
-    console.error("Invalid YouTube URL:", resource.link);
-  }
-}
-
-
-
- 
+                      youTubeEmbed = `
+                        <div class="youtube-container">
+                          <iframe
+                            src="${embedUrl}"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                          </iframe>
+                        </div>
+                      `;
+                    }
+                  } catch (e) {
+                    console.error("Invalid YouTube URL:", resource.link);
+                  }
+                }
 
                 return `
-                  <div class="resource-card" style="
-                    background: #fff;
-                    border-radius: 14px;
-                    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-                    padding: 1.5rem 1.2rem;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: space-between;
-                    transition: transform 0.2s ease, box-shadow 0.2s ease;
-                  "
-                  onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 6px 18px rgba(0,0,0,0.1)'"
-                  onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(0,0,0,0.06)'"
-                  >
+                  <div class="resource-card">
                     <div>
-                      <h4 style="margin-bottom: 0.5rem; color: #1e88e5; font-weight: 600; font-size:1.1rem;">${resource.title}</h4>
-                      <p class="resource-meta" style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.7rem;">
-                        <span style="margin-right: 12px;"><i class="fas fa-tag"></i> ${resource.type}</span>
+                      <h4>${resource.title}</h4>
+                      <div class="resource-meta">
+                        <span><i class="fas fa-tag"></i> ${resource.type}</span>
                         <span><i class="fas fa-calendar-alt"></i> ${new Date(resource.createdAt).toLocaleDateString()}</span>
-                      </p>
-                      <p style="font-size: 0.95rem; color: #334155; margin-bottom: 1rem; line-height:1.4;">${resource.description || '<span style="color:#bbb;">No description</span>'}</p>
+                      </div>
+                      <p>${resource.description || '<span style="color:#bbb;">No description</span>'}</p>
                     </div>
 
-                    <div class="resource-actions" style="margin-bottom: 0.7rem;">
-                      ${canView ? `<a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm" style="margin-right:8px;">View</a>` : ''}
-                      ${
-                        resource.filePath && !isYouTube
-                          ? `<a href="${API_BASE_URL}/resources/${resource._id}/download" class="btn btn-outline-secondary btn-sm" style="margin-right:8px;">Download</a>`
-                          : ''
-                      }
+                    <div class="resource-actions">
+                      ${canView ? `<a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm">View</a>` : ''}
+                      ${resource.filePath && !isYouTube
+                        ? `<a href="${API_BASE_URL}/resources/${resource._id}/download" class="btn btn-outline-secondary btn-sm">Download</a>`
+                        : ''}
                     </div>
 
                     ${ext === 'pdf'
                       ? `<div style="margin-top:10px;">
-                        <iframe src="${fileUrl}" width="100%" height="300" style="border-radius:8px; border:1px solid #eee;"></iframe>
+                        <iframe src="${fileUrl}" width="100%" height="250" style="border-radius:8px; border:1px solid #eee;"></iframe>
                       </div>` : ''}
 
                     ${isVideoFile ? `
-                      <video width="100%"  controls style="margin-top:10px; border-radius:8px;">
+                      <video width="100%" controls style="margin-top:10px; border-radius:8px;">
                         <source src="${fileUrl}" type="video/${ext}">
                         Your browser does not support the video tag.
                       </video>
@@ -1129,13 +1534,13 @@ if (resource.link && (resource.link.includes('youtube.com') || resource.link.inc
                     <div class="resource-completion" data-resource-id="${resource._id}">
                       <button class="btn btn-sm btn-outline-success mark-complete-btn">Mark Complete</button>
                       <div class="rating-section mt-2" style="display:none;">
-                        <label style="font-size:0.9rem;">Rate this resource:</label>
-                        <select class="form-select form-select-sm rating-input" style="width:auto; display:inline-block;">
-                          <option value="">--</option>
+                        <label>Rate this resource:</label>
+                        <select class="form-control rating-input">
+                          <option value="">Select rating</option>
                           <option value="1">1 - Poor</option>
-                          <option value="2">2</option>
-                          <option value="3">3 - Okay</option>
-                          <option value="4">4</option>
+                          <option value="2">2 - Fair</option>
+                          <option value="3">3 - Good</option>
+                          <option value="4">4 - Very Good</option>
                           <option value="5">5 - Excellent</option>
                         </select>
                         <button class="btn btn-sm btn-primary submit-rating-btn">Submit</button>
@@ -1149,35 +1554,15 @@ if (resource.link && (resource.link.includes('youtube.com') || resource.link.inc
         </div>
       `).join('')}
     </div>
-
- 
   `;
-  
 }
 
-
-
-
-   
-     
-    
-
-/**
- * Renders assessments list with submission status check
- * @param {Array} assessments - Array of assessment objects
- * @param {string} courseId - The ID of the course
- * @returns {string} HTML string of rendered assessments
- */
+// Renders assessments with mobile optimization
 async function renderAssessments(assessments, courseId) {
   if (assessments.length === 0) {
-    return `
-      <div class="empty-assessments">
-        <p>No assessments available for this course yet.</p>
-      </div>
-    `;
+    return `<div class="empty-message"><p>No assessments available for this course yet.</p></div>`;
   }
 
-  // Get user submissions for this course
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const email = user.email;
   let userSubmissions = [];
@@ -1191,15 +1576,11 @@ async function renderAssessments(assessments, courseId) {
     }
   }
 
-  let submitAreaId = 'assessment-submit-area';
-
   return `
     <div class="assessment-list">
       ${assessments.map(assessment => {
-        // Check if user has already submitted this assessment
         const hasSubmitted = userSubmissions.some(sub => sub.assessmentId === assessment._id);
         
-        // Due date highlighting
         let dueClass = '';
         if (assessment.dueDate) {
           const today = new Date();
@@ -1213,45 +1594,39 @@ async function renderAssessments(assessments, courseId) {
           }
         }
 
-        // Show file link if filePath exists
-
-        let fileLink ='';
-        const fileUrl = assessment.downloadUrl ;
+        let fileLink = '';
+        const fileUrl = assessment.downloadUrl;
         
         if (assessment.filePath) {
-          
-
           const ext = assessment.originalName ? assessment.originalName.split('.').pop().toLowerCase() : '';
           const canView = ['pdf', 'png', 'jpg', 'jpeg', 'gif'].includes(ext);
           if (canView) {
-            fileLink = `<a href="${fileUrl}" target="_blank" class="btn btn-outline-info btn-sm" style="margin-left:8px;">View Attached File</a>`;
+            fileLink = `<a href="${fileUrl}" target="_blank" class="btn btn-outline-info btn-sm">View File</a>`;
           } else {
-            fileLink = `<a href="${fileUrl}" download class="btn btn-outline-info btn-sm" style="margin-left:8px;">Download Attached File</a>`;
+            fileLink = `<a href="${fileUrl}" download class="btn btn-outline-info btn-sm">Download File</a>`;
           }
         }
 
         return `
-          <div class="assessment-item card mb-3" data-assessment-id="${assessment._id}" data-course-id="${courseId}">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-start">
-                <div>
-                  <h5 class="card-title">${assessment.title}</h5>
-                  <p class="card-text">${assessment.description || 'No description provided'}</p>
-                  ${fileLink}
-                </div>
+          <div class="assessment-item" data-assessment-id="${assessment._id}" data-course-id="${courseId}">
+            <div class="assessment-content">
+              <div class="assessment-header">
+                <h5>${assessment.title}</h5>
                 <span class="badge ${getAssessmentBadgeClass(assessment.status)}">
                   ${assessment.status || 'Pending'}
                 </span>
               </div>
-              <div class="assessment-meta mt-2">
-                <small class="text-muted me-3 ${dueClass}">
+              <p class="assessment-description">${assessment.description || 'No description provided'}</p>
+              ${fileLink ? `<div class="assessment-file">${fileLink}</div>` : ''}
+              <div class="assessment-meta">
+                <div class="meta-item ${dueClass}">
                   <strong>Due:</strong> ${assessment.dueDate ? new Date(assessment.dueDate).toLocaleDateString() : 'No due date'}
-                </small>
-                <small class="text-muted">
+                </div>
+                <div class="meta-item">
                   <strong>Points:</strong> ${assessment.points || 'N/A'}
-                </small>
+                </div>
               </div>
-              <div class="assessment-actions mt-3">
+              <div class="assessment-actions">
                 ${hasSubmitted ? 
                   `<button class="btn btn-success btn-sm" disabled>Already Submitted</button>` : 
                   assessment.status === 'completed' ? 
@@ -1260,22 +1635,25 @@ async function renderAssessments(assessments, courseId) {
                       ${assessment.status === 'in-progress' ? 'Continue' : 'Start'}
                     </button>`}
                 ${assessment.grade ? 
-                  `<span class="ms-2 badge bg-info">Grade: ${assessment.grade}</span>` : ''}
+                  `<span class="grade-badge">Grade: ${assessment.grade}</span>` : ''}
               </div>
               ${!hasSubmitted ? `
-                <div id="${submitAreaId}-${assessment._id}" class="assessment-submit-area" style="display:none; margin-top:1rem;">
+                <div id="assessment-submit-area-${assessment._id}" class="assessment-submit-area" style="display:none;">
                   <form enctype="multipart/form-data" class="assessment-submit-form">
-                    <div class="mb-2">
+                    <div class="form-group">
                       <label for="submissionFile-${assessment._id}" class="form-label">Attach your file:</label>
                       <input type="file" id="submissionFile-${assessment._id}" name="submissionFile" class="form-control" required>
                     </div>
-                    <div class="mb-2">
-                      <textarea class="form-control" name="submissionComment" placeholder="Add a comment (optional)"></textarea>
+                    <div class="form-group">
+                      <label class="form-label">Comment (optional):</label>
+                      <textarea class="form-control" name="submissionComment" placeholder="Add a comment about your submission..."></textarea>
                     </div>
-                    <button type="submit" class="btn btn-success btn-sm">Submit Assessment</button>
-                    <button type="button" class="btn btn-secondary btn-sm cancel-submit" data-assessment-id="${assessment._id}" style="margin-left:8px;">Cancel</button>
+                    <div class="form-actions">
+                      <button type="submit" class="btn btn-success">Submit Assessment</button>
+                      <button type="button" class="btn btn-secondary cancel-submit" data-assessment-id="${assessment._id}">Cancel</button>
+                    </div>
                   </form>
-                  <div class="submit-message mt-2"></div>
+                  <div class="submit-message"></div>
                 </div>
               ` : ''}
             </div>
@@ -1283,11 +1661,121 @@ async function renderAssessments(assessments, courseId) {
         `;
       }).join('')}
     </div>
+    
+    <style>
+      .assessment-content {
+        padding: 0;
+      }
+      
+      .assessment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        gap: 1rem;
+      }
+      
+      .assessment-header h5 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        line-height: 1.3;
+        flex: 1;
+      }
+      
+      .assessment-description {
+        color: #4a5568;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+      }
+      
+      .assessment-file {
+        margin-bottom: 1rem;
+      }
+      
+      .assessment-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      
+      .meta-item {
+        font-size: 0.9rem;
+        color: #4a5568;
+      }
+      
+      .due-passed {
+        color: #e53e3e !important;
+        font-weight: 600;
+      }
+      
+      .due-today {
+        color: #d69e2e !important;
+        font-weight: 600;
+      }
+      
+      .grade-badge {
+        background: #e6fffa;
+        color: #00b3a6;
+        padding: 0.3rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+      }
+      
+      .assessment-submit-area {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+      }
+      
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      
+      .form-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      
+      .submit-message {
+        margin-top: 1rem;
+        padding: 0.5rem;
+        border-radius: 6px;
+      }
+      
+      @media (max-width: 480px) {
+        .assessment-header {
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        
+        .assessment-meta {
+          gap: 0.3rem;
+        }
+        
+        .form-actions {
+          flex-direction: column;
+        }
+        
+        .form-actions .btn {
+          width: 100%;
+        }
+        
+        .grade-badge {
+          margin-left: 0;
+          margin-top: 0.5rem;
+          display: inline-block;
+        }
+      }
+    </style>
   `;
 }
 
-
-//Returns the appropriate Bootstrap badge class based on assessment status
+// Returns the appropriate Bootstrap badge class based on assessment status
 function getAssessmentBadgeClass(status) {
   switch (status) {
     case 'completed': return 'bg-success';
@@ -1298,11 +1786,7 @@ function getAssessmentBadgeClass(status) {
   }
 }
 
-
-
-
-
- //Renders quizzes for the course
+// Renders quizzes for the course with mobile optimization
 async function renderQuizzes(courseId) {
   const quizzesContainerId = 'quizzesContainer';
   let quizzesContainer = document.getElementById(quizzesContainerId);
@@ -1323,41 +1807,256 @@ async function renderQuizzes(courseId) {
       return;
     }
 
-    quizzesContainer.innerHTML = quizzes.map(quiz => `
-      <div class="quiz-block card mb-4" data-quiz-id="${quiz._id}">
-        <div class="card-body">
-          <h5>${quiz.title}</h5>
-          <button class="btn btn-primary btn-sm start-quiz-btn" data-quiz-id="${quiz._id}">Start Quiz</button>
-          <div class="quiz-form-area" id="quiz-form-area-${quiz._id}" style="display:none; margin-top:1rem;">
-            <form class="quiz-response-form" data-quiz-id="${quiz._id}">
-              ${quiz.questions.map((q, qIdx) => `
-                <div class="mb-3">
-                  <strong>Q${qIdx + 1}: <span class="mathjax">${q.question}</span></strong>
-                  <div>
-                    ${q.options.map((opt, oIdx) => `
-                      <div class="form-check">
-                        <input class="form-check-input" type="radio" 
-                          name="question-${qIdx}" 
-                          id="quiz-${quiz._id}-q${qIdx}-opt${oIdx}" 
-                          value="${String.fromCharCode(65 + oIdx)}" required>
-                        <label class="form-check-label" for="quiz-${quiz._id}-q${qIdx}-opt${oIdx}">
-                          <span class="mathjax">${String.fromCharCode(65 + oIdx)}. ${opt}</span>
-                        </label>
+    quizzesContainer.innerHTML = `
+      <div class="quizzes-section">
+        <h3 class="section-title">Course Quizzes</h3>
+        <div class="quiz-list">
+          ${quizzes.map(quiz => `
+            <div class="quiz-block" data-quiz-id="${quiz._id}">
+              <div class="quiz-header">
+                <h4>${quiz.title}</h4>
+                <button class="btn btn-primary start-quiz-btn" data-quiz-id="${quiz._id}">Start Quiz</button>
+              </div>
+              <div class="quiz-form-area" id="quiz-form-area-${quiz._id}" style="display:none;">
+                <form class="quiz-response-form" data-quiz-id="${quiz._id}">
+                  <div class="quiz-questions">
+                    ${quiz.questions.map((q, qIdx) => `
+                      <div class="question-block">
+                        <div class="question-text">
+                          <strong>Question ${qIdx + 1}:</strong>
+                          <span class="mathjax">${q.question}</span>
+                        </div>
+                        <div class="question-options">
+                          ${q.options.map((opt, oIdx) => `
+                            <label class="option-label">
+                              <input type="radio" 
+                                name="question-${qIdx}" 
+                                value="${String.fromCharCode(65 + oIdx)}" 
+                                required>
+                              <span class="option-text mathjax">${String.fromCharCode(65 + oIdx)}. ${opt}</span>
+                            </label>
+                          `).join('')}
+                        </div>
                       </div>
                     `).join('')}
                   </div>
-                </div>
-              `).join('')}
-              <button type="submit" class="btn btn-success btn-sm">Submit Quiz</button>
-              <button type="button" class="btn btn-secondary btn-sm cancel-quiz-btn" style="margin-left:8px;">Cancel</button>
-              <div class="quiz-submit-message mt-2"></div>
-            </form>
-          </div>
+                  <div class="quiz-actions">
+                    <button type="submit" class="btn btn-success">Submit Quiz</button>
+                    <button type="button" class="btn btn-secondary cancel-quiz-btn">Cancel</button>
+                  </div>
+                  <div class="quiz-submit-message"></div>
+                </form>
+              </div>
+            </div>
+          `).join('')}
         </div>
       </div>
-    `).join('');
+      
+      <style>
+        .quizzes-section {
+          margin-top: 2rem;
+          padding-top: 2rem;
+          border-top: 1px solid #e2e8f0;
+        }
+        
+        .quiz-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+        
+        .quiz-block {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+          padding: 1.5rem;
+          border: 1px solid #e2e8f0;
+        }
+        
+        .quiz-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+          gap: 1rem;
+        }
+        
+        .quiz-header h4 {
+          margin: 0;
+          font-size: 1.2rem;
+          font-weight: 600;
+          color: #2d3748;
+          flex: 1;
+        }
+        
+        .quiz-form-area {
+          margin-top: 1.5rem;
+        }
+        
+        .quiz-questions {
+          margin-bottom: 2rem;
+        }
+        
+        .question-block {
+          background: #f8fafc;
+          border-radius: 8px;
+          padding: 1.2rem;
+          margin-bottom: 1.5rem;
+          border: 1px solid #e2e8f0;
+        }
+        
+        .question-text {
+          margin-bottom: 1rem;
+          font-size: 1rem;
+          line-height: 1.5;
+          color: #2d3748;
+        }
+        
+        .question-options {
+          display: flex;
+          flex-direction: column;
+          gap: 0.8rem;
+        }
+        
+        .option-label {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.8rem;
+          padding: 0.8rem;
+          background: white;
+          border-radius: 6px;
+          border: 1px solid #e2e8f0;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-size: 0.95rem;
+          line-height: 1.4;
+        }
+        
+        .option-label:hover {
+          background: #f7fafc;
+          border-color: #3182ce;
+        }
+        
+        .option-label input[type="radio"] {
+          margin: 0;
+          flex-shrink: 0;
+          margin-top: 0.1rem;
+        }
+        
+        .option-text {
+          flex: 1;
+          word-wrap: break-word;
+        }
+        
+        .quiz-actions {
+          display: flex;
+          gap: 1rem;
+          justify-content: center;
+        }
+        
+        .quiz-submit-message {
+          margin-top: 1rem;
+          padding: 1rem;
+          border-radius: 6px;
+          text-align: center;
+          font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+          .quiz-block {
+            padding: 1.2rem;
+          }
+          
+          .quiz-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+          }
+          
+          .quiz-header .btn {
+            width: 100%;
+          }
+          
+          .question-block {
+            padding: 1rem;
+          }
+          
+          .option-label {
+            padding: 0.7rem;
+            font-size: 0.9rem;
+          }
+          
+          .quiz-actions {
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+          
+          .quiz-actions .btn {
+            width: 100%;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .quizzes-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+          }
+          
+          .quiz-block {
+            padding: 1rem;
+          }
+          
+          .quiz-header h4 {
+            font-size: 1.1rem;
+          }
+          
+          .question-text {
+            font-size: 0.95rem;
+          }
+          
+          .option-label {
+            padding: 0.6rem;
+            font-size: 0.85rem;
+          }
+        }
+        
+        /* Dark mode support for quizzes */
+        @media (prefers-color-scheme: dark) {
+          .quiz-block {
+            background: #1a202c;
+            color: #e2e8f0;
+            border-color: #2d3748;
+          }
+          
+          .quiz-header h4 {
+            color: #e2e8f0;
+          }
+          
+          .question-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-color: #4a5568;
+          }
+          
+          .question-text {
+            color: #e2e8f0;
+          }
+          
+          .option-label {
+            background: #1a202c;
+            color: #e2e8f0;
+            border-color: #4a5568;
+          }
+          
+          .option-label:hover {
+            background: #2d3748;
+            border-color: #63b3ed;
+          }
+        }
+      </style>
+    `;
 
-    // --- Render LaTeX with MathJax ---
+    // Render LaTeX with MathJax if available
     if (window.MathJax) {
       MathJax.typesetPromise();
     }
@@ -1366,7 +2065,6 @@ async function renderQuizzes(courseId) {
     quizzesContainer.querySelectorAll('.start-quiz-btn').forEach(btn => {
       btn.addEventListener('click', function() {
         const quizId = btn.getAttribute('data-quiz-id');
-  
         const formArea = document.getElementById(`quiz-form-area-${quizId}`);
         formArea.style.display = 'block';
         btn.style.display = 'none';
@@ -1417,7 +2115,6 @@ async function renderQuizzes(courseId) {
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Submission failed');
           
-          // Show grade and milestone message if applicable
           let message = `<span style="color:green;">Quiz submitted! Grade: ${data.grade}% (${data.correctCount}/${data.totalQuestions})</span>`;
           
           if (data.grade >= 80) {
@@ -1460,7 +2157,7 @@ async function renderQuizzes(courseId) {
               });
             }
           } catch (err) {
-            // Optionally handle marking error
+            console.error('Error with auto-marking:', err);
           }
 
           setTimeout(() => {
@@ -1479,6 +2176,7 @@ async function renderQuizzes(courseId) {
     });
 
   } catch (err) {
+    console.error('Error loading quizzes:', err);
     quizzesContainer.innerHTML = '<div class="error-message">Failed to load quizzes.</div>';
   }
 }
