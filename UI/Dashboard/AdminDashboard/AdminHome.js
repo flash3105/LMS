@@ -160,23 +160,29 @@ async function loadPendingApprovals() {
 
 // Function to render the pending approvals table
 function renderPendingApprovalsTable(users, currentUser) {
-  
-
   if (Array.isArray(users) && users.length > 0) {
-    const filteredUsers = users.filter(
-      user => user.institution?._id === currentUser.institution
-    );
-
-    if (filteredUsers.length === 0) {
-      document.getElementById("pendingApprovalsContent").innerHTML = `
-        <div class="alert alert-info">
-          <i class="fas fa-info-circle"></i> No pending approvals found for your institution.
-        </div>
-      `;
-      return;
+    let filteredUsers;
+    
+    // Check if current user has an institution
+    if (currentUser.institution) {
+      // Filter users by institution
+      filteredUsers = users.filter(
+        user => user.institution?._id === currentUser.institution
+      );
+      
+      if (filteredUsers.length === 0) {
+        document.getElementById("pendingApprovalsContent").innerHTML = `
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No pending approvals found for your institution.
+          </div>
+        `;
+        return;
+      }
+    } else {
+      // If current user has no institution, show all pending users
+      filteredUsers = users;
     }
 
-  
     document.getElementById("pendingApprovalsContent").innerHTML = `
       <div style="max-height: 500px; overflow-y: auto;">
         <table class="table table-striped table-hover">
